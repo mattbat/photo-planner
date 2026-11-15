@@ -4,6 +4,27 @@ What changed in each release of Photo Planner, in plain words. Newest first. The
 
 Changes that are merged but not released yet wait as notes in [`changes/`](changes/README.md). See "Releases" in the README for how a release is made.
 
+## 0.3.0 (2026-11-15)
+
+### New
+
+- Mark people as Early or Late for a shoot. Early people (an older guest, someone who needs a break soon) get their shots first; Late people (called away for a bit, a little one who needs a rest) wait until the end. You can set it before the shoot and on the day from Who's here, which re-orders only the shots still to do.
+- When you link people in a family, you can now choose someone who is already in it instead of adding a new person. That makes it easy to join two branches you added separately. If a new name looks like someone already there, the app asks "Is this the same Emma?" and lets you link her instead.
+
+### Improved
+
+- The app and its help now use American spelling throughout: favorite, color, center, gray and so on.
+- Full-group shots now come first by default, so you get them done while everyone is fresh. You can switch it off in Settings or on any shoot.
+- Form fields line up and look consistent: the same height everywhere, dates and times side by side, and a divider between every row of people. The top bar and tab bar have proper icons, times read like "3:53 PM" everywhere, and shoots show a small progress ring.
+- Pick several poses for a shot. Tap as many suggested poses as you like, put them in order, and on shoot day they show as a row you can swipe, with the directions one tap away.
+- The Light section is simpler: it shows just the evening (or morning) around your shoot, with golden hour and sunset at a glance and how your shoot fits. Blue hour is gone. The sun direction now shows a little sun on the compass, with a caption saying when.
+- Weather now shows °F and mph. If you prefer °C and km/h, switch to metric in Settings.
+
+### Fixed
+
+- "Shot 3 of 12" on the shoot day page now counts 1, 2, 3 all the way to the end, and tells you how many shots are left. It no longer jumps around when you skip, retake or pick a shot to do now.
+- A planned shoot you've shared to your assistant can no longer be started on your phone by mistake. Tap Take back control first if you want to run it yourself.
+
 ## 0.2.0 (2026-11-15)
 
 ### New
