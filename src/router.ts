@@ -13,6 +13,7 @@ export type Route =
   | { name: 'families' }
   | { name: 'family'; id: string }
   | { name: 'poses' }
+  | { name: 'pose'; id: string }
   | { name: 'settings' }
   | { name: 'diagnostics' };
 
@@ -28,7 +29,7 @@ export function parseRoute(hash: string): Route {
     case 'families':
       return parts[1] ? { name: 'family', id: decodeURIComponent(parts[1]) } : { name: 'families' };
     case 'poses':
-      return { name: 'poses' };
+      return parts[1] ? { name: 'pose', id: decodeURIComponent(parts[1]) } : { name: 'poses' };
     case 'settings':
       return { name: 'settings' };
     case 'diagnostics':
@@ -44,6 +45,7 @@ export const paths = {
   families: () => '#/families',
   family: (id: string) => `#/families/${encodeURIComponent(id)}`,
   poses: () => '#/poses',
+  pose: (id: string) => `#/poses/${encodeURIComponent(id)}`,
   settings: () => '#/settings',
   diagnostics: () => '#/diagnostics',
 };

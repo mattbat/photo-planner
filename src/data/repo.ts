@@ -1,4 +1,5 @@
 import { planShoot, suggestOrder, type PlanInput, type SoloScope } from '../domain/shotView';
+import { starterPoses } from '../poses/starterPoses';
 import { demoFamily } from '../tree/fixtures';
 import { ALL_TABLES, db } from './db';
 import { defaultSettings } from './defaults';
@@ -558,6 +559,26 @@ export async function deletePose(id: string): Promise<void> {
     });
     await db.poses.delete(id);
   });
+}
+
+/**
+ * Puts the starter library (PL3) into the `poses` table. Safe to call any time:
+ * it only adds starter poses that are missing (matched by their stable id), so
+ * favourites, photos and anything else on an existing row are never touched.
+ * Returns how many were added.
+ */
+export async function seedStarterPoses(): Promise<number> {
+  return db.transaction('rw', db.poses, async () => {
+    const have = new Set(await db.poses.toCollection().primaryKeys());
+    const now = Date.now();
+    const missing = starterPoses.filter((p) => !have.has(p.id)).map((p) => ({ ...p, createdAt: now, updatedAt: now }));
+    if (missing.length) await db.poses.bulkAdd(missing);
+    return missing.length;
+  });
+}
+
+export async function setPoseFavorite(id: string, favorite: boolean): Promise<void> {
+  await db.poses.update(id, { favorite, updatedAt: Date.now() });
 }
 
 export async function addPosePhoto(fields: Pick<PosePhoto, 'poseId' | 'dataUrl' | 'width' | 'height'>): Promise<PosePhoto> {

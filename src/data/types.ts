@@ -271,6 +271,10 @@ export const POSE_TAGS = [
   'full-length',
   'playful',
   'formal',
+  // Who it suits, used to suggest poses for a shot (PL5).
+  'kids-friendly',
+  'baby',
+  'senior-friendly',
 ] as const;
 export type PoseTag = (typeof POSE_TAGS)[number];
 
@@ -300,7 +304,7 @@ export interface Pose extends Stamped {
   favorite: boolean;
   /** True for the starter library shipped with the app; false for the user's own (PL3, PL4). */
   builtIn: boolean;
-  /** Path of the starter illustration inside the app, for built-in poses. */
+  /** Path of the starter illustration under the app's base URL (e.g. `poses/v-shape.svg`), for built-in poses. */
   image?: string;
   imageCredit?: ImageCredit;
 }

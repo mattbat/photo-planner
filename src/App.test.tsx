@@ -41,7 +41,6 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: /Families/ })).toHaveAttribute('aria-current', 'page');
     await goTo('#/poses');
     expect(await screen.findByRole('heading', { name: 'Poses' })).toBeInTheDocument();
-    expect(screen.getByText('The pose library is coming')).toBeInTheDocument();
     await goTo('#/');
     expect(await screen.findByText('No shoots yet')).toBeInTheDocument();
   });
