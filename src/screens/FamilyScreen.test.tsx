@@ -93,7 +93,8 @@ describe('FamilyScreen', () => {
     await waitFor(async () => expect((await db.people.get(ivy.id))!.parentIds).toEqual([max.id]));
     await user.selectOptions(await within(sheet).findByLabelText('Add parent'), gran.id);
     await waitFor(async () => expect((await db.people.get(ivy.id))!.parentIds).toEqual([max.id, gran.id]));
-    expect(within(sheet).queryByLabelText('Add parent')).not.toBeInTheDocument();
+    // The sheet re-renders from a live query, so wait for it to drop the picker.
+    await waitFor(() => expect(within(sheet).queryByLabelText('Add parent')).not.toBeInTheDocument());
 
     // Partners: a new person, then toggle status, then remove.
     await user.type(within(sheet).getByLabelText('New partner’s name'), 'Sky');
