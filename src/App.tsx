@@ -3,6 +3,7 @@ import { useRoute, type TabName } from './router';
 import { DiagnosticsScreen } from './screens/DiagnosticsScreen';
 import { FamilyScreen } from './screens/FamilyScreen';
 import { FamiliesScreen } from './screens/FamiliesScreen';
+import { PoseDetailScreen } from './screens/PoseDetailScreen';
 import { PosesScreen } from './screens/PosesScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { ShootsScreen } from './screens/ShootsScreen';
@@ -29,6 +30,8 @@ export function App() {
     }
     case 'family':
       return <FamilyScreen key={route.id} familyId={route.id} />;
+    case 'pose':
+      return <PoseDetailScreen key={route.id} poseId={route.id} />;
     case 'settings':
       return <SettingsScreen />;
     case 'diagnostics':

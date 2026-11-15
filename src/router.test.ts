@@ -14,11 +14,12 @@ describe('router', () => {
   });
 
   it('builds paths that parse back to the same route', () => {
-    const { family, ...plain } = paths;
+    const { family, pose, ...plain } = paths;
     for (const [name, path] of Object.entries(plain)) {
       expect(parseRoute(path())).toEqual({ name });
     }
     expect(parseRoute(family('a b/1'))).toEqual({ name: 'family', id: 'a b/1' });
+    expect(parseRoute(pose('p/1'))).toEqual({ name: 'pose', id: 'p/1' });
     expect(parseRoute('#/families/f1')).toEqual({ name: 'family', id: 'f1' });
   });
 

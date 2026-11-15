@@ -50,7 +50,7 @@ function betaPage(): Plugin {
 }
 
 /** Unit tests that need no DOM (see `test.projects`). */
-const LOGIC_TESTS = ['src/engine/**/*.test.ts', 'src/tree/**/*.test.ts', 'src/sun/**/*.test.ts', 'src/domain/**/*.test.ts'];
+const LOGIC_TESTS = ['src/engine/**/*.test.ts', 'src/tree/**/*.test.ts', 'src/sun/**/*.test.ts', 'src/domain/**/*.test.ts', 'src/poses/**/*.test.ts'];
 
 /** 95% line coverage for each pure folder that has code (they are empty until M1/M2/M5, and a threshold for a folder with no files fails the run). */
 const PURE_THRESHOLDS = Object.fromEntries(
@@ -94,6 +94,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // The svg pattern also precaches the pose illustrations in public/poses (PL3), so the library works offline.
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         navigateFallback: `${base}index.html`,
       },

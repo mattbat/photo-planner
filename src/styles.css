@@ -1196,3 +1196,231 @@ textarea:focus {
   padding: 10px 0;
   border-bottom: 1px solid var(--surface-2);
 }
+
+/* Pose library (M7) */
+
+.pl-cats,
+.pl-tags,
+.pl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+/* Categories scroll sideways in one row, like Safari's tab strip. */
+.pl-cats {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: -16px;
+  padding-inline: 16px;
+}
+
+.pl-pill {
+  flex: none;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.pl-pill[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.pl-toolbar {
+  align-items: center;
+}
+
+.pl-toolbar .btn {
+  margin-left: auto;
+}
+
+.pl-filters {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.pl-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pl-card,
+.pl-suggest-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+}
+
+.pl-thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.pl-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pl-noimg {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 40px;
+}
+
+.pl-star {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  color: var(--accent);
+  font-size: 20px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.pl-card-name {
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.pl-card-sub {
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.pl-suggest {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin-inline: -16px;
+  padding: 4px 16px 8px;
+  scroll-snap-type: x proximity;
+}
+
+.pl-suggest-card {
+  flex: none;
+  width: 140px;
+  scroll-snap-align: start;
+}
+
+.pl-suggest-card[aria-pressed='true'] {
+  outline: 2px solid var(--accent);
+}
+
+.pl-fav {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 28px;
+}
+
+.pl-gallery {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin-inline: -16px;
+  padding-inline: 16px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.pl-slide {
+  position: relative;
+  flex: none;
+  width: 100%;
+  margin: 0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  scroll-snap-align: center;
+}
+
+.pl-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.pl-slide-del {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+}
+
+.pl-add-photo {
+  margin: 12px 0;
+  cursor: pointer;
+}
+
+.pl-meta {
+  color: var(--text-2);
+  font-size: 15px;
+}
+
+.pl-tag {
+  padding: 4px 10px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.pl-steps,
+.pl-bullets {
+  margin: 0;
+  padding-left: 22px;
+  line-height: 1.45;
+}
+
+.pl-steps li,
+.pl-bullets li {
+  margin-bottom: 8px;
+}
+
+.pl-credit {
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.pl-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
