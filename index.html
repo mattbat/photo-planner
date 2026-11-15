@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#14120e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Photo Planner" />
+    <meta name="description" content="Plan family photo shoots: build the shot list from the family tree, then tick shots off on the day." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <title>Photo Planner</title>
+    <script>
+      // Light or dark before the app loads, so it never flashes the wrong one
+      // (§14). Same logic as applyTheme in src/theme.ts: follow the phone
+      // unless Settings forced Light or Dark.
+      (function () {
+        var pref = "system";
+        try {
+          pref = localStorage.getItem("photo-planner.theme") || "system";
+        } catch (e) {}
+        var light = pref === "light" || (pref !== "dark" && window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches);
+        document.documentElement.dataset.theme = light ? "light" : "dark";
+        document.querySelector("meta[name=theme-color]").setAttribute("content", light ? "#f7f5f0" : "#14120e");
+        // Dark status bar text on the light theme; the Home Screen app reads this at launch.
+        if (light) document.querySelector("meta[name=apple-mobile-web-app-status-bar-style]").setAttribute("content", "default");
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

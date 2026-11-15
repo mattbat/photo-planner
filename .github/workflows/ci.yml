@@ -1,0 +1,141 @@
+# CI for Photo Planner (REQUIREMENTS.md Q-6, REL1–REL4).
+# Every push and pull request: lint → type-check → unit/property tests with
+# coverage → build → end-to-end tests. Pull requests also need a changelog
+# note (or the no-changelog label). Merging isn't releasing: a push to main
+# deploys to GitHub Pages only when it raises the version (a release made with
+# `npm run release`), and only if every earlier job passed. That push is also
+# tagged vX.Y.Z with a GitHub release. Running the workflow by hand on main
+# redeploys main as it is.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, types, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14
+
+  changelog:
+    name: Changelog note
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      # A note in changes/ for any change to the app, or a complete release.
+      - run: node scripts/release.mjs --check "origin/${{ github.base_ref }}"
+        env:
+          NO_CHANGELOG: ${{ contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
+
+  release:
+    name: Is this a release?
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      # Prints the version only when this push raised it.
+      - id: version
+        if: github.event_name == 'push'
+        run: echo "version=$(node scripts/release.mjs --released '${{ github.event.before }}')" >> "$GITHUB_OUTPUT"
+
+  e2e:
+    name: End-to-end (WebKit, iPhone size)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Browsers are cached per Playwright version; only the system libraries
+      # they need are installed each run (much faster than a full download).
+      - id: playwright
+        run: echo "version=$(npx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - id: browser-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-webkit-chromium
+      - if: steps.browser-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps webkit chromium
+      - if: steps.browser-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps webkit chromium
+      # The other job type-checks, so just bundle here.
+      - run: npx vite build
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: needs.release.outputs.version != '' || github.event_name == 'workflow_dispatch'
+    needs: [test, e2e, release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      # Tag the release and publish its changelog section as a GitHub release.
+      - if: needs.release.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          node scripts/release.mjs --notes "$VERSION" > release-notes.md
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "Photo Planner $VERSION" --notes-file release-notes.md
