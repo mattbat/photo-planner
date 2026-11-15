@@ -1,12 +1,12 @@
 # Photo Planner — Requirements
 
-**Status:** Draft v0.1 · 2026-11-15 · plan only, nothing built yet
+**Status:** Draft v0.2 · 2026-11-15 · plan only, nothing built yet (first round of questions answered)
 **Owner:** Matt
 **Primary user:** An amateur photographer who takes family and group pictures, plus an assistant who marks shots off during the shoot
 
 Built the same way as [next5](https://github.com/mattbat/next5): an iPhone PWA on GitHub Pages, everything stored on the phone, a pure and heavily tested "engine" at the core, and the same CI, release, changelog, beta-preview and help setup.
 
-Items marked **❓** depend on an open question in §17. The plan states the default it assumes until the question is answered.
+Items marked **❓** depend on an open question in §17. Decisions so far are in §17a.
 
 ---
 
@@ -26,6 +26,7 @@ Success means: every requested combination is taken, the shoot runs in an order 
 - Manage several shoots: upcoming, in progress and finished.
 - Keep a library of families (clients), entered once and reused for later shoots.
 - Generate shot combinations automatically from the family's relationships, from a set of templates the photographer can switch on and off.
+- Show the family as a tree diagram that makes every relationship easy to see and check (§5a).
 - Let the photographer edit the list: remove, rename, add custom shots, mark must-haves, reorder.
 - Suggest a shooting order that keeps people moving in and out as little as possible.
 - Run the shoot as a fast, one-handed checklist that an assistant can use.
@@ -38,7 +39,8 @@ Success means: every requested combination is taken, the shoot runs in an order 
 - Taking or storing the actual photos, or connecting to the camera.
 - Client billing, contracts, galleries or delivery.
 - Android- or desktop-first layouts (they may work but aren't designed for).
-- ❓ Live sync between two phones (see §9 and Q3).
+- Live sync between two phones (decided 2026-11-15: hand-off like next5 instead, §9).
+- Gear checklists and per-shoot location notes (skipped for now).
 
 ## 3. Platform and technical constraints
 
@@ -47,7 +49,7 @@ Same as next5 unless noted.
 | ID | Requirement |
 |----|-------------|
 | T1 | PWA installed to the iPhone Home Screen, standalone mode. No App Store, no developer account. |
-| T2 | Hosted on GitHub Pages at `mattbat.com/photo-planner/` (❓ Q10 name). Base path and hash routing set for the subpath, as in next5. |
+| T2 | Hosted on GitHub Pages at `mattbat.com/photo-planner/` (name may change; ideas in §17). Base path and hash routing set for the subpath, as in next5. |
 | T3 | Works completely offline after the first load (Workbox precache), **except** the optional online extras: address search, map, weather forecast (§10). Those say clearly when there is no signal and never block anything else. |
 | T4 | Data in IndexedDB through Dexie, with `navigator.storage.persist()`. Versioned migrations; never edit an existing `version(n)`. |
 | T5 | Updates are never applied silently; the update banner is hidden while a shoot is running. |
@@ -58,15 +60,16 @@ Same as next5 unless noted.
 
 ## 4. Core concepts
 
-- **Family (client):** a named group of people for one or more shoots, e.g. "The Carters". Reused across shoots; edits to the family show up in future shoots, not finished ones.
+- **Family (client):** one connected family tree for one or more shoots, e.g. "The Carters". It can be as big as a reunion: several related households, and the in-laws' side too (e.g. Jen's parents, who share the grandkids). Reused across shoots; edits show up in future shoots, not finished ones.
 - **Person:** belongs to a family. Has a name, an optional nickname, and optionally: sex (only used for "sons / daughters / grandsons…" shots), a birth year or "child / adult" (for kid-friendly ordering and pose suggestions), and notes ("uses a wheelchair", "shy, warm up first").
 - **Relationship:** *partner of* (married or together) and *child of*. That's all the user enters. Everything else is worked out: generations, siblings, households, branches, cousins, in-laws.
   - **Generation:** grandparents = G1, their children = G2, grandchildren = G3, great-grandchildren = G4. Partners take the generation of the person they married in through.
-  - **Household:** a couple (or single parent) and their children who still live with them (❓ Q2: or simply all their children).
+  - **Household:** a couple (or single parent) and their children who are not grown. A grown child is their own household, alone or with their partner and kids (decided 2026-11-15). A person is marked *grown* by age or by a toggle; anyone with a partner or children of their own counts as grown.
   - **Branch:** one child of the top couple, plus their partner and all their descendants (e.g. "Mike's family").
 - **Shot:** one photo setup: a name ("Grandparents + all grandkids"), the exact set of people in it, which template made it (or *custom*), and a must-have flag, notes and a suggested pose.
-- **Shot template:** a rule that turns the family tree into shots (§6). Templates can be on or off per family, with defaults in Settings.
-- **Shoot:** a session for one family (❓ Q4: or several families at one event): date, location, planned start, attending people, the shot list, its order, and on the day each shot's status.
+- **Shot template:** a rule that turns the family tree into shots (§6). Each shoot chooses which templates to use; Settings holds the starting choice for new shoots.
+- **Extra people:** guests and pets (a friend, a nanny, the dog 🐶) who aren't part of the tree. They're left out of generated shots and added to custom shots or chosen templates (decided 2026-11-15).
+- **Shoot:** a session for one family tree (which may contain several related households): date, location, planned start, attending people, the shot list, its order, and on the day each shot's status.
 - **Shot status:** *to do*, *done*, *skipped*, *needs retake*. Plus whether it's *blocked* because someone in it isn't there yet or has left.
 - **Pose:** an entry in the pose library: name, category, group size it suits, example image, description, step-by-step direction, tips.
 
@@ -79,8 +82,28 @@ Same as next5 unless noted.
 | F3 | A family tree view showing generations, couples and children, so the photographer can check the structure at a glance. Tap a person to edit. |
 | F4 | Relationships handle real families: single parents, step-children (child of one partner only), remarriage, partners who aren't married, children with no partner, a person with no children. |
 | F5 | A person can be marked "not usually at shoots" (e.g. lives abroad) so they're unchecked by default. |
-| F6 | A family can be duplicated (e.g. the other side of the family shares the grandkids) ❓ Q4. |
+| F6 | **Several top couples in one tree:** both sets of grandparents (or a reunion with great-aunts and uncles) live in the same family, joined through marriages. Templates work from each top couple ("Jen's parents + all their grandkids"). |
 | F7 | Validation in plain language: "Emma is listed as a child of both Mike and Mike's mother." |
+| F8 | Extra people (guests, pets) per family or per shoot, with a name and an optional photo or emoji. |
+
+## 5a. Family tree diagram
+
+A diagram of the family, drawn by the app from the relationships (nobody arranges boxes by hand). It's the main way to check the family is entered right, and it's reused wherever people are picked.
+
+| ID | Requirement |
+|----|-------------|
+| V1 | **Layout:** one row per generation, top to bottom. Partners sit side by side joined by a line (a solid line for together, dashed for separated); their children hang below from that line. Step-children connect only to their own parent. Families joined by marriage (both sets of grandparents) appear side by side in one diagram. |
+| V2 | **Branches are colour-coded:** each child of a top couple and everyone descended from them share a colour, which is reused on the shot list and shoot day ("Mike's family" is always blue). |
+| V3 | Each person is a card: name (or nickname), a generation label, an optional photo or initials, and icons for *kid* and *not usually at shoots*. Grown children show a household outline around them, their partner and their kids. |
+| V4 | Pinch to zoom and drag to pan; **Fit** shows the whole family; it works for 4 to 60 people on an iPhone screen. |
+| V5 | **Tap a person** to edit them, add a partner, child or parent from there ("+ child" on a couple line), or see how they're related to everyone else. |
+| V6 | **Relationship finder:** tap two people to read how they're related in plain words: "Emma is Dan's niece", "Jen is Ruth's daughter-in-law", "Liam and Ava are first cousins". |
+| V7 | **Shot view:** on the shot list or on shoot day, tap a shot to see its people highlighted on the tree and everyone else dimmed. Useful to check a shot is what you meant, and for the assistant to spot who to call. |
+| V8 | **Attendance view:** on a shoot, people not attending are greyed out; on shoot day, people who have arrived, are waiting or have left are marked. |
+| V9 | **Share the tree** as an image (to send to the family: "Is this everyone?"). |
+| V10 | The layout is a pure module (`src/tree`) with tests: no overlapping cards or crossing child lines for common family shapes (blended families, remarriage, single parents, two sets of grandparents), and the same family always draws the same way. Drawn as SVG. |
+
+A clickable mockup of the tree and the shoot-day screen is reviewed before the full build (as next5 did for its game screens).
 
 ## 6. Shot generation (the engine)
 
@@ -113,7 +136,13 @@ A pure TypeScript module (`src/engine`), no React, Dexie or DOM, tested like nex
 | Solo | **Solo portraits** (choose generations: everyone, kids only, adults only) | |
 | Custom | **Custom shot**: pick people by tapping them | "Sarah + her college roommate" |
 
-Also: **Guests / extra people** (a friend, a pet 🐶) who join only custom shots or chosen templates. ❓ Q6
+| Grown children | **Parents + all their grown children** (no partners or grandkids) | Grandma, Grandpa, Mike, Sarah, Dan |
+| Grown children | **Parents + each grown child** | Grandma, Grandpa + Mike |
+| Grown children | **Parents + each grown child's household** | Grandma, Grandpa + Mike, Jen and their kids |
+| Grown children | **Each grown child's household alone** | Mike, Jen and their kids |
+| Extras | **Add pets / guests to a template** (e.g. the dog in the full group and in its household's photo) | |
+
+The grown-children templates exist because grown children are their own households but you still want them with their parents (decided 2026-11-15).
 
 ### 6.2 Engine rules
 
@@ -147,11 +176,10 @@ Also: **Guests / extra people** (a friend, a pet 🐶) who join only custom shot
 | P3 | Shot list screen: generated shots grouped by template group, toggle templates, add custom shots, mark **must-have ★**, notes, attach a suggested pose (§11). |
 | P4 | **Duplicate a shoot** (e.g. same family next year), carrying over templates, custom shots and settings, not statuses. |
 | P5 | **Share the shot list as text** (Messages, email, Notes, print) so the family can check it ahead of time: "Anything missing?" |
-| P6 | A per-shoot gear / to-bring checklist and location notes (parking, where to stand). ❓ Q8 nice-to-have. |
 
 ## 8. Shoot day (checklist)
 
-Designed for the assistant's thumb and outdoor glare: large text, big targets, light theme by default outdoors (❓ Q9).
+Designed for the assistant's thumb and outdoor glare: large text, big targets, high contrast in both themes.
 
 | ID | Requirement |
 |----|-------------|
@@ -168,7 +196,7 @@ Designed for the assistant's thumb and outdoor glare: large text, big targets, l
 
 ## 9. Photographer and assistant
 
-❓ Q3 is the big decision here. Three options:
+**Decided 2026-11-15: option B, hand-off like next5.** The three options considered:
 
 | Option | How it works | Pros | Cons |
 |--------|--------------|------|------|
@@ -176,19 +204,19 @@ Designed for the assistant's thumb and outdoor glare: large text, big targets, l
 | **B. Hand-off, like next5** (recommended for v1) | Share the shoot by link or AirDrop file (SH1–SH6 in next5, reused nearly as-is). One phone runs the checklist at a time; send it back at the end so the photographer's copy is complete. | Proven code, no server, works with no signal (AirDrop). | Not live: the photographer's phone doesn't update during the shoot. |
 | **C. Live sync** | Both phones see every check mark within a second or two, via a tiny server (e.g. Cloudflare Worker + Durable Object, which fits the Cloudflare account already used for next5's betas). Joined by a short code or QR. | Both phones always current; the photographer can glance at what's left. | A server to run (free tier), needs signal at the shoot (must queue offline changes and merge later), more to build and test. Breaks next5's "no server" decision. |
 
-Assumed until decided: **B in v1, C considered after v1.**
+Hand-off details (adapted from next5's SH1–SH6): share the shoot by link or AirDrop file at any point; the receiving phone gets the family, attendance and shot list (with suggested poses, without your own pose photos to keep links small); one phone runs the checklist at a time, with **Take back control**; send it back at the end so the photographer's copy has every check mark, retake and added shot.
 
 ## 10. Light: golden hour and location
 
 | ID | Requirement |
 |----|-------------|
-| L1 | **Location** for each shoot, set by: current GPS position; searching an address or place (online, e.g. Open-Meteo or OpenStreetMap geocoding, no API key); or typing coordinates. ❓ Q5: a map to drop a pin. Saved locations can be reused ("Riverside Park"). |
+| L1 | **Location** for each shoot, set by: current GPS position; searching an address or place (online, e.g. Open-Meteo or OpenStreetMap geocoding, no API key); or typing coordinates, or dropping a pin on a map (OpenStreetMap tiles via Leaflet; online only). All three were wanted (decided 2026-11-15). Saved locations can be reused ("Riverside Park"). |
 | L2 | **Light timeline** for the date and place: sunrise, morning golden hour, sunset, evening golden hour, blue hour, and solar noon, shown as a coloured bar across the day, with the shoot's planned span (O5) drawn on it. Times in the location's time zone. |
 | L3 | Definitions shown in help: golden hour = sun between about 6° above and 4° below the horizon; blue hour = 4° to 6° below. |
 | L4 | **Suggested start time**: so the planned shoot ends as golden hour ends (evening) or starts as it begins (morning), with must-have and big-group shots in the best light. A warning if the shot list is longer than golden hour. |
 | L5 | **Sun direction**: the sun's compass bearing at the planned time, with a compass arrow (using the phone's compass when allowed) so the photographer knows where to put the family relative to the sun. |
 | L6 | **Pick a date**: a small calendar or list showing golden-hour times for the next weeks, to help choose a date. |
-| L7 | ❓ Q5 optional: **Weather forecast** (cloud cover, rain chance, wind) for shoots in the next ~14 days from Open-Meteo (free, no key). Online only; cached for offline viewing. |
+| L7 | **Weather forecast** (cloud cover, rain chance, wind) for shoots in the next ~14 days from Open-Meteo (free, no key). Online only; cached for offline viewing. |
 | L8 | Shoot day shows a countdown to the end of golden hour (D7). |
 
 The sun calculation lives in a pure module (`src/sun`) with tests against published NOAA times for a few cities and dates, including polar and daylight-saving edge cases.
@@ -199,7 +227,7 @@ The sun calculation lives in a pure module (`src/sun`) with tests against publis
 |----|-------------|
 | PL1 | Categories: **Individual** (adult, man, woman, teen, senior), **Couples**, **Parent + child**, **Kids & babies**, **Siblings**, **Small family (3–6)**, **Large group (7+)**, **Generations**, **Candid / movement**. |
 | PL2 | Each pose: name, example image, short description, how to direct it (step by step, in words you can say to people), tips and common mistakes, group size range, tags (sitting, standing, walking, lying down, close-up, full-length, playful, formal), and difficulty. |
-| PL3 | **Starter library** of about 60 poses built into the app, works offline. ❓ Q7 decides where the example images come from. |
+| PL3 | **Starter library** of about 60 poses built into the app, works offline. Example images can be drawn illustrations, AI-generated images or free-licence stock photos (Pexels/Unsplash, credited) (decided 2026-11-15). Plan: one consistent illustration style for the whole starter set, so it looks like one library; photos the user adds sit alongside. Each image's source and licence is recorded. |
 | PL4 | The photographer can **add their own poses** and **add their own example photos** to any pose (from Photos or the camera), and mark favourites. |
 | PL5 | **Suggested poses** on each shot, matched by group size and who is in it (e.g. kids present, three generations). Tap to attach one; the attached pose shows on shoot day. |
 | PL6 | Search and filter by category, size and tags. |
@@ -225,7 +253,7 @@ As next5 §12: README for users and developers; a skippable first-run intro endi
 
 - iPhone 17 portrait, down to 375 pt wide; safe areas; system font; iOS-style sheets.
 - Tap targets ≥ 44 pt; Done is always one tap.
-- Shoot day must be readable in bright sun: high contrast, large type, light theme by default there (❓ Q9).
+- **Theme follows the phone's light/dark setting by default**, with Light and Dark available in Settings (decided 2026-11-15). Shoot day must be readable in bright sun in either: high contrast, large type.
 - A look of its own (warm, photographic accent colour) rather than next5's sports style, but the same components.
 - Destructive actions confirm first.
 
@@ -245,7 +273,7 @@ Each milestone is a draft PR tried on the beta preview before merging.
 | # | Milestone | Contents |
 |---|-----------|----------|
 | M0 | **Scaffold from next5** | Vite/React/TS/PWA setup, Dexie, theme, viewport, update banner, install hint, error banner, wake lock, backup/share, release scripts, changelog, CI, Cloudflare beta, CLAUDE.md, STATUS.md. An empty app that installs and updates. |
-| M1 | **Families** | People, relationships, tree view, quick-add flow, demo family (made-up). |
+| M1 | **Families + tree** | People, relationships, quick-add flow, extra people, tree diagram (layout module, zoom, tap to edit, relationship finder), demo family (made-up). Mockup reviewed first. |
 | M2 | **Shot engine** | Templates, merge, naming, preview counts, manual edits kept. Thorough tests. |
 | M3 | **Shoots + shot list** | Shoots list, new shoot, attendance, shot list editing, must-haves, share as text. |
 | M4 | **Ordering + shoot day** | Ordering engine, call in / can leave, checklist, who's here, waiting shots, add on the spot, Undo, finish summary. *(First version worth using at a real shoot.)* |
@@ -260,23 +288,43 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 
 | # | Question | Default assumption until decided |
 |---|----------|----------------------------------|
-| Q1 | Typical size: how many people and how many shots at a big shoot? | Up to ~40 people and ~80 shots; design for 4–40 people. |
-| Q2 | "Household": a couple + their children of any age, or only children still living at home? (Matters for adult kids with their own families.) | Children without a partner or kids of their own stay in their parents' household. |
-| Q3 | Assistant: one phone, hand-off (like next5) or live sync (needs a small server)? | Hand-off in v1. |
-| Q4 | One family per shoot, or events with several families (a reunion, a wedding with both sides)? | One family per shoot, but a "family" can be as big as a reunion. |
-| Q5 | Online extras: address search, a map to drop a pin, weather forecast — which are wanted? | Address search + GPS + forecast; no map in v1. |
-| Q6 | Guests and pets in shots? | Yes, as "extra people" for custom shots. |
-| Q7 | Pose example images: real photos can't be copied from the web. Options: (a) drawn illustrations (simple, consistent, built in), (b) free-licence stock photos (Pexels/Unsplash) bundled with credit, (c) your own photos added over time, (d) AI-generated images. | (a) for the starter library + (c), with (b) for some if you'd like real photos. |
-| Q8 | Gear checklist and location notes per shoot? | Notes yes, gear checklist later. |
-| Q9 | Theme: light by default (better in sun) or dark like next5? | Light by default, dark available. |
-| Q10 | App name and address? | "Photo Planner" at `mattbat.com/photo-planner/`. |
-| Q11 | Should the client family ever use the app themselves (e.g. open a link to approve the shot list)? | No; they get the list as text (P5). |
-| Q12 | Which templates should be on by default? | Full group, each generation, grandparents + all grandkids, grandparents + each branch, each branch, each household, each couple, all siblings, solo portraits of kids. |
+| Q1 | Typical size: how many people and how many shots at your biggest shoot? | Up to ~40 people and ~80 shots; design for 4–60 people. |
+| Q12 | **Starting shot types.** When you create a new shoot, which of the §6.1 shot types should already be ticked? (You can always tick or untick them per shoot.) Put another way: what's on your usual list? | Full group · grandparents · grandparents + all grandkids · parents + all grown children · parents + each grown child's household · each household · each couple · all siblings · cousins · solo portraits of the kids. |
+| Q13 | App name. | "Photo Planner" for now. Ideas below. |
+| Q14 | Should the tree also show people who have died (for memorial context) without putting them in shots? | No. |
+
+**Name ideas** (the address would follow, e.g. `mattbat.com/shotcall/`):
+
+| Name | Why |
+|------|-----|
+| **ShotCall** | The assistant "calls" each shot; also a pun on calling the shots. |
+| **Every Shot** | The promise: you got every combination. |
+| **Family Frames** | Plain and warm; says what it's for. |
+| **Group Call** | Calling groups in and out. |
+| **GoldenList** | The shot list + golden hour. |
+| **Who's In** | The question asked before every shot. |
+| **Branches** | Family tree + shot groups by branch. |
+| **ShotTree** | The family tree that builds your shots. |
+
+## 17a. Decisions log
+
+| Date | Decision |
+|------|----------|
+| 2026-11-15 | iPhone PWA built like next5 (same stack, hosting, tests, releases, beta previews, help). |
+| 2026-11-15 | Assistant gets the shoot by hand-off (link or AirDrop file), one phone running it at a time, as in next5. No server, no live sync. |
+| 2026-11-15 | Pose images may be drawn, AI-generated or free-licence stock. |
+| 2026-11-15 | A shoot can include several related households; they live in one family tree, which can have more than one top couple (both sets of grandparents). |
+| 2026-11-15 | Grown children are their own household, and there are templates to photograph them with their parents. |
+| 2026-11-15 | Address search, GPS, a map pin and a weather forecast are all wanted (online only; everything else works offline). |
+| 2026-11-15 | Guests and pets can be in shots, as extra people. |
+| 2026-11-15 | Theme follows the phone's setting by default. |
+| 2026-11-15 | Skipped for now: gear checklists, location notes, letting the family use the app, and "keep these people apart". |
+| 2026-11-15 | A family tree diagram (§5a) is part of v1, built with the families milestone (M1). |
 
 ## 18. Risks
 
 - **Combination explosion:** pair templates multiply quickly (6 grandkids × 2 grandparents = 12 shots). Mitigated by preview counts (E5) and off-by-default pair templates.
-- **Family trees are messy:** divorces, step-families and partners who shouldn't be in the same photo. Relationships stay simple, and any person can be excluded from any shot or template; a "keep apart" option may be needed (❓).
+- **Family trees are messy:** divorces, step-families and partners who shouldn't be in the same photo. Relationships stay simple, and any person can be excluded from any shot or template; a "keep apart" option is skipped for now.
 - **Golden hour isn't the whole story:** hills, trees and buildings block the sun before sunset. The app shows sun direction and says so in help; it can't know local terrain.
 - **Storage:** user photos in IndexedDB can grow; resize on import (T8) and keep backups optional with/without photos.
 - **Image licensing** for the pose library (Q7).
