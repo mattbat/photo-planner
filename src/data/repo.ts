@@ -50,7 +50,7 @@ let lastStamp = 0;
 /**
  * New records get a creation time that is strictly later than the previous
  * one, so "oldest first" is the order they were added in (it fixes the order
- * of people in the tree, and so branch colours, whatever their random ids).
+ * of people in the tree, and so branch colors, whatever their random ids).
  */
 function stamp<T extends object>(fields: T): T & { id: string; createdAt: number; updatedAt: number } {
   const now = Math.max(Date.now(), lastStamp + 1);
@@ -825,7 +825,7 @@ export async function receiveShoot(incoming: ShootHandoff): Promise<void> {
     if (incoming.location) await upsert(db.locations, [incoming.location]);
     await upsert(db.poses, incoming.poses);
     const existing = await db.shoots.get(incoming.shoot.id);
-    // Keep the sender's updatedAt, so opening the same link twice is recognised. A forecast already here stays.
+    // Keep the sender's updatedAt, so opening the same link twice is recognized. A forecast already here stays.
     await db.shoots.put({
       ...migrateShoot(incoming.shoot),
       ...(existing?.forecast ? { forecast: existing.forecast } : {}),
@@ -892,7 +892,7 @@ export async function deletePose(id: string): Promise<void> {
 /**
  * Puts the starter library (PL3) into the `poses` table. Safe to call any time:
  * it only adds starter poses that are missing (matched by their stable id), so
- * favourites, photos and anything else on an existing row are never touched.
+ * favorites, photos and anything else on an existing row are never touched.
  * Returns how many were added.
  */
 export async function seedStarterPoses(): Promise<number> {

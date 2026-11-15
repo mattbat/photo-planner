@@ -52,7 +52,7 @@ export function isGrown(person: Person, hasPartner: boolean, hasChildren: boolea
 /**
  * People in a fixed order, whatever order they were read from the database
  * in (that is the random order of their ids): oldest record first, then by
- * name. The tree, its branch colours and the shot engine all rely on this.
+ * name. The tree, its branch colors and the shot engine all rely on this.
  */
 export function orderedPeople(people: Person[]): Person[] {
   return [...people].sort((a, b) => a.createdAt - b.createdAt || a.name.localeCompare(b.name) || (a.id < b.id ? -1 : 1));
@@ -107,9 +107,9 @@ export function displayName(p: Pick<Person, 'name' | 'nickname'>): string {
 }
 
 /**
- * The branch colour (0 to 7) of each person who belongs to a branch, as the
- * tree draws it, so shot lists can use the same colours (V2). People of the
- * top couples have none. Colours follow the picture from left to right, not
+ * The branch color (0 to 7) of each person who belongs to a branch, as the
+ * tree draws it, so shot lists can use the same colors (V2). People of the
+ * top couples have none. Colors follow the picture from left to right, not
  * the ids, so a family always looks the same.
  */
 export function branchColors(treePeople: TreePerson[]): Map<string, number> {

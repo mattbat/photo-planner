@@ -95,13 +95,13 @@ A diagram of the family, drawn by the app from the relationships (nobody arrange
 | ID | Requirement |
 |----|-------------|
 | V1 | **Layout:** one row per generation, top to bottom. Partners sit side by side joined by a line (a solid line for together, dashed for separated); their children hang below from that line. Step-children connect only to their own parent. Families joined by marriage (both sets of grandparents) appear side by side in one diagram. |
-| V2 | **Branches are colour-coded:** each child of a top couple and everyone descended from them share a colour, which is reused on the shot list and shoot day ("Mike's family" is always blue). |
+| V2 | **Branches are color-coded:** each child of a top couple and everyone descended from them share a color, which is reused on the shot list and shoot day ("Mike's family" is always blue). |
 | V3 | Each person is a card: name (or nickname), a generation label, an optional photo or initials, and icons for *kid* and *not usually at shoots*. Grown children show a household outline around them, their partner and their kids. |
 | V4 | Pinch to zoom and drag to pan; **Fit** shows the whole family; it works for 4 to 60 people on an iPhone screen. |
 | V5 | **Tap a person** to edit them, add a partner, child or parent from there ("+ child" on a couple line), or see how they're related to everyone else. |
 | V6 | **Relationship finder:** tap two people to read how they're related in plain words: "Emma is Dan's niece", "Jen is Ruth's daughter-in-law", "Liam and Ava are first cousins". |
 | V7 | **Shot view:** on the shot list or on shoot day, tap a shot to see its people highlighted on the tree and everyone else dimmed. Useful to check a shot is what you meant, and for the assistant to spot who to call. |
-| V8 | **Attendance view:** on a shoot, people not attending are greyed out; on shoot day, people who have arrived, are waiting or have left are marked. |
+| V8 | **Attendance view:** on a shoot, people not attending are grayed out; on shoot day, people who have arrived, are waiting or have left are marked. |
 | V9 | **Share the tree** as an image (to send to the family: "Is this everyone?"). |
 | V10 | The layout is a pure module (`src/tree`) with tests: no overlapping cards or crossing child lines for common family shapes (blended families, remarriage, single parents, two sets of grandparents), and the same family always draws the same way. Drawn as SVG. |
 
@@ -233,15 +233,15 @@ The sun calculation lives in a pure module (`src/sun`) with tests against publis
 |----|-------------|
 | PL1 | Categories: **Individual** (adult, man, woman, teen, senior), **Couples**, **Parent + child**, **Kids & babies**, **Siblings**, **Small family (3–6)**, **Large group (7+)**, **Generations**, **Candid / movement**. |
 | PL2 | Each pose: name, example image, short description, how to direct it (step by step, in words you can say to people), tips and common mistakes, group size range, tags (sitting, standing, walking, lying down, close-up, full-length, playful, formal), and difficulty. |
-| PL3 | **Starter library** of about 60 poses built into the app, works offline. Example images can be drawn illustrations, AI-generated images or free-licence stock photos (Pexels/Unsplash, credited) (decided 2026-11-15). Plan: one consistent illustration style for the whole starter set, so it looks like one library; photos the user adds sit alongside. Each image's source and licence is recorded. |
-| PL4 | The photographer can **add their own poses** and **add their own example photos** to any pose (from Photos or the camera), and mark favourites. |
+| PL3 | **Starter library** of about 60 poses built into the app, works offline. Example images can be drawn illustrations, AI-generated images or free-license stock photos (Pexels/Unsplash, credited) (decided 2026-11-15). Plan: one consistent illustration style for the whole starter set, so it looks like one library; photos the user adds sit alongside. Each image's source and license is recorded. |
+| PL4 | The photographer can **add their own poses** and **add their own example photos** to any pose (from Photos or the camera), and mark favorites. |
 | PL5 | **Suggested poses** on each shot, matched by group size and who is in it (e.g. kids present, three generations). Tap to attach poses: **a shot can have several**, shown with a count ("3 poses"), in an order the photographer can change with up/down arrows, and cleared all at once. Every attached pose shows on shoot day as a row of thumbnails with names; tapping one opens its directions. |
 | PL6 | Search and filter by category, size and tags. |
 | PL7 | A **pose sheet** per shoot: all the poses attached to each shot, to review the night before. |
 
 ## 12. Data, backup and sharing
 
-Reuses next5's code and behaviour.
+Reuses next5's code and behavior.
 
 | ID | Requirement |
 |----|-------------|
@@ -260,7 +260,7 @@ As next5 §12: README for users and developers; a skippable first-run intro endi
 - iPhone 17 portrait, down to 375 pt wide; safe areas; system font; iOS-style sheets.
 - Tap targets ≥ 44 pt; Done is always one tap.
 - **Theme follows the phone's light/dark setting by default**, with Light and Dark available in Settings (decided 2026-11-15). Shoot day must be readable in bright sun in either: high contrast, large type.
-- A look of its own (warm, photographic accent colour) rather than next5's sports style, but the same components.
+- A look of its own (warm, photographic accent color) rather than next5's sports style, but the same components.
 - Destructive actions confirm first.
 
 ## 15. Testing, CI and releases
@@ -316,7 +316,7 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 |------|----------|
 | 2026-11-15 | iPhone PWA built like next5 (same stack, hosting, tests, releases, beta previews, help). |
 | 2026-11-15 | Assistant gets the shoot by hand-off (link or AirDrop file), one phone running it at a time, as in next5. No server, no live sync. |
-| 2026-11-15 | Pose images may be drawn, AI-generated or free-licence stock. |
+| 2026-11-15 | Pose images may be drawn, AI-generated or free-license stock. |
 | 2026-11-15 | A shoot can include several related households; they live in one family tree, which can have more than one top couple (both sets of grandparents). |
 | 2026-11-15 | Grown children are their own household, and there are templates to photograph them with their parents. |
 | 2026-11-15 | Address search, GPS, a map pin and a weather forecast are all wanted (online only; everything else works offline). |

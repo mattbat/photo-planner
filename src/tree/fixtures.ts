@@ -47,7 +47,7 @@ export const remarriedFamily: TreePerson[] = [
 
 export const singleParentFamily: TreePerson[] = [
   P('gm', 'Gran', {}),
-  P('mum', 'Mum', { parentIds: ['gm'] }),
+  P('mum', 'Mom', { parentIds: ['gm'] }),
   P('kid', 'Kid', { grown: false, parentIds: ['mum'] }),
   P('kid2', 'Kid2', { grown: false, parentIds: ['mum'] }),
 ];

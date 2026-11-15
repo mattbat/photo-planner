@@ -8,7 +8,7 @@ import { paths, navigate } from '../router';
 import { PoseEditSheet } from './PoseEditSheet';
 import { poseImageSrc, resizePhoto } from './posePhoto';
 
-/** One pose (PL2, PL4): image and your photos, how to direct it, tips, favourite, your own edits. */
+/** One pose (PL2, PL4): image and your photos, how to direct it, tips, favorite, your own edits. */
 export function PoseDetailScreen({ poseId }: { poseId: string }) {
   // `null` once looked up and missing; `undefined` while loading.
   const pose = useLiveQuery(async () => (await db.poses.get(poseId)) ?? null, [poseId]);
@@ -133,7 +133,7 @@ export function PoseDetailScreen({ poseId }: { poseId: string }) {
       {pose.imageCredit && (
         <p className="pl-credit">
           Image: {pose.imageCredit.source}
-          {pose.imageCredit.credit ? `, ${pose.imageCredit.credit}` : ''} · {pose.imageCredit.licence}
+          {pose.imageCredit.credit ? `, ${pose.imageCredit.credit}` : ''} · {pose.imageCredit.license}
         </p>
       )}
 

@@ -261,10 +261,10 @@ describe('backUp', () => {
     Object.assign(navigator, {
       canShare: () => true,
       share: async () => {
-        throw new DOMException('cancelled', 'AbortError');
+        throw new DOMException('canceled', 'AbortError');
       },
     });
-    expect(await backUp()).toBe('Backup cancelled.');
+    expect(await backUp()).toBe('Backup canceled.');
     expect(lastBackupAt()).toBeNull();
 
     delete (navigator as { canShare?: unknown }).canShare;

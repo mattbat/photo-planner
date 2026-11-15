@@ -331,7 +331,7 @@ describe('FamilyScreen', () => {
   it('shares the tree picture and says what happened', async () => {
     const { family } = await seedFamily();
     const user = userEvent.setup();
-    share.mockResolvedValueOnce('downloaded').mockResolvedValueOnce('shared').mockRejectedValueOnce(new Error('Nope')).mockResolvedValueOnce('cancelled');
+    share.mockResolvedValueOnce('downloaded').mockResolvedValueOnce('shared').mockRejectedValueOnce(new Error('Nope')).mockResolvedValueOnce('canceled');
     render(<FamilyScreen familyId={family.id} />);
     const button = await screen.findByRole('button', { name: 'Share' });
     await user.click(button);

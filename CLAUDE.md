@@ -15,6 +15,7 @@ iPhone PWA for planning family photo shoots: a family tree builds the shot list,
 - Never edit an existing Dexie `version(n)` in `src/data/db.ts`. Add a new version with a migration and a test. Backups from older layouts must still restore.
 - Use made-up names only (families, people, pets, places). The repo is public.
 - Photos are stored as resized data URLs (T8), so backups stay plain JSON.
+- Language: American English everywhere (UI, help, docs, changelog notes, comments, tests): favorite, color, center, gray, behavior, license, canceled, prioritize, organize, Mom. Times are US style ("3:53 PM"), weather is °F and mph by default. Keep old stored ids that already shipped (e.g. the starter pose id `tell-your-favourite-memory`) so saved data still matches.
 - Theme default is "follow the phone" (`system`); never force dark.
 - Use the Edit/Write tools for files with special characters (· — ↶ ’), not shell redirects on Windows.
 

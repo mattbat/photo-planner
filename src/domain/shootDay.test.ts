@@ -189,7 +189,7 @@ describe('progress and summary', () => {
     expect(progress(s, { now: 5, plannedMinutes: 1 }).elapsedMinutes).toBeUndefined();
   });
 
-  it('summarises and writes the text to share', () => {
+  it('summarizes and writes the text to share', () => {
     let s = addShot(base(), shot('x', ['ivy'], { source: 'custom', name: 'Ivy twirl' }), 1);
     s = markShot(markShot(markShot(s, 'a', 'done', 2), 'b', 'skip', 3), 'c', 'retake', 4);
     const sum = summarize(s);

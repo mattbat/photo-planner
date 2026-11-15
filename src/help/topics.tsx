@@ -456,13 +456,13 @@ const ALL: Topic[] = [
           The <b>Poses</b> tab is a library of pose ideas, each drawn as a simple figure, sorted by category and the size
           of the group.
         </p>
-        <Shot name="poses" caption="Filter by category, group size and tags. Star your favourites." />
+        <Shot name="poses" caption="Filter by category, group size and tags. Star your favorites." />
         <ul>
           <li>
             Use the category pills, <b>Group size</b> and tags to narrow it down; search by name.
           </li>
           <li>
-            Tap <b>★</b> to favourite a pose. Open one for the description, tips and your own photos.
+            Tap <b>★</b> to favorite a pose. Open one for the description, tips and your own photos.
           </li>
           <li>
             On a shot, open it and tap as many poses as you like under <b>Suggested poses</b> (tap again to take one off).

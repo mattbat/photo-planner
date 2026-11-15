@@ -345,7 +345,7 @@ describe('ShareShootSheet', () => {
     expect((await db.shoots.get(shoot.id))!.handoff).toMatchObject({ n: 1, away: true });
   });
 
-  it('sends nothing and marks nothing when sharing is cancelled', async () => {
+  it('sends nothing and marks nothing when sharing is canceled', async () => {
     Object.defineProperty(navigator, 'share', { value: vi.fn(() => Promise.reject(new DOMException('no', 'AbortError'))), configurable: true });
     const { user, onSent, shoot } = await open();
     await user.click(screen.getByRole('button', { name: 'Text a link' }));

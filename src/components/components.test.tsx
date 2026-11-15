@@ -195,18 +195,18 @@ describe('UpdateBanner', () => {
     expect(update).toHaveBeenCalledTimes(1);
   });
 
-  it('doesn’t update if the backup is cancelled, but can update without one', async () => {
+  it('doesn’t update if the backup is canceled, but can update without one', async () => {
     const user = userEvent.setup();
     await createFamily('The Testers');
     const update = vi.fn(async () => {});
     const share = vi.fn(async () => {
-      throw new DOMException('cancelled', 'AbortError');
+      throw new DOMException('canceled', 'AbortError');
     });
     Object.assign(navigator, { canShare: () => true, share });
     render(<UpdateBanner update={update} />);
     await user.click(screen.getByRole('button', { name: 'Update' }));
     await user.click(await screen.findByRole('button', { name: 'Back up, then update' }));
-    expect(await screen.findByText('Backup cancelled. Nothing was updated.')).toBeInTheDocument();
+    expect(await screen.findByText('Backup canceled. Nothing was updated.')).toBeInTheDocument();
     expect(update).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Update without a backup' }));
     expect(update).toHaveBeenCalledTimes(1);

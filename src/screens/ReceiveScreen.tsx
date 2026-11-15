@@ -19,16 +19,16 @@ export function ReceiveScreen({ data }: { data: string }) {
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
     void (async () => {
       const parsed = await decodeHandoff(data);
-      if (cancelled) return;
+      if (canceled) return;
       if (!parsed.ok) return setState({ kind: 'error', message: parsed.message });
       const local = await db.shoots.get(parsed.handoff.shoot.id);
-      if (!cancelled) setState({ kind: 'ready', handoff: parsed.handoff, local, decision: decideReceive(local, parsed.handoff) });
+      if (!canceled) setState({ kind: 'ready', handoff: parsed.handoff, local, decision: decideReceive(local, parsed.handoff) });
     })();
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, [data]);
 

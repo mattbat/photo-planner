@@ -315,7 +315,7 @@ export function backupReminderDue(hasData: boolean, now = Date.now()): boolean {
 export async function backUp(options: BackupOptions & { familyName?: string } = {}): Promise<string> {
   const backup = await createBackup(options);
   const outcome = await shareFile(backupFileName(backup, options.familyName), JSON.stringify(backup, null, 1));
-  if (outcome === 'cancelled') return 'Backup cancelled.';
+  if (outcome === 'canceled') return 'Backup canceled.';
   if (options.familyId === undefined) markBackedUp();
   return outcome === 'shared'
     ? 'Backup ready. Make sure you saved it somewhere safe, like Files or iCloud Drive.'

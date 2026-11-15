@@ -39,7 +39,7 @@ test('demo family → new shoot → toggle a template → see shots → suggeste
   await expect(page.getByRole('dialog').getByTestId('family-tree')).toBeVisible();
 });
 
-test('the family tree opens fitted to the top couples, and branches have their own colours', async ({ page }) => {
+test('the family tree opens fitted to the top couples, and branches have their own colors', async ({ page }) => {
   await page.goto('./#/families');
   await page.getByRole('button', { name: 'Load demo family' }).click();
   const tree = page.getByTestId('family-tree');

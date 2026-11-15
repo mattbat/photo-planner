@@ -24,12 +24,12 @@ export function useWakeLock(active: boolean): WakeLockState {
   useEffect(() => {
     if (!active || !supported) return;
     let sentinel: WakeLockSentinel | null = null;
-    let cancelled = false;
+    let canceled = false;
 
     const acquire = async () => {
       try {
         const lock = await navigator.wakeLock.request('screen');
-        if (cancelled) {
+        if (canceled) {
           void lock.release();
           return;
         }
@@ -49,7 +49,7 @@ export function useWakeLock(active: boolean): WakeLockState {
     void acquire();
     document.addEventListener('visibilitychange', onVisible);
     return () => {
-      cancelled = true;
+      canceled = true;
       document.removeEventListener('visibilitychange', onVisible);
       void sentinel?.release();
     };

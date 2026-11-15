@@ -40,7 +40,7 @@ function pose(
     favorite: false,
     builtIn: true,
     image: `poses/${id}.svg`,
-    imageCredit: { source: 'Photo Planner', licence: 'Original illustration, made for this app' },
+    imageCredit: { source: 'Photo Planner', license: 'Original illustration, made for this app' },
   };
 }
 
@@ -191,7 +191,7 @@ export const starterPoses: Pose[] = [
 
   // --------------------------------------------------------------- parent+child
   pose('lift-overhead', 'Lift overhead', 'parent-child', [2, 2], 2, ['standing', 'playful', 'kids-friendly', 'full-length'],
-    'The parent lifts the child high in the air while both laugh. Gives pure joy and is a favourite for toddlers.',
+    'The parent lifts the child high in the air while both laugh. Gives pure joy and is a favorite for toddlers.',
     [
       'Hold your child under the arms and lift them up high.',
       'Look up at them and smile big.',
@@ -204,7 +204,7 @@ export const starterPoses: Pose[] = [
     'The parent crouches and the child whispers in their ear (or the other way around). Gives natural smiles without any "say cheese".',
     [
       'Crouch down so you are at your child\'s height.',
-      'Child, whisper your favourite thing in Mum or Dad\'s ear.',
+      'Child, whisper your favorite thing in Mom or Dad\'s ear.',
       'Parent, make a surprised face.',
       'Swap, and the parent whispers back.',
       'Now both laugh out loud.',
@@ -215,7 +215,7 @@ export const starterPoses: Pose[] = [
     [
       'Sit on the step and let your child climb onto your lap.',
       'Wrap your arms around their tummy.',
-      'Child, lean back into Mum or Dad.',
+      'Child, lean back into Mom or Dad.',
       'Rest your cheek against their head.',
       'Now look at me together.',
     ],
@@ -245,7 +245,7 @@ export const starterPoses: Pose[] = [
     [
       'Crouch down and let your child climb onto your shoulders.',
       'Hold their ankles firmly.',
-      'Child, hold on to Mum\'s or Dad\'s hands or hair.',
+      'Child, hold on to Mom\'s or Dad\'s hands or hair.',
       'Look up at each other and laugh.',
       'Now both look at me.',
     ],
@@ -254,7 +254,7 @@ export const starterPoses: Pose[] = [
     'The parent kneels to the child\'s level for a big hug. Works with every age and personality.',
     [
       'Kneel down to your child\'s height with open arms.',
-      'Child, run into Mum or Dad\'s arms!',
+      'Child, run into Mom or Dad\'s arms!',
       'Squeeze tight and close your eyes.',
       'Now turn your face to me for a smile.',
       'Parent, rub their back and give them a kiss on the head.',
@@ -331,7 +331,7 @@ export const starterPoses: Pose[] = [
       'Throw the leaves up as you run.',
       'Last time: run and jump into my arms!',
     ],
-    ['Pre-focus on a spot, and use continuous autofocus with burst mode.', 'Common mistake: placing the child too far away. A 10 metre run is plenty.']),
+    ['Pre-focus on a spot, and use continuous autofocus with burst mode.', 'Common mistake: placing the child too far away. A 10 meter run is plenty.']),
 
   // ---------------------------------------------------------------- siblings
   pose('stacked-heads', 'Stacked heads', 'siblings', [2, 4], 1, ['close-up', 'playful', 'kids-friendly'],
@@ -411,11 +411,11 @@ export const starterPoses: Pose[] = [
     [
       'Sit close together on the blanket.',
       'Parents, put your arms around the kids.',
-      'Kids, lean back against Mum and Dad.',
+      'Kids, lean back against Mom and Dad.',
       'Cross your legs or tuck them to one side.',
       'Everyone, look at me and laugh.',
     ],
-    ['Pick a blanket in a plain colour that does not fight with clothing.', 'Common mistake: leaving feet sticking out toward the camera. Tuck them to the side.']),
+    ['Pick a blanket in a plain color that does not fight with clothing.', 'Common mistake: leaving feet sticking out toward the camera. Tuck them to the side.']),
   pose('family-walking-in-line', 'Walking in a line', 'small-family', [3, 6], 1, ['walking', 'full-length', 'kids-friendly'],
     'The family walks toward the camera holding hands in a row. Relaxed and full of life.',
     [
@@ -459,7 +459,7 @@ export const starterPoses: Pose[] = [
   pose('hug-from-behind', 'Hug from behind', 'small-family', [3, 5], 1, ['standing', 'kids-friendly', 'full-length', 'senior-friendly'],
     'The kids stand in front and the parents wrap their arms around them from behind. A warm, protective feel.',
     [
-      'Kids, stand in front of Mum and Dad.',
+      'Kids, stand in front of Mom and Dad.',
       'Parents, put your arms around your kids from behind.',
       'Rest your chin on their head.',
       'Kids, hold your parents\' arms.',
@@ -499,7 +499,7 @@ export const starterPoses: Pose[] = [
     ],
     ['Shoot from the bottom of the stairs, level with the front row.', 'Common mistake: people standing in a straight line along the same step. Fill each step in a staggered way.']),
   pose('v-shape', 'V-shape', 'large-group', [6, 20], 2, ['standing', 'formal', 'full-length'],
-    'The group arranges itself in a wide V with the point toward the camera. Everyone is visible and the lines lead to the centre.',
+    'The group arranges itself in a wide V with the point toward the camera. Everyone is visible and the lines lead to the center.',
     [
       'Make a V with the point nearest to me.',
       'The shortest people go at the point.',
@@ -518,18 +518,18 @@ export const starterPoses: Pose[] = [
       'Everyone, look at me!',
     ],
     ['Take a shot of each household together first, so they get their own photo.', 'Common mistake: big gaps between clusters. Bring them close until the shoulders almost touch.']),
-  pose('grandparents-centre-seated', 'Grandparents seated in the centre', 'large-group', [6, 30], 1, ['formal', 'sitting', 'senior-friendly', 'standing'],
+  pose('grandparents-centre-seated', 'Grandparents seated in the center', 'large-group', [6, 30], 1, ['formal', 'sitting', 'senior-friendly', 'standing'],
     'The grandparents sit in the middle, with the family arranged around them. Puts the heart of the family in the heart of the photo.',
     [
       'Grandma and Grandpa, take a seat in the middle.',
       'Children, sit on the ground or on arms of the chairs.',
       'Parents and others, stand in a curve behind them.',
-      'Lean toward the centre and put a hand on a shoulder.',
+      'Lean toward the center and put a hand on a shoulder.',
       'Everybody, look at me.',
     ],
-    ['Make the grandparents comfortable before anything else, with a good seat.', 'Common mistake: placing the elders at the edge. Their place is at the centre.']),
+    ['Make the grandparents comfortable before anything else, with a good seat.', 'Common mistake: placing the elders at the edge. Their place is at the center.']),
   pose('everyone-looks-at-the-youngest', 'Everyone looks at the youngest', 'large-group', [6, 30], 2, ['standing', 'baby', 'kids-friendly', 'playful'],
-    'The youngest child or baby takes centre stage while everyone else gazes at them. Natural smiles guaranteed.',
+    'The youngest child or baby takes center stage while everyone else gazes at them. Natural smiles guaranteed.',
     [
       'Everyone, stand around the baby in a curve.',
       'Look at the baby as if they are the most precious thing in the world.',
@@ -555,18 +555,18 @@ export const starterPoses: Pose[] = [
     [
       'Great-grandma, sit in the front on the chair.',
       'Grandma, stand behind and put a hand on her shoulder.',
-      'Mum, stand next to Grandma holding the baby.',
+      'Mom, stand next to Grandma holding the baby.',
       'Everybody, lean in toward the baby.',
       'Look at the baby, and now at me.',
     ],
     ['Take the oldest person\'s comfort into account and keep it short.', 'Common mistake: forgetting to take it. Many families regret not capturing four generations.']),
   pose('grandparent-reading', 'Grandparent reading', 'generations', [2, 4], 1, ['sitting', 'kids-friendly', 'senior-friendly', 'full-length'],
-    'A grandparent reads a favourite book to the grandchildren snuggled on both sides. Gentle and real.',
+    'A grandparent reads a favorite book to the grandchildren snuggled on both sides. Gentle and real.',
     [
       'Grandpa, open the book and read the story out loud.',
       'Kids, snuggle in on both sides.',
       'Do the voices for the characters!',
-      'Kids, point at your favourite picture.',
+      'Kids, point at your favorite picture.',
       'Look up at me just for a moment.',
     ],
     ['Pick a book the grandparent knows well, so they can look up from time to time.', 'Common mistake: asking everyone to look at the camera. The best frame is of them looking at the book.']),
@@ -575,7 +575,7 @@ export const starterPoses: Pose[] = [
     [
       'Stand close with your arms around each other.',
       'Lean your heads toward each other.',
-      'Grandma, tell us your favourite joke.',
+      'Grandma, tell us your favorite joke.',
       'Everybody laugh out loud!',
       'Hold the smile and look at me.',
     ],
@@ -602,13 +602,13 @@ export const starterPoses: Pose[] = [
     ['Take the photo at the grandchild\'s eye level so you can see all the faces.', 'Common mistake: grandparents standing straight and far apart. Ask them to lean in and soften their knees.']),
 
   // ------------------------------------------------------------------- candid
-  pose('tell-your-favourite-memory', 'Tell your favourite memory', 'candid', [2, 2], 1, ['sitting', 'senior-friendly', 'close-up'],
-    'Two people sit facing each other and one tells the other a favourite memory. You photograph the laughter and the looks.',
+  pose('tell-your-favourite-memory', 'Tell your favorite memory', 'candid', [2, 2], 1, ['sitting', 'senior-friendly', 'close-up'],
+    'Two people sit facing each other and one tells the other a favorite memory. You photograph the laughter and the looks.',
     [
       'Sit facing each other on the bench.',
-      'Tell your partner your favourite memory of them.',
+      'Tell your partner your favorite memory of them.',
       'Listener, react however you like.',
-      'Now swap and the other one tells their favourite.',
+      'Now swap and the other one tells their favorite.',
       'Keep talking, and ignore me!',
     ],
     ['Back off and use a longer lens so they forget you are there.', 'Common mistake: stopping them to correct the pose. Let the moment run.']),

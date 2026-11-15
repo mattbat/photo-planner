@@ -152,14 +152,14 @@ describe('SettingsScreen', () => {
     expect(await db.families.count()).toBe(0);
   });
 
-  it('does not erase if the backup offered first is cancelled', async () => {
+  it('does not erase if the backup offered first is canceled', async () => {
     const user = userEvent.setup();
     beta.value = { branch: 'claude/families', next: {} };
     await createFamily('The Testers');
     Object.assign(navigator, {
       canShare: () => true,
       share: async () => {
-        throw new DOMException('cancelled', 'AbortError');
+        throw new DOMException('canceled', 'AbortError');
       },
     });
     vi.spyOn(window, 'confirm').mockReturnValue(true);

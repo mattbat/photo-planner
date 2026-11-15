@@ -68,13 +68,13 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | ID | Status | Notes |
 |----|--------|-------|
 | V1 | ✅ | One row per generation, partners joined by a solid or dashed line, step-children linked to their own parent (M1). |
-| V2 | 🟡 | Branch colours are stable (follow the picture left to right, not ids) and used on shot list chips (M3); shoot day comes with M4. |
+| V2 | 🟡 | Branch colors are stable (follow the picture left to right, not ids) and used on shot list chips (M3); shoot day comes with M4. |
 | V3 | 🟡 | Cards with name or nickname, generation, initials, kid icon and household outline. Photo and the "not usually at shoots" icon are not on the card yet. |
 | V4 | ✅ | Pinch, drag, wheel zoom and Fit inside the tree box; the page never scrolls sideways (M1). 📱 |
 | V5 | 🟡 | Tap a person to edit and add parents, partners and children; "+" on a couple line adds a child. "How related" waits for V6. |
 | V6 | ✅ | "How are they related?" mode on the family screen: tap two people, banner shows `describeRelationship` (M3). |
 | V7 | ✅ | Tapping a shot opens a sheet with its people highlighted on the tree (M3); the live screen's Tree view highlights the current shot (M4). |
-| V8 | ✅ | Live Tree view: not-attending greyed out, arrived ✓, not yet !, left → badges (M4). |
+| V8 | ✅ | Live Tree view: not-attending grayed out, arrived ✓, not yet !, left → badges (M4). |
 | V9 | ✅ | Share button on the family screen: SVG to PNG on a canvas, then the share sheet or a download (M1). 📱 |
 | V10 | 🟡 | Pure layout module with example and property tests (M1); sun and tree modules were integrated with the strict type settings. |
 
@@ -113,7 +113,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 
 | ID | Status | Notes |
 |----|--------|-------|
-| D1 | ✅ | Current shot card: big name, people grouped by branch with the tree colours, extras with emoji, pose thumbnail and name, notes, ★ must-have (`LiveScreen`, M4). |
+| D1 | ✅ | Current shot card: big name, people grouped by branch with the tree colors, extras with emoji, pose thumbnail and name, notes, ★ must-have (`LiveScreen`, M4). |
 | D2 | ✅ | "Next" card: call in (green ▲), can leave (red ▼) and done for the day, worked out against the shots still to do (`transition` in `src/domain/shootDay.ts`). |
 | D3 | ✅ | Big Done ✓ in the bottom thumb zone; Skip, Needs retake and ↶ Undo beside it. Undo reverses the last event exactly (done, skip, retake, put-back, arrive, leave, not-here-yet, add-shot); a property test checks it. |
 | D4 | ✅ | List view: To do, Waiting, Retakes, Done, Skipped; tap a shot for Do this now, Mark done, Skip, Needs retake, Put back. |
@@ -157,10 +157,10 @@ Option B, hand-off like next5 (decided 2026-11-15). Code: `src/data/handoff.ts`,
 |----|--------|-------|
 | PL1 | ✅ | Nine category chips on the Poses tab (`src/poses/labels.ts`). |
 | PL2 | ✅ | Detail screen: image, description, numbered "How to direct it", tips, common mistakes, size range, tags, difficulty. Three extra tags (kid-friendly, baby, senior-friendly) feed suggestions. |
-| PL3 | ✅ | 60 original illustrations in `public/poses` (precached for offline), starter data in `src/poses/starterPoses.ts`. Seeded into the `poses` table on first visit by `seedStarterPoses` (adds only missing ids, never touches favourites or photos). Credit and licence stored per pose. Existing rows are not rewritten when a later release edits starter text. |
-| PL4 | ✅ | Add, edit and delete own poses; favourite and add photos (resized to 1600 px JPEG) on any pose. Built-in poses cannot be edited or deleted. 📱 camera picker to check on iPhone. |
+| PL3 | ✅ | 60 original illustrations in `public/poses` (precached for offline), starter data in `src/poses/starterPoses.ts`. Seeded into the `poses` table on first visit by `seedStarterPoses` (adds only missing ids, never touches favorites or photos). Credit and license stored per pose. Existing rows are not rewritten when a later release edits starter text. |
+| PL4 | ✅ | Add, edit and delete own poses; favorite and add photos (resized to 1600 px JPEG) on any pose. Built-in poses cannot be edited or deleted. 📱 camera picker to check on iPhone. |
 | PL5 | ✅ | "Suggested poses" in the shot sheet (group worked out in `src/domain/poseGroup.ts`); tap several to attach (`Shot.poseIds`, ordered; `togglePose`, `movePose`, `clearPoses` in `repo.ts`), a count, up/down arrows to reorder, Clear poses; shown on the live card as a row of thumbnails, tap for directions. Old `poseId` data is converted by Dexie version 2 (`src/domain/shotPoses.ts`), and on restore and receive. `poseIds` is optional in the type (absent means none); `poseId` is only read from old files. |
-| PL6 | ✅ | Search, group-size and tag filters, favourites toggle. |
+| PL6 | ✅ | Search, group-size and tag filters, favorites toggle. |
 | PL7 | ✅ | Pose sheet button on the shoot screen lists shots in order with all their attached poses (M4). The shot-list text and the hand-off carry every pose. |
 
 ## 12. Data, backup and sharing

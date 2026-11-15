@@ -45,8 +45,8 @@ export function kindAtAltitude(altDeg: number): LightKind {
 }
 
 /**
- * The local day as consecutive coloured segments. Boundaries are the exact
- * golden and blue hour times; the colour of each stretch comes from the sun's
+ * The local day as consecutive colored segments. Boundaries are the exact
+ * golden and blue hour times; the color of each stretch comes from the sun's
  * height at its middle, so polar days and nights come out right.
  */
 export function dayTimeline(times: SunTimes): TimelineSegment[] {

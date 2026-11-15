@@ -12,7 +12,7 @@ import { poseImageSrc } from './posePhoto';
 
 const SIZES = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15];
 
-/** The pose library (PL1–PL6): category chips, search, size and tag filters, favourites. */
+/** The pose library (PL1–PL6): category chips, search, size and tag filters, favorites. */
 export function PosesScreen() {
   const poses = useLiveQuery(() => db.poses.toArray());
   const [category, setCategory] = useState<PoseCategory | null>(null);
@@ -67,7 +67,7 @@ export function PosesScreen() {
           Filters{activeFilters > 0 ? ` (${activeFilters})` : ''}
         </button>
         <button type="button" className="pl-pill" aria-pressed={favOnly} onClick={() => setFavOnly(!favOnly)}>
-          ★ Favourites
+          ★ Favorites
         </button>
         <button type="button" className="btn small" onClick={() => setAdding(true)}>
           + Add pose
@@ -121,7 +121,7 @@ function PoseCard({ pose }: { pose: Pose }) {
       <span className="pl-thumb">
         {pose.image ? <img src={poseImageSrc(pose.image)} alt="" loading="lazy" /> : <span className="pl-noimg" aria-hidden>🧍</span>}
         {pose.favorite && (
-          <span className="pl-star" aria-label="Favourite">
+          <span className="pl-star" aria-label="Favorite">
             ★
           </span>
         )}

@@ -1,5 +1,5 @@
 /**
- * Data model (REQUIREMENTS.md §4–§12). Plain serialisable objects only: they
+ * Data model (REQUIREMENTS.md §4–§12). Plain serializable objects only: they
  * are stored in IndexedDB, written to backup files and, later, handed to the
  * assistant's phone. No classes, functions, Dates or Blobs.
  *
@@ -321,10 +321,10 @@ export type PoseTag = (typeof POSE_TAGS)[number];
 
 export type PoseDifficulty = 'easy' | 'medium' | 'hard';
 
-/** Where a pose's example image came from and under what licence (PL3). */
+/** Where a pose's example image came from and under what license (PL3). */
 export interface ImageCredit {
   source: string;
-  licence: string;
+  license: string;
   credit?: string;
   url?: string;
 }

@@ -47,7 +47,7 @@ describe('dayTimeline', () => {
     expect(kinds.filter((k) => k === 'golden')).toHaveLength(2);
   });
 
-  it('is one colour on a polar day and a polar night', () => {
+  it('is one color on a polar day and a polar night', () => {
     expect(dayTimeline(tromsoSummer).every((s) => s.kind === 'day' || s.kind === 'golden')).toBe(true);
     expect(dayTimeline(tromsoWinter).some((s) => s.kind === 'day')).toBe(false);
   });
@@ -138,7 +138,7 @@ describe('forecastForShoot', () => {
     tempC: 10,
   }));
   const f = { fetchedAt: 1, date: '2026-11-20', latitude: 1, longitude: 1, hours };
-  it('summarises the hours the shoot touches', () => {
+  it('summarizes the hours the shoot touches', () => {
     const s = forecastForShoot(f, '16:30', 100);
     expect(s.hours.map((h) => h.time)).toEqual(['16:00', '17:00', '18:00']);
     expect(s.rainPercent).toBe(60);

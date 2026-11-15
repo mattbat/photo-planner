@@ -24,7 +24,7 @@ export function suggestStart(opts: {
   if (!gStart || !gEnd || gEnd <= gStart) {
     const start = new Date(times.solarNoon.getTime() - dur / 2);
     const why = times.polar === 'day' ? 'The sun does not set' : times.polar === 'night' ? 'The sun does not rise' : 'There is no golden hour';
-    return { start, end: new Date(start.getTime() + dur), warning: `${why} on this date here, so there is no golden hour; the suggestion is centred on solar noon.` };
+    return { start, end: new Date(start.getTime() + dur), warning: `${why} on this date here, so there is no golden hour; the suggestion is centered on solar noon.` };
   }
   const goldenMin = minutes(gStart, gEnd);
   const label = session === 'evening' ? "tonight's" : "this morning's";

@@ -45,7 +45,7 @@ describe('layoutTree fixtures', () => {
     expect(c.x2).toBeGreaterThan(c.x1);
   });
 
-  it('generation rows and branch colours', () => {
+  it('generation rows and branch colors', () => {
     const l = layoutTree(demoFamily), m = byId(l);
     expect(m.get('harold')!.generation).toBe(1);
     expect(m.get('luis')!.generation).toBe(1);

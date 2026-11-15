@@ -60,8 +60,8 @@ export function TreeContent({ layout, byId, highlightIds, statusById, selectedId
         const st = statusById?.[n.id];
         const hl = !dimming || highlightIds!.has(n.id);
         const sel = selectedIds?.has(n.id);
-        const grey = st === 'absent' || st === 'left';
-        const opacity = (hl ? 1 : 0.28) * (grey ? 0.5 : 1);
+        const gray = st === 'absent' || st === 'left';
+        const opacity = (hl ? 1 : 0.28) * (gray ? 0.5 : 1);
         const label = `${p.name}, generation ${n.generation}${p.grown ? '' : ', child'}${st ? `, ${STATUS_LABEL[st]}` : ''}${dimming && hl ? ', highlighted' : ''}`;
         const col = color(n);
         return (

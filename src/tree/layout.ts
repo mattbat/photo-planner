@@ -92,7 +92,7 @@ export function layoutTree(peopleIn: TreePerson[], opts: LayoutOptions = {}): Tr
   const rootGap = opts.rootGap ?? ROOT_GAP, rowGap = opts.rowGap ?? ROW_GAP;
   const pad = opts.padding ?? PADDING;
 
-  // ---- normalise input ----
+  // ---- normalize input ----
   const idx = new Map<string, number>();
   const people: TreePerson[] = [];
   for (const p of peopleIn) if (!idx.has(p.id)) { idx.set(p.id, people.length); people.push(p); }
@@ -327,7 +327,7 @@ export function layoutTree(peopleIn: TreePerson[], opts: LayoutOptions = {}): Tr
   }));
   const cx = (i: number) => px[i]! + cardW / 2;
 
-  // ---- branches / colours ----
+  // ---- branches / colors ----
   const branch = new Array<string | undefined>(n).fill(undefined);
   const color = new Array<number>(n).fill(0);
   const claimed = new Set<number>();
@@ -342,7 +342,7 @@ export function layoutTree(peopleIn: TreePerson[], opts: LayoutOptions = {}): Tr
   for (const r of rootOrder) {
     const heads = new Set<number>();
     for (const i of comps[r]!) for (const ch of children[i]!) heads.add(ch);
-    // Left to right on the page (input order only breaks ties), so colours follow the picture, not the ids.
+    // Left to right on the page (input order only breaks ties), so colors follow the picture, not the ids.
     for (const h of [...heads].sort((a, b) => px[a]! - px[b]! || a - b)) {
       if (rootSet.has(compOf[h]!) || claimed.has(compOf[h]!)) continue;
       claim(compOf[h]!, h, nextColor++ % BRANCH_COLORS);
@@ -401,7 +401,7 @@ export function layoutTree(peopleIn: TreePerson[], opts: LayoutOptions = {}): Tr
     households.push({ ids: ids.map((i) => people[i]!.id), rect: { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } });
   });
 
-  // ---- normalise / size ----
+  // ---- normalize / size ----
   let minX = Infinity, maxX = -Infinity, maxY = 0;
   for (const nd of nodes) { minX = Math.min(minX, nd.x); maxX = Math.max(maxX, nd.x + cardW); maxY = Math.max(maxY, nd.y + cardH); }
   if (!n) return { nodes, couples, childLinks, households, width: pad * 2, height: pad * 2 };

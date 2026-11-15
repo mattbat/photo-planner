@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('opens Poses, filters Couples, opens a pose and favourites it', async ({ page }) => {
+test('opens Poses, filters Couples, opens a pose and favorites it', async ({ page }) => {
   await page.goto('./#/poses');
   await expect(page.getByRole('heading', { name: 'Poses' })).toBeVisible();
   const grid = page.getByRole('list', { name: 'Poses' });
@@ -19,8 +19,8 @@ test('opens Poses, filters Couples, opens a pose and favourites it', async ({ pa
   await page.getByRole('button', { name: 'Add to favorites' }).click();
   await expect(page.getByRole('button', { name: 'Remove from favorites' })).toBeVisible();
 
-  // The favourite survives going back and shows in the grid.
+  // The favorite survives going back and shows in the grid.
   await page.getByRole('link', { name: 'Back' }).click();
-  await page.getByRole('button', { name: '★ Favourites' }).click();
+  await page.getByRole('button', { name: '★ Favorites' }).click();
   await expect(grid.getByRole('listitem')).toHaveCount(1);
 });

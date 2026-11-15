@@ -10,7 +10,7 @@ Ideas for after 0.2.0, collected 2026-11-15 and not yet decided. Nothing here is
 |------|--------------|-------|
 | ⭐ **Client questionnaire link** | Send the family a link to confirm who's coming, add a must-have shot or a new baby, and send it back. | Uses the same no-server link as the assistant hand-off (§9). Needs a limited "client" view and a merge of their answers. |
 | ⭐ **Shot list presets by event** | Saved sets of shot types and order options: "Extended family", "Holiday card", "Wedding family formals", "Reunion". | Builds on the per-shoot template choices; a preset is just a saved `templates` + `orderOptions`. |
-| **Outfit and colour notes** | Per-household notes, plus a ready-to-send reminder text ("muted blues, no logos"). | Share as text like P5. |
+| **Outfit and color notes** | Per-household notes, plus a ready-to-send reminder text ("muted blues, no logos"). | Share as text like P5. |
 | **Location scouting notes** | Photos of spots, parking, restrooms, and where the light falls at shoot time. | Attach to saved locations; photos resized like T8. Skipped for v1 (Q8). |
 | **Gear checklist** | A to-bring list per shoot or per event preset. | Skipped for v1 (Q8). |
 | **Rain plan** | A backup indoor location and time when the forecast looks bad. | Uses the cached forecast (L7). |
@@ -38,7 +38,7 @@ Ideas for after 0.2.0, collected 2026-11-15 and not yet decided. Nothing here is
 
 | Idea | What it does | Notes |
 |------|--------------|-------|
-| ⭐ **Editing checklist** | After the shoot, mark each shot culled / edited / delivered, and star the client's favourites. | A post-shoot status alongside the shoot-day status. |
+| ⭐ **Editing checklist** | After the shoot, mark each shot culled / edited / delivered, and star the client's favorites. | A post-shoot status alongside the shoot-day status. |
 | **Delivery summary** | The list of shots taken, ready to paste into a gallery email. | Extends the finish summary (D9). |
 | **Stats across shoots** | Average minutes per shot by group size, most-used poses, how often big groups need retakes. | Needs the shot timer for minutes. |
 

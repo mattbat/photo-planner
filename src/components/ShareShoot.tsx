@@ -25,7 +25,7 @@ export function ShareShootSheet({ shoot, familyName, onSent, onClose }: { shoot:
     const url = handoffLink(await encodeHandoff(handoff));
     const title = `Photo Planner: ${familyName}`;
     const outcome = await shareLink(url, title, `${title} shoot on ${formatDate(shoot.date)}. Tap to open it in Photo Planner.`);
-    if (outcome === 'cancelled') return;
+    if (outcome === 'canceled') return;
     if (outcome === 'failed') return setError('Couldn’t share or copy the link. Try sending a file instead.');
     await markSent(shoot.id, handoff.n);
     onSent(outcome === 'copied' ? 'Link copied. Paste it in a message to the other phone.' : 'Shoot shared.');
@@ -35,7 +35,7 @@ export function ShareShootSheet({ shoot, familyName, onSent, onClose }: { shoot:
     const handoff = await build();
     if (!handoff) return setError('This shoot isn’t on this phone any more.');
     const outcome = await shareFile(handoffFileName(handoff), JSON.stringify(handoff));
-    if (outcome === 'cancelled') return;
+    if (outcome === 'canceled') return;
     await markSent(shoot.id, handoff.n);
     onSent(outcome === 'shared' ? 'Shoot shared.' : 'Shoot file downloaded. Send it to the other phone.');
   };
