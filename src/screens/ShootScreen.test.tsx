@@ -197,7 +197,7 @@ describe('ShootScreen', () => {
     expect(document.querySelector('.step.out')).toHaveTextContent('Can leave:');
     expect(screen.getAllByText(/done for the day/).length).toBeGreaterThan(0);
     await user.click(screen.getByRole('button', { name: '↻ Re-order rest' }));
-    await user.click(screen.getByLabelText(/Big group first/));
+    await user.click(screen.getByRole('switch', { name: 'Big group first' }));
     await waitFor(async () => expect((await reload(shoot.id)).orderOptions.bigGroupFirst).toBe(false));
   });
 

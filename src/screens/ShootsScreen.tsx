@@ -7,6 +7,7 @@ import { db } from '../data/db';
 import type { Shoot } from '../data/types';
 import { formatDate } from '../domain/dates';
 import { goldenHourLabel } from '../domain/light';
+import { clockAt } from '../domain/shotView';
 import { guessTimeZone } from '../sun';
 import { navigate, paths } from '../router';
 
@@ -71,7 +72,7 @@ export function ShootsScreen() {
                         {shoot.title && <span className="list-sub">{shoot.title}</span>}
                         <span className="list-sub">
                           {formatDate(shoot.date)}
-                          {shoot.startTime ? ` ${shoot.startTime}` : ''}
+                          {shoot.startTime ? ` · ${clockAt(shoot.startTime, 0)}` : ''}
                           {place ? ` · ${place.name}` : ''}
                           {golden ? ` · ${golden}` : ''}
                         </span>

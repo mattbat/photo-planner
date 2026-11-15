@@ -14,7 +14,9 @@ describe('router', () => {
   });
 
   it('builds paths that parse back to the same route', () => {
-    const { family, shoot, live, pose, ...plain } = paths;
+    const { family, shoot, live, pose, help, ...plain } = paths;
+    expect(parseRoute(help())).toEqual({ name: 'help', topic: null });
+    expect(parseRoute(help('light'))).toEqual({ name: 'help', topic: 'light' });
     for (const [name, path] of Object.entries(plain)) {
       expect(parseRoute(path())).toEqual({ name });
     }
