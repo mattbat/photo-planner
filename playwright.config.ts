@@ -20,6 +20,11 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}/photo-planner/`,
     trace: 'off',
+    // Start past the first-run intro; e2e/help.spec.ts tests it from a fresh phone.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: `http://localhost:${PORT}`, localStorage: [{ name: 'photo-planner.introSeen', value: '1' }] }],
+    },
   },
   projects: [
     {

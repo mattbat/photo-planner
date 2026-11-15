@@ -5,6 +5,7 @@ import { lockedAway } from '../data/handoff';
 import { FamilyTree } from '../components/FamilyTree';
 import { treeCss } from '../components/treeStyles';
 import { Empty, Section, Segmented, Sheet, TopBar, Toggle } from '../components/ui';
+import { HelpLink } from '../help/parts';
 import { shareText } from '../data/share';
 import {
   doShotNow,
@@ -285,6 +286,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
               Share shoot
             </button>
           )}
+          <HelpLink topic="shoot-day">How shoot day works</HelpLink>
           <a className="btn secondary wide" href={paths.shoot(shoot.id)}>
             Back to the shot list
           </a>

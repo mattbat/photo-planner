@@ -4,9 +4,9 @@ Tracks every requirement in [REQUIREMENTS.md](../REQUIREMENTS.md). Update this f
 
 **Legend:** ✅ Done · 🟡 Partial · ⬜ Not started · ➖ Dropped · 📱 Needs checking on a real iPhone
 
-**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 27 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **M4 (shoot day)** is done: Start shoot, the live checklist (`#/shoots/:id/live`), who's here, undo, finish and summary, poses on shots. **M6 (hand-off)** is done: share a shoot by link or file, receive, one phone at a time. **Next:** M8 help and polish.
+**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 27 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **M4 (shoot day)** is done: Start shoot, the live checklist (`#/shoots/:id/live`), who's here, undo, finish and summary, poses on shots. **M6 (hand-off)** is done: share a shoot by link or file, receive, one phone at a time. **M5 (light)**, **M7 (poses)** and **M8 (help, intro, README, polish)** are done. **Next:** check on a real iPhone, then release 1.0.
 
-Last updated: 2026-11-15 (M6)
+Last updated: 2026-11-15 (M6 + M8)
 
 ## Milestones
 
@@ -20,7 +20,7 @@ Last updated: 2026-11-15 (M6)
 | M5 | Light | ✅ |
 | M6 | Assistant hand-off | ✅ |
 | M7 | Pose library | ✅ |
-| M8 | Help + polish → 1.0 | ⬜ |
+| M8 | Help + polish → 1.0 | ✅ (built; 1.0 waits on M6 and a check on a real iPhone) |
 
 ## Release and tooling (REL, Q)
 
@@ -138,7 +138,7 @@ Option B, hand-off like next5 (decided 2026-11-15). Code: `src/data/handoff.ts`,
 |----|--------|-------|
 | L1 | ✅ | Light section on the shoot: saved places (reused across shoots, Forget to remove), Use my location, place search (Open-Meteo geocoding, gives the time zone), typed coordinates, and a map pin (Leaflet + OpenStreetMap tiles, lazy-loaded, online only). GPS/pin/coordinates ask the forecast service for the time zone when online, else use the phone's. Offline, online options say "Needs a connection" and never block (M5). 📱 GPS permission to check on iPhone. |
 | L2 | ✅ | Coloured day bar (night, blue hour, golden hour, daylight) with the planned shoot overlaid, and a list of blue hour, sunrise, golden hour, solar noon, sunset (`src/domain/light.ts`, `LightSection`). Polar days/nights and half-missing spans give plain wording (M5). |
-| L3 | ✅ | "What do golden hour and blue hour mean?" fold in the Light section (M5). The full help topic lands with M8. |
+| L3 | ✅ | "What do golden hour and blue hour mean?" fold in the Light section (M5). Full definitions in the Help topic "Golden hour and location" (M8). |
 | L4 | ✅ | Morning/Evening choice, suggested start and end, warning from `suggestStart` when the list is longer than golden hour, "Use this start time" sets `startTime` (M5). Must-have-first weighting is not exposed. |
 | L5 | ✅ | Bearing, 16-point label and altitude at the planned time, arrow in a compass rose; "Use compass" turns the rose live (iOS permission asked on the tap; hidden when the phone has no orientation sensor) (M5). 📱 Compass to check on iPhone. |
 | L6 | ✅ | "Pick a date" fold lists the next 21 days with evening and morning golden hours; tap one to set the shoot date (M5). |
@@ -205,10 +205,10 @@ The template ids and their starting on/off choices (Q12) are defined in `src/dat
 
 | Item | Status | Notes |
 |------|--------|-------|
-| README for users and developers | 🟡 | Short version written in M0; grows each milestone. |
-| First-run intro, in-app Help, screenshots | ⬜ | M8. `npm run screenshots` captures the empty shell for now. |
-| ⓘ explanations | 🟡 | `Info` component in place and used in Settings (M0). |
-| Empty states | 🟡 | Shoots, Families and an empty family (M0, M1); Poses is a placeholder. |
+| README for users and developers | ✅ | User section with screenshots; developer section covering the engine, order, tree and sun, tests, deploy and beta (M8). |
+| First-run intro (H-3), in-app Help (H-1, H-8), screenshots | ✅ | Skippable intro ending in "Try the demo family" or "Add my own family", replayable from Help. Ten topics at `#/help`, from Settings → Help and guide and "?" links. `npm run screenshots` walks the demo family in light and dark into `public/help/*.webp`, precached (M8). The assistant topic is written from §9 and must match the hand-off (M6). |
+| ⓘ explanations (H-4) | ✅ | Each template shows a one-line description; each order option has an ⓘ; Settings too (M8). |
+| Empty states (H-6) | ✅ | Shoots, Families, an empty family, the shot list and poses each say what to do next (M8). |
 | Install hint in Safari | ✅ | Shown on Shoots until dismissed (M0). |
 | iPhone 17 layout, safe areas, 44 pt targets | 🟡 | Tab bar, top bar and sheets respect safe areas; checked in WebKit at 402×874 (M0). 📱 |
 | Theme follows the phone, Light and Dark in Settings | ✅ | Default "Match phone"; no flash on launch (M0). |

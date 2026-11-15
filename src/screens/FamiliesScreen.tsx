@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { NameSheet } from '../components/NameSheet';
 import { QuickAddFamilySheet } from '../components/QuickAddFamilySheet';
 import { Empty, Sheet, TopBar } from '../components/ui';
+import { HelpLink } from '../help/parts';
 import { db } from '../data/db';
 import { createDemoFamily, createFamily, deleteFamily, setFamilyArchived, updateFamily } from '../data/repo';
 import type { Family } from '../data/types';
@@ -49,6 +50,11 @@ export function FamiliesScreen() {
             New family
           </button>
         </div>
+      )}
+      {families && (
+        <p className="help-link-row">
+          <HelpLink topic="families">About families</HelpLink>
+        </p>
       )}
       {families?.length === 0 && (
         <>

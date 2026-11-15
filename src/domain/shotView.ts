@@ -124,7 +124,7 @@ function engineInput(input: PlanInput, withEdits: boolean) {
     extras: toEngineExtras(extras, shoot.templates),
     attendingIds: shoot.attendingIds,
     templateIds: enabledTemplates(shoot),
-    ...(input.familyName ? { familyName: input.familyName } : {}),
+    // Family names like "The Pike–Vega family" read badly as "… cousins", so shots just say "Cousins".
     edits: { removed: withEdits ? shoot.removedKeys : [], renamed: withEdits ? renamed : {}, custom },
   };
 }

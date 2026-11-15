@@ -6,6 +6,7 @@ import { NameSheet } from '../components/NameSheet';
 import { PersonSheet } from '../components/PersonSheet';
 import { shareTreeImage } from '../components/treeImage';
 import { Empty, Section, Segmented, TopBar } from '../components/ui';
+import { HelpLink } from '../help/parts';
 import { db } from '../data/db';
 import { addChild, addPerson } from '../data/repo';
 import type { Extra } from '../data/types';
@@ -88,6 +89,9 @@ export function FamilyScreen({ familyId }: { familyId: string }) {
         </section>
       )}
       <div className="view-switch">
+        <p className="help-link-row">
+          <HelpLink topic="families">Help</HelpLink>
+        </p>
         <Segmented<View>
           label="View"
           value={view}

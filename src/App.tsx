@@ -1,8 +1,11 @@
+import { Intro } from './components/Intro';
 import { TabBar } from './components/TabBar';
-import { useRoute, type TabName } from './router';
+import { canGoBack, navigate, paths, useRoute, type TabName } from './router';
+import { useFirstRun } from './help/intro';
 import { DiagnosticsScreen } from './screens/DiagnosticsScreen';
 import { FamilyScreen } from './screens/FamilyScreen';
 import { FamiliesScreen } from './screens/FamiliesScreen';
+import { HelpScreen } from './screens/HelpScreen';
 import { LiveScreen } from './screens/LiveScreen';
 import { PoseDetailScreen } from './screens/PoseDetailScreen';
 import { PosesScreen } from './screens/PosesScreen';
@@ -19,10 +22,12 @@ const TAB_SCREENS: Record<TabName, () => React.JSX.Element> = {
 
 export function App() {
   const route = useRoute();
+  const [firstRun, closeIntro] = useFirstRun();
   switch (route.name) {
     case 'shoots':
     case 'families':
     case 'poses': {
+      if (firstRun && route.name === 'shoots') return <Intro offerDemo onClose={closeIntro} />;
       const Screen = TAB_SCREENS[route.name];
       return (
         <div className="has-tabs">
@@ -45,5 +50,9 @@ export function App() {
       return <SettingsScreen />;
     case 'diagnostics':
       return <DiagnosticsScreen />;
+    case 'help':
+      return <HelpScreen topic={route.topic} />;
+    case 'welcome':
+      return <Intro offerDemo={false} onClose={() => (canGoBack() ? window.history.back() : navigate(paths.shoots()))} />;
   }
 }

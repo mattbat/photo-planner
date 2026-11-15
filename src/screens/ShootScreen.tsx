@@ -7,6 +7,7 @@ import { ShotSheet } from '../components/ShotSheet';
 import { TemplatesPanel } from '../components/TemplatesPanel';
 import { treeCss } from '../components/treeStyles';
 import { Empty, Section, Sheet, TopBar, Toggle } from '../components/ui';
+import { HelpLink } from '../help/parts';
 import { shareText } from '../data/share';
 import {
   applySuggestedOrder,
@@ -148,11 +149,11 @@ function Shoot({ data }: { data: ShootData }) {
         </p>
       )}
 
-      <Section title="Light">
+      <Section title="Light" aside={<HelpLink topic="light">Help</HelpLink>}>
         <LightSection shoot={shoot} location={location} totalMinutes={analysis.totalMinutes} />
       </Section>
 
-      <Section title="Templates">
+      <Section title="Templates" aside={<HelpLink topic="shot-types">Shot types</HelpLink>}>
         <details className="fold" open>
           <summary>
             {shoot.templates.filter((t) => t.enabled).length} on. Switch templates on or off to change the shot list.
@@ -166,7 +167,7 @@ function Shoot({ data }: { data: ShootData }) {
         </details>
       </Section>
 
-      <Section title={`Shot list (${shoot.shots.length})`}>
+      <Section title={`Shot list (${shoot.shots.length})`} aside={<HelpLink topic="shot-list">Help</HelpLink>}>
         {plan.flagged.length > 0 && (
           <section className="problems" aria-label="Shots that can’t be made">
             <h2>Can’t make these shots</h2>
@@ -185,10 +186,10 @@ function Shoot({ data }: { data: ShootData }) {
         </div>
         <details className="fold">
           <summary>Order options{shoot.manualOrder ? ' (you ordered these by hand)' : ''}</summary>
-          <Toggle label="Kids first" checked={shoot.orderOptions.kidsFirst} onChange={(v) => void setOrderOptions(shoot.id, { kidsFirst: v })} />
-          <Toggle label="Release older people early" checked={shoot.orderOptions.releaseOlderEarly} onChange={(v) => void setOrderOptions(shoot.id, { releaseOlderEarly: v })} />
-          <Toggle label="Big group first" checked={shoot.orderOptions.bigGroupFirst} onChange={(v) => void setOrderOptions(shoot.id, { bigGroupFirst: v })} />
-          <Toggle label="Must-haves early" checked={shoot.orderOptions.mustHavesEarly} onChange={(v) => void setOrderOptions(shoot.id, { mustHavesEarly: v })} />
+          <Toggle label="Kids first" info="Little ones are photographed before they get tired. They sit under their parents, so those shots stay together." checked={shoot.orderOptions.kidsFirst} onChange={(v) => void setOrderOptions(shoot.id, { kidsFirst: v })} />
+          <Toggle label="Release older people early" info="Shots with the oldest guests come first, so grandparents can sit down or leave early." checked={shoot.orderOptions.releaseOlderEarly} onChange={(v) => void setOrderOptions(shoot.id, { releaseOlderEarly: v })} />
+          <Toggle label="Big group first" info="The full group goes first, while everyone is fresh and still here." checked={shoot.orderOptions.bigGroupFirst} onChange={(v) => void setOrderOptions(shoot.id, { bigGroupFirst: v })} />
+          <Toggle label="Must-haves early" info="Shots you starred are moved earlier, while energy and light are best." checked={shoot.orderOptions.mustHavesEarly} onChange={(v) => void setOrderOptions(shoot.id, { mustHavesEarly: v })} />
         </details>
 
         {shoot.shots.length === 0 ? (

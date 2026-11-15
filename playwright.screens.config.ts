@@ -14,7 +14,7 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}/photo-planner/`,
     // Safari's engine at iPhone 17 size (≈402×874 pt), at 2× for sharp text.
     ...devices['iPhone 15 Pro'],
-    viewport: { width: 402, height: 874 },
+    viewport: { width: Number(process.env.SHOTS_W ?? 402), height: Number(process.env.SHOTS_H ?? 874) },
     deviceScaleFactor: 2,
   },
   webServer: {

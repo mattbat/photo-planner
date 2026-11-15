@@ -144,6 +144,22 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
         </Section>
       )}
 
+      <Section title="Help">
+        <ul className="list">
+          <li>
+            <a className="list-item" href={paths.help()}>
+              <span className="list-title">
+                Help and guide
+                <span className="list-sub">How everything works, with screenshots</span>
+              </span>
+              <span className="chevron" aria-hidden>
+                ›
+              </span>
+            </a>
+          </li>
+        </ul>
+      </Section>
+
       <Section title="Appearance">
         <Segmented<ThemePreference>
           label="Appearance"

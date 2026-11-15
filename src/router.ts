@@ -17,7 +17,9 @@ export type Route =
   | { name: 'pose'; id: string }
   | { name: 'receive'; data: string }
   | { name: 'settings' }
-  | { name: 'diagnostics' };
+  | { name: 'diagnostics' }
+  | { name: 'help'; topic: string | null }
+  | { name: 'welcome' };
 
 /** The three top-level tabs, in tab-bar order. */
 export const TABS = ['shoots', 'families', 'poses'] as const;
@@ -39,6 +41,10 @@ export function parseRoute(hash: string): Route {
       return { name: 'settings' };
     case 'diagnostics':
       return { name: 'diagnostics' };
+    case 'help':
+      return { name: 'help', topic: parts[1] ?? null };
+    case 'welcome':
+      return { name: 'welcome' };
     default:
       return { name: 'shoots' };
   }
@@ -57,6 +63,8 @@ export const paths = {
   receive: (data: string) => `#/receive/${data}`,
   settings: () => '#/settings',
   diagnostics: () => '#/diagnostics',
+  help: (topic?: string) => (topic ? `#/help/${topic}` : '#/help'),
+  welcome: () => '#/welcome',
 };
 
 export function navigate(hash: string): void {
