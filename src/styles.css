@@ -2224,3 +2224,44 @@ textarea::placeholder {
 .qa-picked {
   margin: 0;
 }
+
+/* Early and Late people (O7). */
+.prio-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--text);
+  color: var(--bg);
+}
+
+.prio-badge.late {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--text-2);
+}
+
+.prio-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prio-name input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+.prio-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}

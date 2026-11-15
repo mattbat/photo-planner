@@ -7,6 +7,20 @@ export interface OrderOptions {
   bigGroupFirst?: boolean;
   mustHavesEarly?: boolean;
   mustHaveKeys?: Iterable<string>;
+  /**
+   * People to finish first ("early", e.g. an older guest) or push to the end
+   * ("late", e.g. someone called away briefly). Anyone else is normal.
+   *
+   * Guarantee (after the `fixedPrefix`): shots are grouped in three tiers and
+   * the tiers never interleave. Tier 0 has an early person and no late one,
+   * tier 2 has a late person and no early one, tier 1 is every other shot
+   * (no priority person, or both kinds). So when no shot mixes an early and a
+   * late person, every shot with an early person comes before every shot
+   * without one, and every shot with a late person comes after every shot
+   * without one. Inside a tier the usual objective applies (fewest changes
+   * first), plus early people are done for the day as soon as possible.
+   */
+  priorities?: Record<string, 'early' | 'late'>;
   /** Keys already done or ordered by hand: kept first, in this order. */
   fixedPrefix?: string[];
   /** Keys like "1-2", "3-6", "7+". */
@@ -50,7 +64,7 @@ function pop(x: number): number {
   return Math.imul(x, 0x01010101) >>> 24;
 }
 
-const A_KIDS = 0.2, A_BIG = 0.3, A_MUST = 0.4, G_OLDER = 0.25;
+const A_KIDS = 0.2, A_BIG = 0.3, A_MUST = 0.4, G_OLDER = 0.25, G_EARLY = 0.5;
 
 export function orderShots(shots: Shot[], people: EnginePerson[], options: OrderOptions = {}): OrderResult {
   const n = shots.length;
@@ -70,6 +84,24 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
     if (fam.gen(id) === 1) olderMask[b >> 5]! |= 1 << (b & 31);
     if (!fam.isGrown(id)) kidMask[b >> 5]! |= 1 << (b & 31);
   }
+  // priority people (any id that appears in a shot)
+  const earlyMask = new Int32Array(W), lateMask = new Int32Array(W);
+  for (const [id, how] of Object.entries(options.priorities ?? {})) {
+    const b = pid.get(id);
+    if (b === undefined) continue;
+    (how === 'early' ? earlyMask : lateMask)[b >> 5]! |= 1 << (b & 31);
+  }
+  const tier = new Uint8Array(n); // 0 early only, 1 neither or both, 2 late only
+  const earlyCount = new Int32Array(n);
+  let tiered = false;
+  for (let i = 0; i < n; i++) {
+    let e = 0, l = 0;
+    for (let k = 0; k < W; k++) { e += pop(M[i * W + k]! & earlyMask[k]!); l += pop(M[i * W + k]! & lateMask[k]!); }
+    earlyCount[i]! = e;
+    tier[i]! = e > 0 && l === 0 ? 0 : l > 0 && e === 0 ? 2 : 1;
+    if (tier[i]! !== 1) tiered = true;
+  }
+  const hasEarly = earlyMask.some((m) => m !== 0);
   const must = new Set(options.mustHaveKeys ?? []);
   const maxSize = Math.max(1, ...sizes);
   const wPos = new Float64Array(n); // per-shot "earlier is better" weight
@@ -95,16 +127,18 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
       if (i) c += ham(ord[i - 1]!, ord[i]!);
       c += wPos[ord[i]!]! * i;
     }
-    if (options.releaseOlderEarly) {
+    if (options.releaseOlderEarly || hasEarly) {
       seen.fill(0);
       for (let i = n - 1; i >= 0; i--) {
         const s = ord[i]!;
-        let fresh = 0;
+        let fresh = 0, freshEarly = 0;
         for (let k = 0; k < W; k++) {
           fresh += pop(M[s * W + k]! & olderMask[k]! & ~seen[k]!);
+          freshEarly += pop(M[s * W + k]! & earlyMask[k]! & ~seen[k]!);
           seen[k]! |= M[s * W + k]!;
         }
-        c += G_OLDER * fresh * i;
+        if (options.releaseOlderEarly) c += G_OLDER * fresh * i;
+        c += G_EARLY * freshEarly * i;
       }
     }
     return c;
@@ -127,12 +161,15 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
   if (free.length) {
     let starts: number[];
     const bySize = [...free].sort((a, b) => sizes[b]! - sizes[a]! || a - b);
-    if (options.bigGroupFirst && !P) starts = [bySize[0]!];
-    else if (free.length <= 60) starts = free;
-    else starts = [...bySize.slice(0, 15), ...bySize.slice(-15)];
+    const lowTier = tiered ? Math.min(...free.map((i) => tier[i]!)) : 0;
+    const allowed = tiered ? bySize.filter((i) => tier[i]! === lowTier) : bySize;
+    if (options.bigGroupFirst && !P) starts = [allowed[0]!];
+    else if (free.length <= 60) starts = tiered ? free.filter((i) => tier[i]! === lowTier) : free;
+    else starts = [...allowed.slice(0, 15), ...allowed.slice(-15)];
     let bestCost: number;
     // the plain input order is always a candidate, so we never come out worse than it
-    const identity = Int32Array.from([...prefix, ...free]);
+    const tierSorted = tiered ? [...free].sort((a, b) => tier[a]! - tier[b]! || a - b) : free;
+    const identity = Int32Array.from([...prefix, ...tierSorted]);
     best = identity;
     bestCost = objective(identity);
     for (const s of starts) {
@@ -142,10 +179,11 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
       let cur = s, pos = P;
       ord[pos++]! = cur; taken[cur]! = 1;
       while (pos < n) {
-        let bj = -1, bc = Infinity;
+        let bj = -1, bc = Infinity, minTier = 2;
+        if (tiered) for (const j of free) if (!taken[j]! && tier[j]! < minTier) minTier = tier[j]!;
         for (const j of free) {
-          if (taken[j]!) continue;
-          const cst = ham(cur, j) + (wPos[j]! + (options.releaseOlderEarly ? G_OLDER * olderCount[j]! : 0)) * pos;
+          if (taken[j]! || (tiered && tier[j]! !== minTier)) continue;
+          const cst = ham(cur, j) + (wPos[j]! + (options.releaseOlderEarly ? G_OLDER * olderCount[j]! : 0) + G_EARLY * earlyCount[j]!) * pos;
           if (cst < bc) { bc = cst; bj = j; }
         }
         ord[pos++]! = bj; taken[bj]! = 1; cur = bj;
@@ -155,13 +193,14 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
     }
     // 2-opt on the free tail (the start stays put under bigGroupFirst)
     const lo = P + (options.bigGroupFirst && !P ? 1 : 0);
-    const weighted = options.kidsFirst || options.bigGroupFirst || options.mustHavesEarly || options.releaseOlderEarly;
+    const weighted = options.kidsFirst || options.bigGroupFirst || options.mustHavesEarly || options.releaseOlderEarly || hasEarly;
     let budget = 60000; // fixed evaluation budget keeps the result deterministic and fast
     let improved = true;
     for (let pass = 0; improved && pass < 25 && budget > 0; pass++) {
       improved = false;
       for (let i = lo; i < n - 1; i++) {
         for (let j = i + 1; j < n; j++) {
+          if (tiered && tier[best[i]!]! !== tier[best[j]!]!) break; // tiers stay in order: only reverse inside one
           if (weighted) {
             if (--budget < 0) break;
             reverse(best, i, j);
@@ -177,7 +216,7 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
       }
     }
     // orientation: prefer peeling off from the bigger end when nothing else decides
-    if (!P && !options.bigGroupFirst) {
+    if (!P && !options.bigGroupFirst && !tiered) {
       const rev = Int32Array.from(best).reverse();
       const rc = objective(rev);
       if (rc < bestCost - 1e-9 || (Math.abs(rc - bestCost) <= 1e-9 && sizes[rev[0]!]! > sizes[best[0]!]!)) best = rev;

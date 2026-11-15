@@ -186,6 +186,8 @@ export interface OrderInput {
   order: string[];
   options: AppSettings['defaultOrderOptions'];
   estimates: TimeEstimates;
+  /** People to shoot early or late (O7). */
+  priorities?: Record<string, 'early' | 'late'> | undefined;
   thisYear?: number;
 }
 
@@ -207,6 +209,7 @@ function runOrder(input: OrderInput, fixedPrefix: string[], useOptions: boolean)
     {
       ...(useOptions ? { kidsFirst: o.kidsFirst, releaseOlderEarly: o.releaseOlderEarly, bigGroupFirst: o.bigGroupFirst, mustHavesEarly: o.mustHavesEarly } : {}),
       mustHaveKeys: ordered.filter((s) => s.mustHave).map((s) => s.id),
+      ...(input.priorities ? { priorities: input.priorities } : {}),
       fixedPrefix,
       minutesBySize: minutesBySize(input.estimates),
       setupMinutes: input.estimates.setup,
@@ -219,6 +222,30 @@ export function suggestOrder(input: OrderInput, keepDone = false): string[] {
   const ordered = inOrder(input.shots, input.order);
   const prefix = keepDone ? ordered.filter((s) => s.status !== 'todo').map((s) => s.id) : [];
   return runOrder(input, prefix, true).order;
+}
+
+/**
+ * Shoot day (O8): re-order only the shots still to do. Done, skipped and
+ * retake shots keep their places; the shot being photographed stays first of
+ * the rest; the other to-do shots are re-ordered (with the priorities) into
+ * the slots the to-do shots had.
+ */
+export function suggestDayOrder(input: OrderInput, currentShotId?: string): string[] {
+  const ordered = inOrder(input.shots, input.order);
+  const closed = ordered.filter((s) => s.status !== 'todo').map((s) => s.id);
+  const current = ordered.find((s) => s.id === currentShotId && s.status === 'todo');
+  const result = runOrder(input, [...closed, ...(current ? [current.id] : [])], true).order;
+  const todo = new Set(ordered.filter((s) => s.status === 'todo').map((s) => s.id));
+  const queue = result.filter((id) => todo.has(id));
+  return ordered.map((s) => (todo.has(s.id) ? queue.shift()! : s.id));
+}
+
+/** The short note after priorities change on shoot day: "Reordered: Grandma's 4 shots are next". */
+export function reorderNote(name: string, how: 'early' | 'late' | 'normal', shots: number): string {
+  const n = `${shots} shot${shots === 1 ? '' : 's'}`;
+  if (how === 'early') return `Reordered: ${name}’s ${n} ${shots === 1 ? 'is' : 'are'} next.`;
+  if (how === 'late') return `Reordered: ${name}’s ${n} ${shots === 1 ? 'is' : 'are'} last.`;
+  return `Reordered the rest without a priority for ${name}.`;
 }
 
 /** The current order as steps (who to call in, who can leave, who is done for the day) with minutes (O3, O5). */

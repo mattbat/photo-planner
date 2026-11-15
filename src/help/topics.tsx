@@ -250,6 +250,14 @@ const ALL: Topic[] = [
             <b>Must-haves early</b>: starred shots sooner, while energy is high.
           </li>
         </ul>
+        <h2>Early and late people</h2>
+        <p>
+          Tap <b>Early or late people</b> at the top of the shoot. Mark someone <b>Early</b> to finish their shots first
+          (an older guest, someone who needs a break soon) or <b>Late</b> to keep them to the end (someone called away,
+          a little one who needs a rest). Tick several people to set them at once. A small <b>Early</b> or{' '}
+          <b>Late</b> badge shows on their names. If you ordered the list by hand it stays as it is until you tap{' '}
+          <b>Suggested order</b>.
+        </p>
         <h2>Call in and can leave</h2>
         <p>
           Each shot shows <b>Call in:</b> the people who aren’t in the shot before it, and <b>Can leave:</b> people whose
@@ -350,6 +358,11 @@ const ALL: Topic[] = [
           their remaining shots up next. In Settings, <b>Treat everyone as here</b> sets whether a new shoot starts with
           everyone present.
         </p>
+        <p>
+          The same sheet has <b>Normal / Early / Late</b> for each person. Marking someone <b>Early</b> brings their
+          remaining shots up next; <b>Late</b> sends them to the end. Only shots still to do move; done shots stay put and
+          the shot you are on stays on top. A short note says what changed.
+        </p>
         <h2>Add a shot on the spot</h2>
         <p>
           Tap <b>+ Shot</b> and tap the people to include: “Can we get one with just the girls?”. It is added and marked
@@ -357,7 +370,7 @@ const ALL: Topic[] = [
         </p>
         <h2>Progress and golden hour</h2>
         <p>
-          The top shows how many are done and how many ★ must-haves are left. When golden hour is coming to an end, a
+          The shot card says <b>Shot 3 of 12 · 10 left</b>: shots finished so far plus one, out of all shots, and how many are left. The top shows how many are done and how many ★ must-haves are left. When golden hour is coming to an end, a
           countdown appears.
         </p>
         <h2>Finish</h2>

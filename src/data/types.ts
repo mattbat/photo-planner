@@ -163,6 +163,9 @@ export interface OrderOptions {
   mustHavesEarly: boolean;
 }
 
+/** Who to finish first or push to the end on a shoot (O7); anyone not listed is normal. */
+export type Priority = 'early' | 'late';
+
 /** Where a person is on shoot day (D5, V8). */
 export type Presence = 'expected' | 'here' | 'left';
 
@@ -226,6 +229,8 @@ export interface Shoot extends Stamped {
    * regenerating does not bring them back (E6).
    */
   removedKeys: string[];
+  /** People to shoot early or late (O7), by person id. Optional: no index, so no Dexie version. */
+  priorities?: Record<string, Priority>;
   // Shoot day (§8)
   presence: Record<string, Presence>;
   /** The shot being photographed now (D1); resumes after the phone locks (D8). */

@@ -97,6 +97,16 @@ describe('pack and unpack', () => {
     }
   });
 
+  it('carries who is early and late', async () => {
+    const { shootId } = await planned();
+    const h = await build(shootId);
+    const withPriorities: ShootHandoff = { ...h, shoot: { ...h.shoot, priorities: { [h.people[0]!.id]: 'early', [h.people[1]!.id]: 'late' } } };
+    const parsed = await decodeHandoff(await encodeHandoff(withPriorities));
+    expect(parsed.ok && parsed.handoff.shoot.priorities).toEqual(withPriorities.shoot.priorities);
+    const bad = { ...withPriorities, shoot: { ...withPriorities.shoot, priorities: { x: 'whenever' } } };
+    expect((await decodeHandoff(await encodeHandoff(bad as unknown as ShootHandoff))).ok).toBe(false);
+  });
+
   it('survives any title and notes (property)', async () => {
     const { shootId } = await planned();
     const h = await build(shootId);

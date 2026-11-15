@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CustomShotSheet } from '../components/CustomShotSheet';
+import { PriorityBadge, PriorityControl } from '../components/PrioritySheet';
+import { applyPriority } from '../components/priority';
 import { ShareShootSheet, SharedBanner } from '../components/ShareShoot';
 import { lockedAway } from '../data/handoff';
 import { FamilyTree } from '../components/FamilyTree';
@@ -18,7 +20,7 @@ import {
   undoLastOnDay,
   updateSettings,
 } from '../data/repo';
-import type { Extra, Person, Pose, Presence, Shot } from '../data/types';
+import type { Extra, Person, Pose, Presence, Shoot, Shot } from '../data/types';
 import { formatDate } from '../domain/dates';
 import { displayName, groupByGeneration, toTreePeople } from '../domain/familyView';
 import { shortNames } from '../domain/shortNames';
@@ -188,7 +190,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
       {view === 'now' && (
         <>
           {current ? (
-            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} pose={current.poseId ? poses.get(current.poseId) : undefined} waiting={waitingFor(state, current)} counter={shotCounter(state)} />
+            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} pose={current.poseId ? poses.get(current.poseId) : undefined} waiting={waitingFor(state, current)} counter={shotCounter(state)} priorities={shoot.priorities} />
           ) : (
             <section className="live-card live-empty" aria-label="Current shot">
               <h2>{open === 0 ? 'All shots handled' : 'Waiting for people'}</h2>
@@ -238,7 +240,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
         </div>
       </footer>
 
-      {dialog === 'who' && <WhoSheet data={data} nameOf={nameOf} onClose={() => setDialog(null)} />}
+      {dialog === 'who' && <WhoSheet data={data} nameOf={nameOf} onNote={setMessage} onClose={() => setDialog(null)} />}
       {dialog === 'add' && (
         <CustomShotSheet
           shootId={shoot.id}
@@ -336,6 +338,7 @@ function CurrentCard({
   pose,
   waiting,
   counter,
+  priorities,
 }: {
   shot: Shot;
   nameOf: (id: string) => string;
@@ -344,6 +347,7 @@ function CurrentCard({
   pose: Pose | undefined;
   waiting: string[];
   counter: ShotCounter;
+  priorities: Shoot['priorities'];
 }) {
   const extraById = new Map(extras.map((e) => [e.id, e]));
   const { groups, extra } = groupPeople(shot.personIds, nodes, new Set(extraById.keys()), nameOf);
@@ -369,7 +373,10 @@ function CurrentCard({
           <div className="live-glabel">{g.label}</div>
           <div className="live-people">
             {g.ids.map((id) => (
-              <span key={id}>{nameOf(id)}</span>
+              <span key={id}>
+                {nameOf(id)}
+                <PriorityBadge value={priorities?.[id]} />
+              </span>
             ))}
           </div>
         </div>
@@ -506,9 +513,10 @@ const PRESENCE: { value: Presence; label: string }[] = [
 ];
 
 /** Who’s here (D5): arrived, not yet, or left. Someone leaving offers to bring their shots forward. */
-function WhoSheet({ data, nameOf, onClose }: { data: ShootData; nameOf: (id: string) => string; onClose: () => void }) {
+function WhoSheet({ data, nameOf, onNote, onClose }: { data: ShootData; nameOf: (id: string) => string; onNote: (note: string) => void; onClose: () => void }) {
   const { shoot, people, partnerships } = data;
   const [offer, setOffer] = useState<string | null>(null);
+  const [note, setNote] = useState('');
   const treatAll = useLiveQuery(async () => (await getSettings()).treatEveryoneAsHere !== false) ?? true;
   const groups = useMemo(() => groupByGeneration(people.filter((p) => shoot.attendingIds.includes(p.id)), partnerships), [people, partnerships, shoot.attendingIds]);
   const remaining = (id: string) => shoot.shots.filter((s) => s.status === 'todo' && s.personIds.includes(id)).length;
@@ -535,13 +543,21 @@ function WhoSheet({ data, nameOf, onClose }: { data: ShootData; nameOf: (id: str
           </button>
         </div>
       )}
+      {note && (
+        <p className="status-msg" role="status">
+          {note}
+        </p>
+      )}
       {groups.map((g) => (
         <ul key={g.generation} className="list live-who" aria-label={`Generation ${g.generation}`}>
           {g.people.map((p) => {
             const now = shoot.presence[p.id] ?? 'here';
             return (
               <li key={p.id} className="live-who-row">
-                <span className="live-who-name">{displayName(p)}</span>
+                <span className="live-who-name">
+                  {displayName(p)}
+                  <PriorityBadge value={shoot.priorities?.[p.id]} />
+                </span>
                 <div className="segmented" role="radiogroup" aria-label={`${displayName(p)} is`}>
                   {PRESENCE.map((o) => (
                     <button key={o.value} type="button" role="radio" aria-checked={o.value === now} className={o.value === now ? 'on' : ''} onClick={() => set(p, o.value)}>
@@ -549,6 +565,16 @@ function WhoSheet({ data, nameOf, onClose }: { data: ShootData; nameOf: (id: str
                     </button>
                   ))}
                 </div>
+                <PriorityControl
+                  name={displayName(p)}
+                  value={shoot.priorities?.[p.id] ?? 'normal'}
+                  onChange={(v) =>
+                    void applyPriority(shoot, [p.id], v, nameOf).then((text) => {
+                      setNote(text);
+                      onNote(text);
+                    })
+                  }
+                />
               </li>
             );
           })}

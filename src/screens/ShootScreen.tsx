@@ -3,6 +3,7 @@ import { AttendanceList } from '../components/AttendanceList';
 import { LiveControls } from '../components/LiveControls';
 import { LightSection } from '../components/LightSection';
 import { CustomShotSheet } from '../components/CustomShotSheet';
+import { PriorityBadge, PrioritySheet } from '../components/PrioritySheet';
 import { ShotSheet } from '../components/ShotSheet';
 import { TemplatesPanel } from '../components/TemplatesPanel';
 import { treeCss } from '../components/treeStyles';
@@ -22,7 +23,7 @@ import {
   updateShoot,
   updateShot,
 } from '../data/repo';
-import type { Shot } from '../data/types';
+import type { Shoot, Shot } from '../data/types';
 import { formatDate } from '../domain/dates';
 import { shortNames } from '../domain/shortNames';
 import { goldenHourLabel } from '../domain/light';
@@ -44,7 +45,7 @@ import { navigate, paths } from '../router';
 
 const minutesText = (m: number) => (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60 ? `${m % 60} min` : ''}`.trim());
 
-type Dialog = 'attendance' | 'custom' | 'options' | { shotId: string } | null;
+type Dialog = 'attendance' | 'custom' | 'options' | 'priorities' | { shotId: string } | null;
 
 /** One shoot: templates, shot list and order (§6, §7). */
 export function ShootScreen({ shootId }: { shootId: string }) {
@@ -73,8 +74,8 @@ function Shoot({ data }: { data: ShootData }) {
 
   const ordered = useMemo(() => inOrder(shoot.shots, shoot.order), [shoot.shots, shoot.order]);
   const orderInput: OrderInput = useMemo(
-    () => ({ people, partnerships, extras, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates }),
-    [people, partnerships, extras, shoot.shots, shoot.order, shoot.orderOptions, settings.timeEstimates],
+    () => ({ people, partnerships, extras, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities }),
+    [people, partnerships, extras, shoot.shots, shoot.order, shoot.orderOptions, settings.timeEstimates, shoot.priorities],
   );
   const analysis = useMemo(() => analyzeOrder(orderInput), [orderInput]);
   const planInput = useMemo(
@@ -140,6 +141,9 @@ function Shoot({ data }: { data: ShootData }) {
           </button>
           <span>{shoot.shots.length} shots</span>
           <span>about {minutesText(analysis.totalMinutes)}</span>
+          <button type="button" className="link" onClick={() => setDialog('priorities')}>
+            {Object.keys(shoot.priorities ?? {}).length ? `${Object.keys(shoot.priorities ?? {}).length} early or late` : 'Early or late people'}
+          </button>
         </div>
       </section>
       <LiveControls shoot={shoot} people={people} extras={extras} familyName={family?.name ?? 'Shoot'} />
@@ -207,6 +211,7 @@ function Shoot({ data }: { data: ShootData }) {
                 index={index}
                 nameOf={nameOf}
                 colorOf={(id) => colors.get(id)}
+                priorities={shoot.priorities}
                 step={stepByKey.get(shot.id)}
                 minutes={minutesByKey.get(shot.id)}
                 startTime={shoot.startTime}
@@ -253,6 +258,7 @@ function Shoot({ data }: { data: ShootData }) {
           />
         </Sheet>
       )}
+      {dialog === 'priorities' && <PrioritySheet shoot={shoot} people={people} partnerships={partnerships} nameOf={nameOf} onClose={() => setDialog(null)} />}
       {dialog === 'custom' && (
         <CustomShotSheet
           shootId={shoot.id}
@@ -285,6 +291,7 @@ function ShotRow({
   index,
   nameOf,
   colorOf,
+  priorities,
   step,
   minutes,
   startTime,
@@ -299,6 +306,7 @@ function ShotRow({
   index: number;
   nameOf: (id: string) => string;
   colorOf: (id: string) => number | undefined;
+  priorities: Shoot['priorities'];
   step: ReturnType<typeof analyzeOrder>['steps'][number] | undefined;
   minutes: { start: number; duration: number } | undefined;
   startTime: string | undefined;
@@ -339,6 +347,7 @@ function ShotRow({
           return (
             <span key={id} className="pchip" style={{ borderColor: c === undefined ? 'var(--ft-line)' : `var(--branch-${c})` }}>
               {nameOf(id)}
+              <PriorityBadge value={priorities?.[id]} />
             </span>
           );
         })}

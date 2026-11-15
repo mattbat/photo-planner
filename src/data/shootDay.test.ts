@@ -9,6 +9,7 @@ import {
   markShotOnDay,
   moveShotsUpNext,
   reopenShoot,
+  setPriorities,
   setShootPresence,
   startShoot,
   undoLastOnDay,
@@ -106,5 +107,73 @@ describe('shoot day repo functions (§8)', () => {
     await startShoot('nope');
     await finishShoot('nope');
     expect(await db.shoots.get('nope')).toBeUndefined();
+  });
+});
+
+describe('early and late people (O7, O8)', () => {
+  const idsWith = (s: { shots: { id: string; personIds: string[] }[]; order: string[] }, person: string) => {
+    const by = new Map(s.shots.map((x) => [x.id, x]));
+    return s.order.map((id) => by.get(id)!.personIds.includes(person));
+  };
+
+  it('before the shoot, Early people\u2019s shots come first and Normal puts it back', async () => {
+    const { shoot, gran, get } = await live().then(async (l) => {
+      // a planned shoot instead: use the live one's family but a fresh planned shoot
+      const planned = await createShoot(l.family, { date: '2026-12-06' });
+      return { ...l, shoot: planned, get: async () => (await db.shoots.get(planned.id))! };
+    });
+    const before = (await get()).order;
+    const res = await setPriorities(shoot.id, [gran.id], 'early');
+    const s = await get();
+    expect(s.priorities).toEqual({ [gran.id]: 'early' });
+    const flags = idsWith(s, gran.id);
+    expect(flags.indexOf(false)).toBeGreaterThan(0);
+    expect(flags.slice(flags.indexOf(false)).every((f) => !f)).toBe(true);
+    expect(res.reordered).toBe(s.order.join() !== before.join());
+    await setPriorities(shoot.id, [gran.id], 'normal');
+    expect((await get()).priorities).toBeUndefined();
+  });
+
+  it('a hand-ordered planned shoot keeps its order; the priority is only saved', async () => {
+    const { family, ivy } = await seedFamily();
+    const shoot = await createShoot(family, { date: '2026-12-06' });
+    await db.shoots.update(shoot.id, { manualOrder: true });
+    const order = (await db.shoots.get(shoot.id))!.order;
+    expect(await setPriorities(shoot.id, [ivy.id], 'late')).toEqual({ reordered: false });
+    const s = (await db.shoots.get(shoot.id))!;
+    expect(s.order).toEqual(order);
+    expect(s.priorities).toEqual({ [ivy.id]: 'late' });
+  });
+
+  it('on shoot day only the shots still to do move, and the current shot stays', async () => {
+    const { shoot, get, ivy } = await live();
+    const first = await get();
+    await markShotOnDay(shoot.id, first.currentShotId!, 'done');
+    await markShotOnDay(shoot.id, (await get()).currentShotId!, 'skip');
+    const mid = await get();
+    const closedAt = mid.order.map((id, i) => [id, i] as const).filter(([id]) => mid.shots.find((x) => x.id === id)!.status !== 'todo');
+    await setPriorities(shoot.id, [ivy.id], 'late');
+    const after = await get();
+    expect(after.currentShotId).toBe(mid.currentShotId);
+    for (const [id, i] of closedAt) expect(after.order[i]).toBe(id);
+    expect([...after.order].sort()).toEqual([...mid.order].sort());
+    const todo = after.order.filter((id) => after.shots.find((x) => x.id === id)!.status === 'todo');
+    expect(todo[0]).toBe(mid.currentShotId);
+    const rest = todo.slice(1).map((id) => after.shots.find((x) => x.id === id)!.personIds.includes(ivy.id));
+    const firstLate = rest.indexOf(true);
+    expect(firstLate < 0 || rest.slice(firstLate).every((f) => f)).toBe(true);
+  });
+
+  it('is ignored for missing shoots and shoots run on the other phone, and removed with the person', async () => {
+    expect(await setPriorities('nope', ['x'], 'early')).toEqual({ reordered: false });
+    const { shoot, ivy, get } = await live();
+    await setPriorities(shoot.id, [ivy.id], 'early');
+    await db.shoots.update(shoot.id, { handoff: { n: 1, role: 'photographer', away: true } });
+    expect(await setPriorities(shoot.id, [ivy.id], 'late')).toEqual({ reordered: false });
+    expect((await get()).priorities).toEqual({ [ivy.id]: 'early' });
+    await db.shoots.update(shoot.id, { handoff: { n: 2, role: 'photographer', away: false } });
+    const { deletePerson } = await import('./repo');
+    await deletePerson(ivy.id);
+    expect((await get()).priorities ?? {}).toEqual({});
   });
 });

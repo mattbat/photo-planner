@@ -1,6 +1,6 @@
-import { addShot, markShot, makeCurrent, moveShotsUp, pickNext, setPresence, undo as undoDay, type DayState } from '../domain/shootDay';
+import { currentShot, addShot, markShot, makeCurrent, moveShotsUp, pickNext, setPresence, undo as undoDay, type DayState } from '../domain/shootDay';
 import { newProblems } from '../domain/links';
-import { planShoot, suggestOrder, type PlanInput, type SoloScope } from '../domain/shotView';
+import { planShoot, suggestDayOrder, suggestOrder, type PlanInput, type SoloScope } from '../domain/shotView';
 import { starterPoses } from '../poses/starterPoses';
 import { demoFamily } from '../tree/fixtures';
 import { ALL_TABLES, db } from './db';
@@ -16,6 +16,7 @@ import type {
   Pose,
   PosePhoto,
   Presence,
+  Priority,
   Shoot,
   Shot,
   TemplateId,
@@ -133,6 +134,7 @@ export async function deletePerson(id: string): Promise<void> {
       shoot.attendingIds = shoot.attendingIds.filter((p) => p !== id);
       shoot.shots = shoot.shots.map((s) => ({ ...s, personIds: s.personIds.filter((p) => p !== id) }));
       delete shoot.presence[id];
+      if (shoot.priorities) delete shoot.priorities[id];
       shoot.updatedAt = now;
     });
     await db.people.delete(id);
@@ -680,10 +682,38 @@ export async function applySuggestedOrder(id: string, rest = false): Promise<voi
     if (!shoot) return;
     const input = await planInput(shoot);
     const order = suggestOrder(
-      { ...input, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates },
+      { ...input, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities },
       rest,
     );
     await db.shoots.update(id, { order, manualOrder: false, updatedAt: Date.now() });
+  });
+}
+
+/**
+ * Marks people Early, Late or Normal for a shoot (O7). Before the shoot the
+ * whole list is re-ordered, unless the photographer ordered it by hand; on
+ * shoot day only the shots still to do are (done shots never move, O8).
+ * Returns whether the order changed.
+ */
+export async function setPriorities(id: string, personIds: string[], how: Priority | 'normal'): Promise<{ reordered: boolean }> {
+  const settings = await getSettings();
+  return db.transaction('rw', [...SHOOT_TABLES()], async () => {
+    const shoot = await db.shoots.get(id);
+    if (!shoot || lockedAway(shoot)) return { reordered: false };
+    const priorities = { ...(shoot.priorities ?? {}) };
+    for (const p of personIds) {
+      if (how === 'normal') delete priorities[p];
+      else priorities[p] = how;
+    }
+    if (Object.keys(priorities).length) shoot.priorities = priorities;
+    else delete shoot.priorities;
+    const input = { ...(await planInput(shoot)), shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities };
+    let order = shoot.order;
+    if (shoot.status === 'live') order = suggestDayOrder(input, currentShot(shoot)?.id);
+    else if (shoot.status === 'planned' && !shoot.manualOrder) order = suggestOrder(input);
+    const reordered = order.join() !== shoot.order.join();
+    await db.shoots.put({ ...shoot, order, updatedAt: Date.now() });
+    return { reordered };
   });
 }
 

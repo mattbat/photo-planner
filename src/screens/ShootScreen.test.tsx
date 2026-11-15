@@ -263,6 +263,37 @@ describe('ShootScreen', () => {
   });
 });
 
+describe('ShootScreen early and late people', () => {
+  it('marks people Early or Late one at a time or several at once, with badges on their chips (O7)', async () => {
+    const { shoot, user, gran, ivy, nia } = await open();
+    await user.click(screen.getByRole('button', { name: 'Early or late people' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Who goes first or last' });
+    await user.click(within(within(sheet).getByRole('radiogroup', { name: 'Gran Tester goes' })).getByRole('radio', { name: 'Early' }));
+    await waitFor(async () => expect((await reload(shoot.id)).priorities).toEqual({ [gran.id]: 'early' }));
+    const order = (await reload(shoot.id)).order;
+    const shots = (await reload(shoot.id)).shots;
+    const flags = order.map((id) => shots.find((x) => x.id === id)!.personIds.includes(gran.id));
+    expect(flags.slice(flags.indexOf(false)).every((f) => !f)).toBe(true);
+    await user.click(within(sheet).getByRole('checkbox', { name: 'Select Ivy Tester' }));
+    await user.click(within(sheet).getByRole('checkbox', { name: 'Select Nia Tester' }));
+    await user.click(within(within(sheet).getByRole('group', { name: 'Set the selected people' })).getByRole('button', { name: 'Late' }));
+    await waitFor(async () => expect((await reload(shoot.id)).priorities).toEqual({ [gran.id]: 'early', [ivy.id]: 'late', [nia.id]: 'late' }));
+    await user.click(within(sheet).getByRole('button', { name: 'Done' }));
+    expect(screen.getByRole('button', { name: '3 early or late' })).toBeInTheDocument();
+    expect(screen.getAllByText('Early').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Late').length).toBeGreaterThan(0);
+  });
+
+  it('tells you when a hand-ordered list was left alone (O7)', async () => {
+    const { shoot, user } = await open();
+    await updateShoot(shoot.id, { manualOrder: true });
+    await user.click(screen.getByRole('button', { name: 'Early or late people' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Who goes first or last' });
+    await user.click(within(within(sheet).getByRole('radiogroup', { name: 'Gran Tester goes' })).getByRole('radio', { name: 'Late' }));
+    expect(await within(sheet).findByRole('status')).toHaveTextContent(/by hand/);
+  });
+});
+
 function fireDate(input: HTMLElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
   setter.call(input, value);

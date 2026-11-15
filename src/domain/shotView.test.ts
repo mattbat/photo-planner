@@ -367,3 +367,13 @@ describe('relationships and solo scope', () => {
     expect(soloScopeOf(settings(['soloEveryone']))).toBe('everyone');
   });
 });
+
+describe('shoot-day priorities (O8)', () => {
+  it('reorderNote says what happened in plain words', async () => {
+    const { reorderNote } = await import('./shotView');
+    expect(reorderNote('Grandma', 'early', 4)).toBe('Reordered: Grandma’s 4 shots are next.');
+    expect(reorderNote('Grandma', 'early', 1)).toBe('Reordered: Grandma’s 1 shot is next.');
+    expect(reorderNote('Noah', 'late', 2)).toBe('Reordered: Noah’s 2 shots are last.');
+    expect(reorderNote('Noah', 'normal', 2)).toMatch(/Reordered/);
+  });
+});

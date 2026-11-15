@@ -94,6 +94,8 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | O3 | ✅ | Call in ▲ / can leave ▼ / done for the day per step (M3). |
 | O4 | ✅ | Drag handle (and arrow keys) sets manual order; ↻ Re-order rest keeps shots already taken first (M3). |
 | O5 | ✅ | Total minutes and per-shot clock time from the start time and Settings estimates (M3). |
+| O7 | ✅ | `priorities` option in `orderShots` (`src/engine/order.ts`: tiers plus early release, still pure and deterministic); `Shoot.priorities` (optional, no Dexie version); `setPriorities` in `repo.ts`; `PrioritySheet` (per person and multi-select) on the shoot screen; Early/Late badges on shot chips, the live card and Who's here; validated in `validate.ts` and carried in the hand-off. Example, property (permutation, prefix kept, tiers in order, deterministic) and screen tests. |
+| O8 | ✅ | Who's here on shoot day has Normal / Early / Late; `suggestDayOrder` in `src/domain/shotView.ts` re-orders only to-do shots into their own slots (done shots never move, the current shot stays first); `reorderNote` gives the note. Undo does not undo a re-order. |
 | O6 | ⬜ |  |
 
 ## 7. Shoot planning

@@ -222,4 +222,20 @@ describe('LiveScreen', () => {
     await user.click(await screen.findByRole('button', { name: 'Finish shoot' }));
     await waitFor(async () => expect((await reload(shoot.id)).status).toBe('done'));
   });
+
+  it('marking someone Early on the day re-orders only the shots still to do, and says so (O8)', async () => {
+    const { shoot, user, ivy } = await open();
+    await user.click(screen.getByRole('button', { name: 'Done ✓' }));
+    await waitFor(async () => expect((await reload(shoot.id)).shots.filter((x) => x.status === 'done')).toHaveLength(1));
+    const mid = await reload(shoot.id);
+    const doneId = mid.shots.find((x) => x.status === 'done')!.id;
+    await user.click(screen.getByRole('button', { name: /^Who’s here/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Who’s here' });
+    await user.click(within(within(dialog).getByRole('radiogroup', { name: 'Ivy Tester goes' })).getByRole('radio', { name: 'Early' }));
+    expect(await within(dialog).findByRole('status')).toHaveTextContent(/Reordered: Ivy’s \d+ shots? (is|are) next\./);
+    const after = await reload(shoot.id);
+    expect(after.priorities).toEqual({ [ivy.id]: 'early' });
+    expect(after.order.indexOf(doneId)).toBe(mid.order.indexOf(doneId));
+    expect(after.currentShotId).toBe(mid.currentShotId);
+  });
 });

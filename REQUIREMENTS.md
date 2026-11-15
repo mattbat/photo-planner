@@ -167,6 +167,8 @@ The grown-children templates exist because grown children are their own househol
 | O3 | Each step shows **call in** (green ▲) and **can leave / step aside** (red ▼), like next5's IN/OUT pairs. |
 | O4 | The photographer can drag shots into any order; the suggestion never overrides a manual order unless asked (**↻ Re-order rest**). |
 | O5 | **Time estimate:** minutes per shot by group size (defaults in Settings, e.g. 2 min for 1–2 people, 3 min for 3–6, 5 min for 7+, plus a set-up allowance). Shows the total and when each shot is expected to happen, so it can be matched to the light (§10). |
+| O7 | **Early and late people.** On a shoot the photographer marks people **Early** (finish them first: an older guest, someone with special needs) or **Late** (push to the end: someone called away briefly, a little one who needs a break); everyone else is Normal. Set per person or for several at once on the shoot screen, shown as a small Early/Late badge on people chips. Stored on the shoot (`priorities`), validated in backups and carried in the hand-off. Guarantee: after any shots fixed by hand or already done, the order is grouped in three tiers that never interleave: shots with an Early person and no Late one, then all other shots, then shots with a Late person and no Early one. With no shot that mixes Early and Late people, every shot with an Early person comes before every shot without one, and every shot with a Late person comes after every shot without one. Inside a tier the fewest-changes order applies, and Early people are released as soon as possible (decided 2026-11-15). |
+| O8 | On shoot day, **Who's here** has the same Normal / Early / Late control. Changing it re-orders only the shots still to do, keeping the one being photographed first; done, skipped and retake shots never move. A short note says what happened ("Reordered: Grandma's 4 shots are next") (decided 2026-11-15). |
 | O6 | Performance: 40 people and 120 shots ordered in under 1 second on an iPhone. |
 
 ## 7. Shoot planning
@@ -324,6 +326,7 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 | 2026-11-15 | The biggest shoot is about 20 people. Design and test for 2–30 people and up to ~80 shots. |
 | 2026-11-15 | No deceased people in the tree. |
 | 2026-11-15 | People already in a family can be picked wherever people are linked, with a duplicate-name hint (F9, F10), so separately added branches can be joined. |
+| 2026-11-15 | People can be marked Early or Late for a shoot, before and on the day, and the order follows (O7, O8). |
 | 2026-11-15 | Build started; the Q12 default shot types are used until changed. Built by Claude with subagents, milestone by milestone. |
 
 ## 18. Risks

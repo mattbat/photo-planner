@@ -55,3 +55,24 @@ test('the family tree opens fitted to the top couples, and branches have their o
   const strokes = await group.locator('.card[data-person-id] rect.box').evaluateAll((els) => els.map((e) => getComputedStyle(e).stroke));
   expect(new Set(strokes).size).toBeGreaterThan(3);
 });
+
+test('mark someone Early: their shots come first and their chips get a badge', async ({ page }) => {
+  await page.goto('./#/families');
+  await page.getByRole('button', { name: 'Load demo family' }).click();
+  await expect(page.getByRole('heading', { name: /Pike–Vega family/ })).toBeVisible();
+  await page.getByRole('link', { name: 'Back' }).click();
+  await page.getByRole('link', { name: /Shoots/ }).click();
+  await page.getByRole('button', { name: '+ New shoot' }).click();
+  await page.getByRole('dialog', { name: 'New shoot' }).getByRole('button', { name: 'Create shoot' }).click();
+  await expect(page.locator('li.shot').first()).toBeVisible();
+
+  await page.getByRole('button', { name: 'Early or late people' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Who goes first or last' });
+  await sheet.getByRole('radiogroup', { name: 'Margaret Pike goes' }).getByRole('radio', { name: 'Early' }).click();
+  await expect(sheet.getByRole('status')).toContainText('Reordered');
+  await sheet.getByRole('button', { name: 'Done' }).click();
+  await expect(page.locator('li.shot').first().locator('.prio-badge')).toHaveText('Early');
+  // Every shot with Margaret comes before every shot without her.
+  const flags = await page.locator('li.shot').evaluateAll((els) => els.map((el) => !!el.querySelector('.prio-badge')));
+  expect(flags.slice(flags.indexOf(false)).every((f) => !f)).toBe(true);
+});
