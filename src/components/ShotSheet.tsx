@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { removeShot, renameShot, updateShot } from '../data/repo';
+import { clearPoses, movePose, removeShot, renameShot, togglePose, updateShot } from '../data/repo';
+import { poseIdsOf } from '../domain/shotPoses';
+import { usePoseMap } from '../hooks/usePoseMap';
 import type { Extra, Partnership, Person, Shot } from '../data/types';
 import { poseGroup } from '../domain/poseGroup';
 import { TEMPLATE_BY_ID } from '../engine/templates';
@@ -34,6 +36,8 @@ export function ShotSheet({
   const ids = new Set(shot.personIds);
   const extraNames = extras.filter((e) => ids.has(e.id)).map((e) => `${e.emoji ?? ''} ${e.name}`.trim());
   const group = useMemo(() => poseGroup(shot.personIds, people, partnerships), [shot.personIds, people, partnerships]);
+  const chosen = poseIdsOf(shot);
+  const poses = usePoseMap();
   const reasons = shot.reasons.map((r) => TEMPLATE_BY_ID[r].label);
   return (
     <Sheet title={shot.name} onClose={onClose}>
@@ -44,13 +48,36 @@ export function ShotSheet({
       {reasons.length > 0 && <p className="status-msg">Made by: {reasons.join(', ')}</p>}
       <h3 className="sheet-sub">
         Suggested poses
-        {shot.poseId && (
-          <button type="button" className="link" onClick={() => void updateShot(shootId, shot.id, { poseId: '' })}>
-            Clear pose
-          </button>
+        {chosen.length > 0 && (
+          <>
+            {' '}
+            <span className="pose-count">{chosen.length} {chosen.length === 1 ? 'pose' : 'poses'}</span>{' '}
+            <button type="button" className="link" onClick={() => void clearPoses(shootId, shot.id)}>
+              Clear poses
+            </button>
+          </>
         )}
       </h3>
-      <PoseSuggestions {...group} selectedId={shot.poseId || undefined} onPick={(pose) => void updateShot(shootId, shot.id, { poseId: pose.id === shot.poseId ? '' : pose.id })} />
+      <p className="hint">Tap several to use them all on this shot. Tap again to take one off.</p>
+      <PoseSuggestions {...group} selectedIds={chosen} onPick={(pose) => void togglePose(shootId, shot.id, pose.id)} />
+      {chosen.length > 0 && (
+        <ol className="pose-chosen" aria-label="Poses for this shot, in order">
+          {chosen.map((id, i) => (
+            <li key={id}>
+              <span className="grow">{poses.get(id)?.name ?? 'Pose'}</span>
+              <button type="button" className="link" aria-label={`Move ${poses.get(id)?.name ?? 'pose'} up`} disabled={i === 0} onClick={() => void movePose(shootId, shot.id, id, -1)}>
+                ↑
+              </button>
+              <button type="button" className="link" aria-label={`Move ${poses.get(id)?.name ?? 'pose'} down`} disabled={i === chosen.length - 1} onClick={() => void movePose(shootId, shot.id, id, 1)}>
+                ↓
+              </button>
+              <button type="button" className="link" aria-label={`Remove ${poses.get(id)?.name ?? 'pose'}`} onClick={() => void togglePose(shootId, shot.id, id)}>
+                ✕
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
       <Toggle label="Must-have" checked={shot.mustHave} onChange={(mustHave) => void updateShot(shootId, shot.id, { mustHave })} />
       <form
         onSubmit={(e) => {

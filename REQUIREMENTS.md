@@ -234,9 +234,9 @@ The sun calculation lives in a pure module (`src/sun`) with tests against publis
 | PL2 | Each pose: name, example image, short description, how to direct it (step by step, in words you can say to people), tips and common mistakes, group size range, tags (sitting, standing, walking, lying down, close-up, full-length, playful, formal), and difficulty. |
 | PL3 | **Starter library** of about 60 poses built into the app, works offline. Example images can be drawn illustrations, AI-generated images or free-licence stock photos (Pexels/Unsplash, credited) (decided 2026-11-15). Plan: one consistent illustration style for the whole starter set, so it looks like one library; photos the user adds sit alongside. Each image's source and licence is recorded. |
 | PL4 | The photographer can **add their own poses** and **add their own example photos** to any pose (from Photos or the camera), and mark favourites. |
-| PL5 | **Suggested poses** on each shot, matched by group size and who is in it (e.g. kids present, three generations). Tap to attach one; the attached pose shows on shoot day. |
+| PL5 | **Suggested poses** on each shot, matched by group size and who is in it (e.g. kids present, three generations). Tap to attach poses: **a shot can have several**, shown with a count ("3 poses"), in an order the photographer can change with up/down arrows, and cleared all at once. Every attached pose shows on shoot day as a row of thumbnails with names; tapping one opens its directions. |
 | PL6 | Search and filter by category, size and tags. |
-| PL7 | A **pose sheet** per shoot: the poses attached to its shots, to review the night before. |
+| PL7 | A **pose sheet** per shoot: all the poses attached to each shot, to review the night before. |
 
 ## 12. Data, backup and sharing
 
@@ -327,6 +327,7 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 | 2026-11-15 | No deceased people in the tree. |
 | 2026-11-15 | People already in a family can be picked wherever people are linked, with a duplicate-name hint (F9, F10), so separately added branches can be joined. |
 | 2026-11-15 | People can be marked Early or Late for a shoot, before and on the day, and the order follows (O7, O8). |
+| 2026-11-15 | A shot can have several poses, in order (`Shot.poseIds`, replacing the single `poseId`); old data, backups and hand-off files are converted (Dexie version 2, restore, receive) (PL5). |
 | 2026-11-15 | Build started; the Q12 default shot types are used until changed. Built by Claude with subagents, milestone by milestone. |
 
 ## 18. Risks

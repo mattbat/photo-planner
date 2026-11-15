@@ -105,6 +105,9 @@ const isShot: Check = (value) =>
     mustHave: isBoolean,
     notes: isString,
     status: oneOf('todo', 'done', 'skipped', 'retake'),
+    // Poses: the new list, or the old single id from older files.
+    poseIds: (v) => v === undefined || listOf(isString, 100)(v),
+    poseId: (v) => v === undefined || isString(v),
   })(value);
 const isEvent = exact({
   at: isNumber,

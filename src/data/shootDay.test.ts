@@ -12,9 +12,13 @@ import {
   setPriorities,
   setShootPresence,
   startShoot,
+  togglePose,
+  addPose,
+  clearPoses,
+  deletePose,
+  movePose,
   undoLastOnDay,
   updateSettings,
-  updateShot,
 } from './repo';
 
 beforeEach(clearDb);
@@ -97,10 +101,10 @@ describe('shoot day repo functions (§8)', () => {
     const s = await get();
     expect(s.status).toBe('live');
     expect(s.finishedAt).toBeUndefined();
-    await updateShot(shoot.id, s.order[0]!, { poseId: 'pose-x' });
-    expect((await get()).shots.find((x) => x.id === s.order[0])!.poseId).toBe('pose-x');
-    await updateShot(shoot.id, s.order[0]!, { poseId: '' });
-    expect((await get()).shots.find((x) => x.id === s.order[0])!.poseId).toBeUndefined();
+    await togglePose(shoot.id, s.order[0]!, 'pose-x');
+    expect((await get()).shots.find((x) => x.id === s.order[0])!.poseIds).toEqual(['pose-x']);
+    await togglePose(shoot.id, s.order[0]!, 'pose-x');
+    expect((await get()).shots.find((x) => x.id === s.order[0])!.poseIds).toBeUndefined();
   });
 
   it('ignores a shoot that is not there', async () => {
@@ -175,5 +179,33 @@ describe('early and late people (O7, O8)', () => {
     const { deletePerson } = await import('./repo');
     await deletePerson(ivy.id);
     expect((await get()).priorities ?? {}).toEqual({});
+  });
+});
+
+describe('several poses on a shot (PL5)', () => {
+  it('toggles, reorders, clears, and detaches a deleted pose from every shot', async () => {
+    const { shoot, get } = await live();
+    const [a, b] = (await get()).order;
+    for (const p of ['p1', 'p2', 'p3']) await togglePose(shoot.id, a!, p);
+    const poseIds = async (id: string) => (await get()).shots.find((s) => s.id === id)!.poseIds;
+    expect(await poseIds(a!)).toEqual(['p1', 'p2', 'p3']);
+    await movePose(shoot.id, a!, 'p3', -1);
+    expect(await poseIds(a!)).toEqual(['p1', 'p3', 'p2']);
+    await movePose(shoot.id, a!, 'p1', -1); // already first: nothing changes
+    await movePose(shoot.id, a!, 'p2', 1); // already last
+    await movePose(shoot.id, a!, 'nope', 1);
+    expect(await poseIds(a!)).toEqual(['p1', 'p3', 'p2']);
+    await togglePose(shoot.id, a!, 'p1');
+    expect(await poseIds(a!)).toEqual(['p3', 'p2']);
+    await clearPoses(shoot.id, a!);
+    expect(await poseIds(a!)).toBeUndefined();
+    // deletePose takes one pose off several shots and keeps the rest.
+    const own = await addPose({ name: 'Mine', category: 'couples', minSize: 2, maxSize: 2, description: '', directions: [], tips: [], mistakes: [], tags: [], difficulty: 'easy', favorite: false, builtIn: false });
+    await togglePose(shoot.id, a!, own.id);
+    await togglePose(shoot.id, a!, 'p9');
+    await togglePose(shoot.id, b!, own.id);
+    await deletePose(own.id);
+    expect(await poseIds(a!)).toEqual(['p9']);
+    expect(await poseIds(b!)).toBeUndefined();
   });
 });

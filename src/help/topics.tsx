@@ -452,8 +452,10 @@ const ALL: Topic[] = [
             Tap <b>★</b> to favourite a pose. Open one for the description, tips and your own photos.
           </li>
           <li>
-            On a shot, open it and pick a pose under <b>Suggested poses</b>. It then appears on shoot day. The{' '}
-            <b>Pose sheet</b> on a shoot lists every shot that has one, to look at before you start.
+            On a shot, open it and tap as many poses as you like under <b>Suggested poses</b> (tap again to take one off).
+            The sheet shows how many you picked, and the ↑ ↓ arrows put them in order. On shoot day they appear as a row
+            under the people; tap one to read its directions. The <b>Pose sheet</b> on a shoot lists the poses on every
+            shot, to look at before you start.
           </li>
           <li>You can add your own poses, with your own reference photo.</li>
         </ul>

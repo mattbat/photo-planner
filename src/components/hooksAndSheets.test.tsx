@@ -409,7 +409,7 @@ describe('PoseSuggestions', () => {
     await userEvent.click(cards[0]!);
     expect(onPick).toHaveBeenCalledTimes(1);
     const picked = onPick.mock.calls[0]![0] as { id: string };
-    rerender(<PoseSuggestions {...group} onPick={onPick} selectedId={picked.id} />);
+    rerender(<PoseSuggestions {...group} onPick={onPick} selectedIds={[picked.id]} />);
     const pressed = within(screen.getByRole('list', { name: 'Suggested poses' })).getAllByRole('listitem').filter((c) => c.getAttribute('aria-pressed') === 'true');
     expect(pressed).toHaveLength(1);
   });

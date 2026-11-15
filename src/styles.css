@@ -2265,3 +2265,37 @@ textarea::placeholder {
   gap: 8px;
   margin: 8px 0;
 }
+
+/* Chosen poses on a shot (PL5). */
+.pose-count {
+  margin-left: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.pose-chosen {
+  margin: 8px 0;
+  padding-left: 22px;
+}
+
+.pose-chosen li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.pose-chosen .grow {
+  flex: 1;
+}
+
+.pose-chosen .link {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.pose-sheet-thumbs {
+  display: flex;
+  gap: 4px;
+}

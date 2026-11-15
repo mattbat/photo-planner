@@ -39,6 +39,7 @@ import {
   shotListText,
   type OrderInput,
 } from '../domain/shotView';
+import { usePoseMap } from '../hooks/usePoseMap';
 import { useBlockDrag } from '../hooks/useBlockDrag';
 import { useShootData, type ShootData } from '../hooks/useShootData';
 import { navigate, paths } from '../router';
@@ -71,6 +72,7 @@ function Shoot({ data }: { data: ShootData }) {
   const colors = useMemo(() => branchColors(treePeople), [treePeople]);
   const nameById = useMemo(() => shortNames(people, extras), [people, extras]);
   const nameOf = (id: string) => nameById.get(id) ?? 'Someone';
+  const poses = usePoseMap();
 
   const ordered = useMemo(() => inOrder(shoot.shots, shoot.order), [shoot.shots, shoot.order]);
   const orderInput: OrderInput = useMemo(
@@ -105,6 +107,7 @@ function Shoot({ data }: { data: ShootData }) {
       order: shoot.order,
       nameOf,
       minutes: analysis.minutes,
+      poseName: (id) => poses.get(id)?.name,
     });
     setStatus(await shareText(title, text, 'Shot list'));
   };

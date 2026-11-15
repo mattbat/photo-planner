@@ -1,3 +1,4 @@
+import { migrateShoot } from '../domain/shotPoses';
 import { db } from './db';
 import { shareFile } from './share';
 import type { Extra, Family, Location, Partnership, Person, Pose, PosePhoto, SettingsRow, Shoot } from './types';
@@ -179,7 +180,9 @@ export interface RestoreResult {
  * - merge: records missing here are added; for records in both, the more
  *   recently changed copy wins. Nothing on this phone is deleted.
  */
-export async function restoreBackup(backup: Backup, mode: RestoreMode): Promise<RestoreResult> {
+export async function restoreBackup(file: Backup, mode: RestoreMode): Promise<RestoreResult> {
+  // Older files have one `poseId` on a shot; it becomes `poseIds` (PL5).
+  const backup: Backup = { ...file, shoots: file.shoots.map(migrateShoot) };
   const result: RestoreResult = { added: 0, updated: 0, kept: 0 };
   const tables = [db.families, db.people, db.partnerships, db.extras, db.shoots, db.locations, db.poses, db.posePhotos, db.settings];
   await db.transaction('rw', tables, async () => {

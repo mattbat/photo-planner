@@ -158,16 +158,45 @@ describe('ShootScreen', () => {
     const sheet = await screen.findByRole('dialog', { name: 'Everyone' });
     const pick = await within(sheet).findAllByRole('listitem');
     await user.click(pick[0]!);
-    await waitFor(async () => expect((await reload(shoot.id)).shots.find((s) => s.name === 'Everyone')!.poseId).toBeTruthy());
-    expect(await within(sheet).findByRole('button', { name: 'Clear pose' })).toBeInTheDocument();
+    await waitFor(async () => expect((await reload(shoot.id)).shots.find((s) => s.name === 'Everyone')!.poseIds).toHaveLength(1));
+    expect(await within(sheet).findByRole('button', { name: 'Clear poses' })).toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: 'Done' }));
     await user.click(screen.getByRole('button', { name: /^Pose sheet \(1\)/ }));
     const poseList = await screen.findByRole('list', { name: 'Shots with poses' });
     expect(poseList).toHaveTextContent('Everyone');
     await user.click(within(screen.getByRole('dialog', { name: 'Pose sheet' })).getByRole('button', { name: 'Done' }));
     await user.click(within(rows()[0]!).getByRole('button', { name: 'Everyone' }));
-    await user.click(await screen.findByRole('button', { name: 'Clear pose' }, { timeout: 3000 }));
-    await waitFor(async () => expect((await reload(shoot.id)).shots.find((s) => s.name === 'Everyone')!.poseId).toBeUndefined());
+    await user.click(await screen.findByRole('button', { name: 'Clear poses' }, { timeout: 3000 }));
+    await waitFor(async () => expect((await reload(shoot.id)).shots.find((s) => s.name === 'Everyone')!.poseIds).toBeUndefined());
+  });
+
+  it('attaches several poses to a shot, counts them, reorders them and lists all of them (PL5, PL7)', async () => {
+    const { user, shoot } = await open();
+    await user.click(within(rows()[0]!).getByRole('button', { name: 'Everyone' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Everyone' });
+    const cards = async () => within(await within(sheet).findByRole('list', { name: 'Suggested poses' })).getAllByRole('listitem');
+    await waitFor(async () => expect(await db.poses.count()).toBeGreaterThan(0)); // the starter poses are seeded
+    const names = (await cards()).slice(0, 3).map((c) => c.textContent);
+    for (const text of names) await user.click((await cards()).find((c) => c.textContent === text)!);
+    const shotNow = async () => (await reload(shoot.id)).shots.find((s) => s.name === 'Everyone')!;
+    await waitFor(async () => expect((await shotNow()).poseIds).toHaveLength(3));
+    expect(await within(sheet).findByText('3 poses')).toBeInTheDocument();
+    const [a, b, c] = (await shotNow()).poseIds!;
+    // Tapping a chosen one again takes it off.
+    await user.click((await cards()).find((x) => x.textContent === names[1])!);
+    await waitFor(async () => expect((await shotNow()).poseIds).toEqual([a, c]));
+    // Reorder with the arrows.
+    const chosen = within(sheet).getByRole('list', { name: 'Poses for this shot, in order' });
+    await user.click(within(chosen).getAllByRole('button', { name: /^Move .* down$/ })[0]!);
+    await waitFor(async () => expect((await shotNow()).poseIds).toEqual([c, a]));
+    await waitFor(() => expect(within(chosen).getAllByRole('listitem')[0]).toHaveTextContent(/Cluster/i)); // the list on screen has caught up
+    await user.click(within(chosen).getAllByRole('button', { name: /^Move .* up$/ })[1]!);
+    await waitFor(async () => expect((await shotNow()).poseIds).toEqual([a, c]));
+    await user.click(within(sheet).getByRole('button', { name: 'Done' }));
+    await user.click(screen.getByRole('button', { name: /^Pose sheet \(1\)/ }));
+    const poseList = await screen.findByRole('list', { name: 'Shots with poses' });
+    expect(within(poseList).getAllByText(/,/).length).toBeGreaterThan(0);
+    expect(b).toBeDefined();
   });
 
   it('moves a shot with the drag handle’s arrow keys, which counts as ordering by hand (O4)', async () => {

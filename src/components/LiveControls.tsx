@@ -4,6 +4,7 @@ import { finishShoot, reopenShoot, startShoot } from '../data/repo';
 import type { Extra, Person, Shoot } from '../data/types';
 import { shortNames } from '../domain/shortNames';
 import { inOrder } from '../domain/shotView';
+import { poseIdsOf } from '../domain/shotPoses';
 import { usePoseMap } from '../hooks/usePoseMap';
 import { navigate, paths } from '../router';
 import { PoseThumb } from './PoseThumb';
@@ -16,7 +17,7 @@ export function LiveControls({ shoot, people, extras, familyName = 'Shoot' }: { 
   const [sharing, setSharing] = useState(false);
   const [message, setMessage] = useState('');
   const locked = lockedAway(shoot);
-  const withPose = shoot.shots.filter((s) => s.poseId).length;
+  const withPose = shoot.shots.filter((s) => poseIdsOf(s).length).length;
   return (
     <div className="live-start">
       <SharedBanner shoot={shoot} onShareAgain={() => setSharing(true)} />
@@ -86,26 +87,29 @@ export function LiveControls({ shoot, people, extras, familyName = 'Shoot' }: { 
 function PoseSheet({ shoot, people, extras, onClose }: { shoot: Shoot; people: Person[]; extras: Extra[]; onClose: () => void }) {
   const poses = usePoseMap();
   const names = shortNames(people, extras);
-  const rows = inOrder(shoot.shots, shoot.order).filter((s) => s.poseId && poses.has(s.poseId));
+  const rows = inOrder(shoot.shots, shoot.order)
+    .map((s) => ({ shot: s, list: poseIdsOf(s).flatMap((id) => (poses.has(id) ? [poses.get(id)!] : [])) }))
+    .filter((r) => r.list.length > 0);
   return (
     <Sheet title="Pose sheet" onClose={onClose}>
       {rows.length === 0 ? (
         <p className="empty">No poses yet. Open a shot and pick one under Suggested poses.</p>
       ) : (
         <ul className="list" aria-label="Shots with poses">
-          {rows.map((s) => {
-            const pose = poses.get(s.poseId!)!;
-            return (
-              <li key={s.id} className="pose-sheet-row">
-                <PoseThumb pose={pose} />
-                <span>
-                  <b>{s.name}</b>
-                  <span className="list-sub">{pose.name}</span>
-                  <span className="list-sub">{s.personIds.map((id) => names.get(id) ?? 'Someone').join(', ')}</span>
-                </span>
-              </li>
-            );
-          })}
+          {rows.map(({ shot: s, list }) => (
+            <li key={s.id} className="pose-sheet-row">
+              <span className="pose-sheet-thumbs">
+                {list.map((pose) => (
+                  <PoseThumb key={pose.id} pose={pose} />
+                ))}
+              </span>
+              <span>
+                <b>{s.name}</b>
+                <span className="list-sub">{list.map((p) => p.name).join(', ')}</span>
+                <span className="list-sub">{s.personIds.map((id) => names.get(id) ?? 'Someone').join(', ')}</span>
+              </span>
+            </li>
+          ))}
         </ul>
       )}
     </Sheet>

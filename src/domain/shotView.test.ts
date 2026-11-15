@@ -143,7 +143,7 @@ describe('planShoot', () => {
       s.id === couple.id ? { ...s, name: 'The big two', nameEdited: true, mustHave: true, notes: 'By the tree', status: 'done' as const, doneAt: 5, poseId: 'p1' } : s,
     );
     const again = planShoot(input(baseShoot(['fullGroup', 'couples'], { shots: edited, order: first.order })));
-    expect(again.shots.find((s) => s.id === couple.id)).toMatchObject({ name: 'The big two', nameEdited: true, mustHave: true, notes: 'By the tree', status: 'done', doneAt: 5, poseId: 'p1' });
+    expect(again.shots.find((s) => s.id === couple.id)).toMatchObject({ name: 'The big two', nameEdited: true, mustHave: true, notes: 'By the tree', status: 'done', doneAt: 5, poseIds: ['p1'] });
     // Another template on: the edits stay, and the shot is still the same shot.
     const more = planShoot(input(baseShoot(['fullGroup', 'couples', 'siblings'], { shots: edited, order: first.order })));
     expect(more.shots.find((s) => s.id === couple.id)?.name).toBe('The big two');
@@ -375,5 +375,23 @@ describe('shoot-day priorities (O8)', () => {
     expect(reorderNote('Grandma', 'early', 1)).toBe('Reordered: Grandma’s 1 shot is next.');
     expect(reorderNote('Noah', 'late', 2)).toBe('Reordered: Noah’s 2 shots are last.');
     expect(reorderNote('Noah', 'normal', 2)).toMatch(/Reordered/);
+  });
+});
+
+describe('shotListText with poses (PL5)', () => {
+  it('lists every pose on a shot', async () => {
+    const { shotListText } = await import('./shotView');
+    const base = { id: 'a', name: 'Everyone', nameEdited: false, personIds: ['x'], source: 'custom' as const, reasons: [], mustHave: false, notes: '', status: 'todo' as const };
+    const text = shotListText({
+      title: 'T',
+      date: 'D',
+      shots: [{ ...base, poseIds: ['p1', 'p2'] }, { ...base, id: 'b', name: 'One', poseIds: ['p1'] }, { ...base, id: 'c', name: 'None' }],
+      order: ['a', 'b', 'c'],
+      nameOf: () => 'X',
+      poseName: (id) => ({ p1: 'Huddle', p2: 'Walk' })[id],
+    });
+    expect(text).toContain('Poses: Huddle, Walk');
+    expect(text).toContain('Pose: Huddle');
+    expect(text.match(/Pose/g)).toHaveLength(2);
   });
 });

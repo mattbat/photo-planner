@@ -1,3 +1,4 @@
+import { poseIdsOf } from '../domain/shotPoses';
 import { slug } from './backup';
 import { db } from './db';
 import type { Extra, Family, Handoff, Location, Partnership, Person, Pose, Shoot } from './types';
@@ -78,7 +79,7 @@ export function pickParts(shoot: Shoot, all: ShootParts): ShootParts {
   const used = new Set<string>(shoot.attendingIds);
   for (const shot of shoot.shots) shot.personIds.forEach((id) => used.add(id));
   for (const template of shoot.templates) template.extraIds?.forEach((id) => used.add(id));
-  const poseIds = new Set(shoot.shots.flatMap((s) => (s.poseId ? [s.poseId] : [])));
+  const poseIds = new Set(shoot.shots.flatMap(poseIdsOf));
   const bare = <T extends { photo?: string }>(record: T): T => {
     const { photo, ...rest } = record;
     void photo;
@@ -123,7 +124,7 @@ export async function buildHandoff(shootId: string, now = new Date()): Promise<S
   if (!shoot) return undefined;
   const family = await db.families.get(shoot.familyId);
   if (!family) return undefined;
-  const poseIds = shoot.shots.flatMap((s) => (s.poseId ? [s.poseId] : []));
+  const poseIds = shoot.shots.flatMap(poseIdsOf);
   return makeHandoff(
     shoot,
     {

@@ -1,5 +1,6 @@
 import { currentShot, addShot, markShot, makeCurrent, moveShotsUp, pickNext, setPresence, undo as undoDay, type DayState } from '../domain/shootDay';
 import { newProblems } from '../domain/links';
+import { migrateShoot, poseIdsOf } from '../domain/shotPoses';
 import { planShoot, suggestDayOrder, suggestOrder, type PlanInput, type SoloScope } from '../domain/shotView';
 import { starterPoses } from '../poses/starterPoses';
 import { demoFamily } from '../tree/fixtures';
@@ -620,17 +621,41 @@ export function moveShotsUpNext(id: string, personId: string): Promise<void> {
 }
 
 /** Partial edit of one shot: must-have, notes, pose (E6). */
-export function updateShot(id: string, shotId: string, changes: Partial<Pick<Shot, 'mustHave' | 'notes' | 'poseId' | 'status'>>): Promise<void> {
+export function updateShot(id: string, shotId: string, changes: Partial<Pick<Shot, 'mustHave' | 'notes' | 'status'>>): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.shots = shoot.shots.map((s) => (s.id === shotId ? { ...s, ...changes } : s));
+  });
+}
+
+/** Changes a shot's poses in one atomic edit (PL5): `edit` gets the current list and returns the new one. */
+function editPoses(id: string, shotId: string, edit: (poseIds: string[]) => string[]): Promise<void> {
   return editShoot(id, (shoot) => {
     shoot.shots = shoot.shots.map((s) => {
       if (s.id !== shotId) return s;
-      const next = { ...s, ...changes };
-      // An empty pose id clears the pose.
-      if (!next.poseId) delete next.poseId;
-      return next;
+      const { poseId, poseIds, ...rest } = s;
+      const next = [...new Set(edit(poseIds?.length ? poseIds : poseId ? [poseId] : []))];
+      return next.length ? { ...rest, poseIds: next } : rest;
     });
   });
 }
+
+/** Adds a pose to a shot, or takes it off if it is there (PL5). New poses go last. */
+export const togglePose = (id: string, shotId: string, poseId: string) =>
+  editPoses(id, shotId, (list) => (list.includes(poseId) ? list.filter((p) => p !== poseId) : [...list, poseId]));
+
+/** Moves a pose one place up or down in a shot's list (PL5). */
+export const movePose = (id: string, shotId: string, poseId: string, by: -1 | 1) =>
+  editPoses(id, shotId, (list) => {
+    const from = list.indexOf(poseId);
+    const to = from + by;
+    if (from < 0 || to < 0 || to >= list.length) return list;
+    const next = [...list];
+    [next[from], next[to]] = [next[to]!, next[from]!];
+    return next;
+  });
+
+/** Takes every pose off a shot (PL5). */
+export const clearPoses = (id: string, shotId: string) => editPoses(id, shotId, () => []);
 
 /** Renames a shot; an empty name goes back to the generated one. The name survives regenerating (E6). */
 export function renameShot(id: string, shotId: string, name: string): Promise<void> {
@@ -802,7 +827,7 @@ export async function receiveShoot(incoming: ShootHandoff): Promise<void> {
     const existing = await db.shoots.get(incoming.shoot.id);
     // Keep the sender's updatedAt, so opening the same link twice is recognised. A forecast already here stays.
     await db.shoots.put({
-      ...incoming.shoot,
+      ...migrateShoot(incoming.shoot),
       ...(existing?.forecast ? { forecast: existing.forecast } : {}),
       handoff: receivedHandoff(incoming),
     });
@@ -850,12 +875,13 @@ export async function deletePose(id: string): Promise<void> {
   await db.transaction('rw', [db.poses, db.posePhotos, db.shoots], async () => {
     await db.posePhotos.where('poseId').equals(id).delete();
     await db.shoots.toCollection().modify((shoot: Shoot) => {
-      if (!shoot.shots.some((s) => s.poseId === id)) return;
+      if (!shoot.shots.some((s) => poseIdsOf(s).includes(id))) return;
       shoot.shots = shoot.shots.map((s) => {
-        if (s.poseId !== id) return s;
-        const rest = { ...s };
-        delete rest.poseId;
-        return rest;
+        if (!poseIdsOf(s).includes(id)) return s;
+        const { poseId, poseIds, ...rest } = s;
+        void poseId;
+        const left = (poseIds ?? (poseId ? [poseId] : [])).filter((p) => p !== id);
+        return left.length ? { ...rest, poseIds: left } : rest;
       });
       shoot.updatedAt = Date.now();
     });

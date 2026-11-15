@@ -13,6 +13,7 @@ import {
   type PreviewCount,
   type Shot as EngineShot,
 } from '../engine';
+import { poseIdsOf } from './shotPoses';
 import { orderedPeople, toTreePeople } from './familyView';
 
 /**
@@ -84,7 +85,7 @@ function toStoredShot(shot: EngineShot, previous: Shot | undefined): Shot {
     reasons: shot.templateIds,
     mustHave: previous?.mustHave ?? false,
     notes: previous?.notes ?? '',
-    ...(previous?.poseId ? { poseId: previous.poseId } : {}),
+    ...(previous && poseIdsOf(previous).length ? { poseIds: poseIdsOf(previous) } : {}),
     status: previous?.status ?? 'todo',
     ...(previous?.doneAt !== undefined ? { doneAt: previous.doneAt } : {}),
   };
@@ -271,6 +272,8 @@ export function shotListText(args: {
   order: string[];
   nameOf: (id: string) => string;
   minutes?: { key: string; start: number }[];
+  /** Names the poses on a shot (PL5). */
+  poseName?: (id: string) => string | undefined;
 }): string {
   const ordered = inOrder(args.shots, args.order);
   const start = new Map((args.minutes ?? []).map((m) => [m.key, m.start]));
@@ -279,6 +282,8 @@ export function shotListText(args: {
     const at = args.startTime && start.has(s.id) ? ` (${clockAt(args.startTime, start.get(s.id)!)})` : '';
     lines.push(`${i + 1}. ${s.mustHave ? '★ ' : ''}${s.name}${at}`);
     lines.push(`   ${s.personIds.map(args.nameOf).join(', ')}`);
+    const poses = poseIdsOf(s).flatMap((id) => args.poseName?.(id) ?? []);
+    if (poses.length) lines.push(`   ${poses.length === 1 ? 'Pose' : 'Poses'}: ${poses.join(', ')}`);
     if (s.notes.trim()) lines.push(`   Note: ${s.notes.trim()}`);
   });
   return lines.join('\n');

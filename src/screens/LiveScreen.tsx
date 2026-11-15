@@ -38,6 +38,7 @@ import {
   type DayState,
 } from '../domain/shootDay';
 import { analyzeOrder } from '../domain/shotView';
+import { poseIdsOf } from '../domain/shotPoses';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useShootData, type ShootData } from '../hooks/useShootData';
 import { usePoseMap } from '../hooks/usePoseMap';
@@ -101,6 +102,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
   const banner = lightBanner ?? <LightBanner shoot={shoot} location={location} now={new Date(now)} />;
   const [view, setView] = useState<View>('now');
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [poseOpen, setPoseOpen] = useState<Pose | null>(null);
 
   const state: DayState = shoot;
   const nameById = useMemo(() => shortNames(people, extras), [people, extras]);
@@ -190,7 +192,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
       {view === 'now' && (
         <>
           {current ? (
-            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} pose={current.poseId ? poses.get(current.poseId) : undefined} waiting={waitingFor(state, current)} counter={shotCounter(state)} priorities={shoot.priorities} />
+            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} poses={poseIdsOf(current).flatMap((id) => (poses.has(id) ? [poses.get(id)!] : []))} waiting={waitingFor(state, current)} counter={shotCounter(state)} priorities={shoot.priorities} onPose={setPoseOpen} />
           ) : (
             <section className="live-card live-empty" aria-label="Current shot">
               <h2>{open === 0 ? 'All shots handled' : 'Waiting for people'}</h2>
@@ -240,6 +242,34 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
         </div>
       </footer>
 
+      {poseOpen && (
+        <Sheet title={poseOpen.name} onClose={() => setPoseOpen(null)}>
+          {poseOpen.description && <p>{poseOpen.description}</p>}
+          {poseOpen.directions.length > 0 && (
+            <>
+              <h3 className="sheet-sub">Directions</h3>
+              <ol className="live-directions">
+                {poseOpen.directions.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ol>
+            </>
+          )}
+          {poseOpen.tips.length > 0 && (
+            <>
+              <h3 className="sheet-sub">Tips</h3>
+              <ul>
+                {poseOpen.tips.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          <a className="btn secondary wide" href={`#/poses/${encodeURIComponent(poseOpen.id)}`}>
+            Open the pose
+          </a>
+        </Sheet>
+      )}
       {dialog === 'who' && <WhoSheet data={data} nameOf={nameOf} onNote={setMessage} onClose={() => setDialog(null)} />}
       {dialog === 'add' && (
         <CustomShotSheet
@@ -335,19 +365,21 @@ function CurrentCard({
   nameOf,
   nodes,
   extras,
-  pose,
+  poses,
   waiting,
   counter,
   priorities,
+  onPose,
 }: {
   shot: Shot;
   nameOf: (id: string) => string;
   nodes: Map<string, NodeInfo>;
   extras: Extra[];
-  pose: Pose | undefined;
+  poses: Pose[];
   waiting: string[];
   counter: ShotCounter;
   priorities: Shoot['priorities'];
+  onPose: (pose: Pose) => void;
 }) {
   const extraById = new Map(extras.map((e) => [e.id, e]));
   const { groups, extra } = groupPeople(shot.personIds, nodes, new Set(extraById.keys()), nameOf);
@@ -391,14 +423,20 @@ function CurrentCard({
           </div>
         </div>
       )}
-      {pose && (
-        <a className="live-pose" href={`#/poses/${encodeURIComponent(pose.id)}`}>
-          <PoseThumb pose={pose} />
-          <span>
-            <span className="live-glabel">Suggested pose</span>
-            <b>{pose.name}</b>
-          </span>
-        </a>
+      {poses.length > 0 && (
+        <div className="live-poses">
+          <div className="live-glabel">{poses.length === 1 ? 'Suggested pose' : `Suggested poses (${poses.length})`}</div>
+          <ul className="live-pose-row" aria-label="Poses for this shot">
+            {poses.map((pose) => (
+              <li key={pose.id}>
+                <button type="button" className="live-pose" aria-label={`Pose: ${pose.name}`} onClick={() => onPose(pose)}>
+                  <PoseThumb pose={pose} />
+                  <b>{pose.name}</b>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {shot.notes.trim() && <p className="live-notes">{shot.notes}</p>}
     </section>

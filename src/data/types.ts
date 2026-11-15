@@ -143,7 +143,9 @@ export interface Shot {
   reasons: TemplateId[];
   mustHave: boolean;
   notes: string;
-  /** The pose attached to it (§11), if any. */
+  /** The poses attached to it (§11), in order. Absent when there are none. */
+  poseIds?: string[];
+  /** Old layout, one pose. Only read from old data and files, and turned into `poseIds` (see `migrateShot`). */
   poseId?: string;
   status: ShotStatus;
   /** Spare: flagged shots are not stored, they are worked out from who is attending (E3). */

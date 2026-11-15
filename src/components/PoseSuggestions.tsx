@@ -10,15 +10,15 @@ import { poseImageSrc } from '../screens/posePhoto';
 
 /**
  * Suggested poses for a shot (PL5): a swipeable row of the best matches for who is in it.
- * Drop it into the shot screens; `onPick` gets the pose to attach (`Shot.poseId`).
- * `selectedId` highlights the pose already attached.
+ * Drop it into the shot screens; `onPick` gets the pose to attach (`Shot.poseIds`).
+ * `selectedIds` highlights the poses already attached; picking one again takes it off.
  */
 export function PoseSuggestions({
   onPick,
-  selectedId,
+  selectedIds = [],
   limit = 8,
   ...group
-}: SuggestInput & { onPick: (pose: Pose) => void; selectedId?: string | undefined; limit?: number }) {
+}: SuggestInput & { onPick: (pose: Pose) => void; selectedIds?: string[] | undefined; limit?: number }) {
   const stored = useLiveQuery(() => db.poses.toArray());
   useEffect(() => {
     void seedStarterPoses();
@@ -33,7 +33,7 @@ export function PoseSuggestions({
   return (
     <div className="pl-suggest" role="list" aria-label="Suggested poses">
       {suggestions.map((p) => (
-        <button key={p.id} type="button" role="listitem" className="pl-suggest-card" aria-pressed={p.id === selectedId} onClick={() => onPick(p)}>
+        <button key={p.id} type="button" role="listitem" className="pl-suggest-card" aria-pressed={selectedIds.includes(p.id)} onClick={() => onPick(p)}>
           <span className="pl-thumb">{p.image ? <img src={poseImageSrc(p.image)} alt="" loading="lazy" /> : <span className="pl-noimg" aria-hidden>🧍</span>}</span>
           <span className="pl-card-name">{p.name}</span>
           <span className="pl-card-sub">{sizeLabel(p.minSize, p.maxSize)}</span>

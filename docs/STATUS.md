@@ -158,9 +158,9 @@ Option B, hand-off like next5 (decided 2026-11-15). Code: `src/data/handoff.ts`,
 | PL2 | ✅ | Detail screen: image, description, numbered "How to direct it", tips, common mistakes, size range, tags, difficulty. Three extra tags (kid-friendly, baby, senior-friendly) feed suggestions. |
 | PL3 | ✅ | 60 original illustrations in `public/poses` (precached for offline), starter data in `src/poses/starterPoses.ts`. Seeded into the `poses` table on first visit by `seedStarterPoses` (adds only missing ids, never touches favourites or photos). Credit and licence stored per pose. Existing rows are not rewritten when a later release edits starter text. |
 | PL4 | ✅ | Add, edit and delete own poses; favourite and add photos (resized to 1600 px JPEG) on any pose. Built-in poses cannot be edited or deleted. 📱 camera picker to check on iPhone. |
-| PL5 | ✅ | "Suggested poses" in the shot sheet (group worked out in `src/domain/poseGroup.ts`); tap to attach (`Shot.poseId`), tap again or Clear pose to remove; shown on the live current-shot card (M4). |
+| PL5 | ✅ | "Suggested poses" in the shot sheet (group worked out in `src/domain/poseGroup.ts`); tap several to attach (`Shot.poseIds`, ordered; `togglePose`, `movePose`, `clearPoses` in `repo.ts`), a count, up/down arrows to reorder, Clear poses; shown on the live card as a row of thumbnails, tap for directions. Old `poseId` data is converted by Dexie version 2 (`src/domain/shotPoses.ts`), and on restore and receive. `poseIds` is optional in the type (absent means none); `poseId` is only read from old files. |
 | PL6 | ✅ | Search, group-size and tag filters, favourites toggle. |
-| PL7 | ✅ | Pose sheet button on the shoot screen lists shots in order with their attached pose (M4). |
+| PL7 | ✅ | Pose sheet button on the shoot screen lists shots in order with all their attached poses (M4). The shot-list text and the hand-off carry every pose. |
 
 ## 12. Data, backup and sharing
 

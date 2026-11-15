@@ -6,7 +6,7 @@ import { db } from './db';
 import { buildHandoff, decideReceive, decodeHandoff, encodeHandoff, lockedAway } from './handoff';
 import {
   addCustomShot, addExtra, addLocation, addPose, addPosePhoto, createShoot, doShotNow, finishShoot, markSent, markShotOnDay, moveShotsUpNext,
-  quickAddFamily, receiveShoot, removeShot, renameShot, reopenShoot, setAttending, setShootPresence, startShoot, takeBack, undoLastOnDay, updatePerson, updateSettings, updateShot,
+  quickAddFamily, receiveShoot, removeShot, renameShot, reopenShoot, setAttending, setShootPresence, startShoot, takeBack, togglePose, undoLastOnDay, updatePerson, updateSettings, updateShot,
 } from './repo';
 import type { Pose } from './types';
 
@@ -85,7 +85,7 @@ async function scenario(f: { couple: boolean; kids: { partner: boolean; grand: n
     name: 'Huddle', category: 'siblings', minSize: 2, maxSize: 4, description: '', directions: [], tips: [], mistakes: [], tags: [], difficulty: 'easy', favorite: false, builtIn: false,
   } satisfies Omit<Pose, 'id' | 'createdAt' | 'updatedAt'>);
   await addPosePhoto({ poseId: pose.id, dataUrl: PHOTO, width: 4, height: 4 });
-  if (shoot.shots[0]) await updateShot(shoot.id, shoot.shots[0].id, { poseId: pose.id });
+  if (shoot.shots[0]) await togglePose(shoot.id, shoot.shots[0].id, pose.id);
   if (live) await startShoot(shoot.id);
   for (const a of actions) await act(shoot.id, a);
   return { family, shootId: shoot.id };

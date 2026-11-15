@@ -16,7 +16,7 @@ import {
   sharedAway,
   type ShootHandoff,
 } from './handoff';
-import { addExtra, addLocation, addPose, createShoot, finishShoot, markShotOnDay, markSent, receiveShoot, setShootPresence, startShoot, takeBack, undoLastOnDay, updateShot } from './repo';
+import { addExtra, addLocation, addPose, createShoot, finishShoot, markShotOnDay, markSent, receiveShoot, setShootPresence, startShoot, takeBack, togglePose, undoLastOnDay } from './repo';
 import type { Handoff, Shoot } from './types';
 import { clearDb, seedFamily } from '../test/helpers';
 
@@ -31,7 +31,7 @@ async function planned() {
     name: 'My lean', category: 'couples', minSize: 2, maxSize: 2, description: 'Lean in', directions: [], tips: [], mistakes: [], tags: [], difficulty: 'easy', favorite: false, builtIn: false,
   });
   const first = shoot.shots[0]!;
-  await updateShot(shoot.id, first.id, { poseId: pose.id });
+  await togglePose(shoot.id, first.id, pose.id);
   return { ...seeded, place, pose, shootId: shoot.id };
 }
 const get = async (id: string) => (await db.shoots.get(id))!;
@@ -66,7 +66,7 @@ describe('buildHandoff', () => {
     const { shootId, family } = await planned();
     await db.poses.put({ ...(await db.poses.toCollection().first())!, id: 'starter-1', builtIn: true });
     const first = (await get(shootId)).shots[1]!;
-    await updateShot(shootId, first.id, { poseId: 'starter-1' });
+    await togglePose(shootId, first.id, 'starter-1');
     const unused = await addExtra(family.id, { name: 'Cat', kind: 'pet' });
     await db.shoots.update(shootId, { attendingIds: (await get(shootId)).attendingIds.filter((id) => id !== unused.id) });
     const h = await build(shootId);
@@ -97,6 +97,25 @@ describe('pack and unpack', () => {
     }
   });
 
+  it('carries every pose on a shot, and receiving an old single-pose file converts it (PL5)', async () => {
+    const { shootId, pose } = await planned();
+    await togglePose(shootId, (await get(shootId)).shots[0]!.id, 'starter-1');
+    const h = await build(shootId);
+    expect(h.shoot.shots[0]!.poseIds).toEqual([pose.id, 'starter-1']);
+    expect(h.poses.map((p) => p.id)).toEqual([pose.id]);
+    const parsed = await decodeHandoff(await encodeHandoff(h));
+    expect(parsed.ok && parsed.handoff.shoot.shots[0]!.poseIds).toEqual([pose.id, 'starter-1']);
+    // An older phone sent `poseId`.
+    const { poseIds, ...rest } = h.shoot.shots[0]!;
+    void poseIds;
+    const oldFile = { ...h, shoot: { ...h.shoot, shots: [{ ...rest, poseId: 'starter-9' }, ...h.shoot.shots.slice(1)] } };
+    const again = await decodeHandoff(await encodeHandoff(oldFile as unknown as ShootHandoff));
+    expect(again.ok).toBe(true);
+    await db.shoots.clear();
+    await receiveShoot(oldFile as unknown as ShootHandoff);
+    expect((await db.shoots.get(shootId))!.shots[0]!.poseIds).toEqual(['starter-9']);
+  });
+
   it('carries who is early and late', async () => {
     const { shootId } = await planned();
     const h = await build(shootId);
@@ -111,8 +130,8 @@ describe('pack and unpack', () => {
     const { shootId } = await planned();
     const h = await build(shootId);
     await fc.assert(
-      fc.asyncProperty(fc.string(), fc.string(), fc.boolean(), async (title, notes, compress) => {
-        const copy: ShootHandoff = { ...h, shoot: { ...h.shoot, title, shots: h.shoot.shots.map((s, i) => (i === 0 ? { ...s, notes } : s)) } };
+      fc.asyncProperty(fc.string(), fc.string(), fc.boolean(), fc.array(fc.string({ minLength: 1 }), { maxLength: 4 }), async (title, notes, compress, poseIds) => {
+        const copy: ShootHandoff = { ...h, shoot: { ...h.shoot, title, shots: h.shoot.shots.map((s, i) => (i === 0 ? { ...s, notes, ...(poseIds.length ? { poseIds } : {}) } : s)) } };
         const parsed = await decodeHandoff(await encodeHandoff(copy, compress));
         expect(parsed.ok && parsed.handoff).toEqual(JSON.parse(JSON.stringify(copy)));
       }),

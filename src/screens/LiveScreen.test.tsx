@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../data/db';
-import { createShoot, startShoot, updateSettings, updateShot, getSettings } from '../data/repo';
+import { createShoot, startShoot, togglePose, updateSettings, updateShot, getSettings } from '../data/repo';
 import { clearDb, seedFamily } from '../test/helpers';
 import { LiveScreen } from './LiveScreen';
 
@@ -237,5 +237,19 @@ describe('LiveScreen', () => {
     expect(after.priorities).toEqual({ [ivy.id]: 'early' });
     expect(after.order.indexOf(doneId)).toBe(mid.order.indexOf(doneId));
     expect(after.currentShotId).toBe(mid.currentShotId);
+  });
+
+  it('shows every pose on the current shot as a row, and a tap opens its directions (PL5)', async () => {
+    const { shoot, user } = await open();
+    const first = (await reload(shoot.id)).order[0]!;
+    await togglePose(shoot.id, first, 'cluster-by-household');
+    await togglePose(shoot.id, first, 'v-shape');
+    const row = await screen.findByRole('list', { name: 'Poses for this shot' });
+    expect(within(row).getAllByRole('listitem')).toHaveLength(2);
+    expect(await card()).toHaveTextContent('Suggested poses (2)');
+    await user.click(within(row).getAllByRole('button')[0]!);
+    const sheet = await screen.findByRole('dialog');
+    expect(within(sheet).getByRole('link', { name: 'Open the pose' })).toBeInTheDocument();
+    expect(within(sheet).getAllByRole('listitem').length).toBeGreaterThan(0);
   });
 });

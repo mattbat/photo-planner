@@ -293,11 +293,37 @@ describe('eraseEverything', () => {
 });
 
 describe('schema (T4)', () => {
-  it('opens at version 1 with every table the spec needs', () => {
-    expect(db.verno).toBe(1);
+  it('opens at version 2 with every table the spec needs', () => {
+    expect(db.verno).toBe(2);
     expect(db.tables.map((t) => t.name).sort()).toEqual(
       ['extras', 'families', 'locations', 'partnerships', 'people', 'poses', 'posePhotos', 'settings', 'shoots'].sort(),
     );
+  });
+
+  it('version 2 turns a shot\u2019s single poseId into poseIds, leaving other shots alone', async () => {
+    const name = `migration-poses-${newId()}`;
+    // The version-1 layout, as an app from before this change stored it.
+    const old = new Dexie(name);
+    old.version(1).stores({
+      families: 'id, name',
+      people: 'id, familyId, *parentIds',
+      partnerships: 'id, familyId, *personIds',
+      extras: 'id, familyId, shootId',
+      shoots: 'id, familyId, date, status',
+      poses: 'id, category, name',
+      posePhotos: 'id, poseId',
+      locations: 'id, name',
+      settings: 'key',
+    });
+    const shot = (id: string, extra: object) => ({ id, name: id, nameEdited: false, personIds: [], source: 'custom', reasons: [], mustHave: false, notes: '', status: 'todo', ...extra });
+    await old.table('shoots').add({ id: 's1', familyId: 'f', date: '2026-12-05', status: 'planned', updatedAt: 1, createdAt: 1, shots: [shot('a', { poseId: 'p1' }), shot('b', {}), shot('c', { poseId: 'p2' })] });
+    old.close();
+    const upgraded = new PhotoPlannerDb(name);
+    const shoot = (await upgraded.shoots.get('s1'))!;
+    expect(shoot.shots.map((s) => s.poseIds)).toEqual([['p1'], undefined, ['p2']]);
+    expect(shoot.shots.some((s) => 'poseId' in s)).toBe(false);
+    upgraded.close();
+    await Dexie.delete(name);
   });
 
   it('keeps data when an older database of the same name is opened again', async () => {
