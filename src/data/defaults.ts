@@ -12,6 +12,7 @@ export const DEFAULT_ORDER_OPTIONS: OrderOptions = {
   bigGroupFirst: true,
   mustHavesEarly: false,
   everyoneFirst: true,
+  groupHouseholds: true,
 };
 
 /** O5: 2 min for 1–2 people, 3 for 3–6, 5 for 7+, and a short set-up allowance. */

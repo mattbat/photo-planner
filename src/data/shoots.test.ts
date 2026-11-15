@@ -207,7 +207,7 @@ describe('order (O1, O2, O4)', () => {
     const { family } = await seedFamily();
     const { id } = await createShoot(family);
     await setOrderOptions(id, { kidsFirst: false, mustHavesEarly: true });
-    expect((await load(id)).orderOptions).toEqual({ kidsFirst: false, releaseOlderEarly: true, bigGroupFirst: true, mustHavesEarly: true, everyoneFirst: true });
+    expect((await load(id)).orderOptions).toEqual({ kidsFirst: false, releaseOlderEarly: true, bigGroupFirst: true, mustHavesEarly: true, everyoneFirst: true, groupHouseholds: true });
     await updateSettings({ timeEstimates: { small: 1, medium: 1, large: 1, setup: 0 } });
     await applySuggestedOrder(id);
   });
