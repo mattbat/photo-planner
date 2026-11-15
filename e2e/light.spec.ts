@@ -32,7 +32,7 @@ test('new shoot → type coordinates → timeline and suggested start → use it
   await page.getByRole('button', { name: 'Use this start time' }).click();
   await expect(page.getByRole('button', { name: 'Start time is set' })).toBeVisible();
   await expect(page.getByTestId('shoot-span')).toBeVisible();
-  await expect(page.locator('.shoot-when')).toContainText(/[ap]m/);
+  await expect(page.locator('.shoot-when')).toContainText(/[AP]M/);
 
   if (process.env.LIGHT_SHOT) {
     await page.getByRole('heading', { name: 'Light', level: 2 }).scrollIntoViewIfNeeded();

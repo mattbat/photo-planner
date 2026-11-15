@@ -70,7 +70,7 @@ function Lit({ shoot, location, totalMinutes }: { shoot: Shoot; location: Locati
           {span && <span className="shoot-span" data-testid="shoot-span" style={{ left: `${span.from * 100}%`, width: `${Math.max((span.to - span.from) * 100, 1)}%` }} />}
         </div>
         <div className="timeline-axis" aria-hidden>
-          {['12 am', '6 am', '12 pm', '6 pm', '12 am'].map((t, i) => (
+          {['12 AM', '6 AM', '12 PM', '6 PM', '12 AM'].map((t, i) => (
             <span key={i}>{t}</span>
           ))}
         </div>

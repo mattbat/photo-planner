@@ -254,3 +254,15 @@ describe('properties', () => {
     }));
   });
 });
+
+import { formatClock } from './times';
+
+describe('formatClock (the app\u2019s one time format)', () => {
+  it('is US style with capital AM and PM', () => {
+    expect(formatClock(0, 5)).toBe('12:05 AM');
+    expect(formatClock(9, 0)).toBe('9:00 AM');
+    expect(formatClock(12, 30)).toBe('12:30 PM');
+    expect(formatClock(15, 53)).toBe('3:53 PM');
+    expect(formatClock(23, 59)).toBe('11:59 PM');
+  });
+});

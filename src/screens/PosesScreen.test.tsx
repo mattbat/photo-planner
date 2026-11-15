@@ -98,9 +98,9 @@ describe('PoseDetailScreen', () => {
     // Built-in poses can't be edited or deleted.
     expect(screen.queryByRole('button', { name: 'Delete pose' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Add to favourites' }));
+    await user.click(screen.getByRole('button', { name: 'Add to favorites' }));
     await waitFor(async () => expect((await db.poses.get(first.id))!.favorite).toBe(true));
-    await user.click(await screen.findByRole('button', { name: 'Remove from favourites' }));
+    await user.click(await screen.findByRole('button', { name: 'Remove from favorites' }));
     await waitFor(async () => expect((await db.poses.get(first.id))!.favorite).toBe(false));
   });
 

@@ -93,6 +93,8 @@ const isOrderOptions = exact({
   releaseOlderEarly: isBoolean,
   bigGroupFirst: isBoolean,
   mustHavesEarly: isBoolean,
+  // Added later: older backups don't have it.
+  everyoneFirst: (v) => v === undefined || isBoolean(v),
 });
 const isShot: Check = (value) =>
   exact({

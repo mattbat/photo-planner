@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { MoreIcon } from '../components/icons';
 import { AttendanceList } from '../components/AttendanceList';
 import { LiveControls } from '../components/LiveControls';
 import { LightSection } from '../components/LightSection';
@@ -32,6 +33,7 @@ import { branchColors, toTreePeople } from '../domain/familyView';
 import {
   analyzeOrder,
   clockAt,
+  everyoneWaitsFor,
   inOrder,
   moveShot,
   planShoot,
@@ -87,6 +89,7 @@ function Shoot({ data }: { data: ShootData }) {
   const previews = useMemo(() => previewShoot(planInput), [planInput]);
   const plan = useMemo(() => planShoot(planInput), [planInput]);
 
+  const waits = everyoneWaitsFor(shoot.shots, shoot.priorities, shoot.orderOptions);
   const stepByKey = new Map(analysis.steps.map((s) => [s.key, s]));
   const minutesByKey = new Map(analysis.minutes.map((m) => [m.key, m]));
   const attendingIds = shoot.attendingIds.filter((id) => nameById.has(id));
@@ -122,8 +125,8 @@ function Shoot({ data }: { data: ShootData }) {
         back={paths.shoots()}
         historyBack
         action={
-          <button type="button" className="link" aria-label="Shoot options" onClick={() => setDialog('options')}>
-            ⋯
+          <button type="button" className="icon-btn" aria-label="Shoot options" onClick={() => setDialog('options')}>
+            <MoreIcon />
           </button>
         }
       />
@@ -193,11 +196,17 @@ function Shoot({ data }: { data: ShootData }) {
         </div>
         <details className="fold">
           <summary>Order options{shoot.manualOrder ? ' (you ordered these by hand)' : ''}</summary>
+          <Toggle label="Everyone first" info="The full-group shots, with or without pets and guests, open the shoot, largest first, while everyone is fresh. A full group that includes someone you marked Late waits for them." checked={shoot.orderOptions.everyoneFirst !== false} onChange={(v) => void setOrderOptions(shoot.id, { everyoneFirst: v })} />
           <Toggle label="Kids first" info="Little ones are photographed before they get tired. They sit under their parents, so those shots stay together." checked={shoot.orderOptions.kidsFirst} onChange={(v) => void setOrderOptions(shoot.id, { kidsFirst: v })} />
           <Toggle label="Release older people early" info="Shots with the oldest guests come first, so grandparents can sit down or leave early." checked={shoot.orderOptions.releaseOlderEarly} onChange={(v) => void setOrderOptions(shoot.id, { releaseOlderEarly: v })} />
           <Toggle label="Big group first" info="The full group goes first, while everyone is fresh and still here." checked={shoot.orderOptions.bigGroupFirst} onChange={(v) => void setOrderOptions(shoot.id, { bigGroupFirst: v })} />
           <Toggle label="Must-haves early" info="Shots you starred are moved earlier, while energy and light are best." checked={shoot.orderOptions.mustHavesEarly} onChange={(v) => void setOrderOptions(shoot.id, { mustHavesEarly: v })} />
         </details>
+        {waits.length > 0 && (
+          <p className="hint" role="status">
+            Full group waits for {waits.map(nameOf).join(', ')}.
+          </p>
+        )}
 
         {shoot.shots.length === 0 ? (
           <Empty>

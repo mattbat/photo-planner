@@ -169,6 +169,7 @@ The grown-children templates exist because grown children are their own househol
 | O5 | **Time estimate:** minutes per shot by group size (defaults in Settings, e.g. 2 min for 1–2 people, 3 min for 3–6, 5 min for 7+, plus a set-up allowance). Shows the total and when each shot is expected to happen, so it can be matched to the light (§10). |
 | O7 | **Early and late people.** On a shoot the photographer marks people **Early** (finish them first: an older guest, someone with special needs) or **Late** (push to the end: someone called away briefly, a little one who needs a break); everyone else is Normal. Set per person or for several at once on the shoot screen, shown as a small Early/Late badge on people chips. Stored on the shoot (`priorities`), validated in backups and carried in the hand-off. Guarantee: after any shots fixed by hand or already done, the order is grouped in three tiers that never interleave: shots with an Early person and no Late one, then all other shots, then shots with a Late person and no Early one. With no shot that mixes Early and Late people, every shot with an Early person comes before every shot without one, and every shot with a Late person comes after every shot without one. Inside a tier the fewest-changes order applies, and Early people are released as soon as possible (decided 2026-11-15). |
 | O8 | On shoot day, **Who's here** has the same Normal / Early / Late control. Changing it re-orders only the shots still to do, keeping the one being photographed first; done, skipped and retake shots never move. A short note says what happened ("Reordered: Grandma's 4 shots are next") (decided 2026-11-15). |
+| O9 | **Everyone first** (option, on by default, in Settings and per shoot). The "everyone" shots open the shoot, largest first: the full-group templates (with or without pets and guests) and any shot containing all the people. The rest are ordered as before. A shot with someone marked Late (O7) is not an everyone shot until they are Normal or Early again: the shoot screen says "Full group waits for Dan". Shots fixed by hand or already done keep their place (decided 2026-11-15). |
 | O6 | Performance: 40 people and 120 shots ordered in under 1 second on an iPhone. |
 
 ## 7. Shoot planning
@@ -328,6 +329,8 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 | 2026-11-15 | People already in a family can be picked wherever people are linked, with a duplicate-name hint (F9, F10), so separately added branches can be joined. |
 | 2026-11-15 | People can be marked Early or Late for a shoot, before and on the day, and the order follows (O7, O8). |
 | 2026-11-15 | A shot can have several poses, in order (`Shot.poseIds`, replacing the single `poseId`); old data, backups and hand-off files are converted (Dexie version 2, restore, receive) (PL5). |
+| 2026-11-15 | Everyone (full-group) shots come first by default; a Late person in the full group makes it wait for them (O9). |
+| 2026-11-15 | One time format app-wide, US style ("3:53 PM"); form fields, top-bar icons and tab icons share one style (polish pass). |
 | 2026-11-15 | Build started; the Q12 default shot types are used until changed. Built by Claude with subagents, milestone by milestone. |
 
 ## 18. Risks

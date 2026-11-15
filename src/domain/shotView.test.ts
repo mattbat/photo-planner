@@ -322,12 +322,12 @@ describe('moveShot', () => {
 
 describe('text', () => {
   it('writes the time of day', () => {
-    expect(clockAt('09:05', 0)).toBe('9:05 am');
-    expect(clockAt('11:50', 20)).toBe('12:10 pm');
-    expect(clockAt('00:00', 5)).toBe('12:05 am');
-    expect(clockAt('23:30', 60)).toBe('12:30 am');
-    expect(clockAt('16:00', -30)).toBe('3:30 pm');
-    expect(clockAt('x', 0)).toBe('12:00 am');
+    expect(clockAt('09:05', 0)).toBe('9:05 AM');
+    expect(clockAt('11:50', 20)).toBe('12:10 PM');
+    expect(clockAt('00:00', 5)).toBe('12:05 AM');
+    expect(clockAt('23:30', 60)).toBe('12:30 AM');
+    expect(clockAt('16:00', -30)).toBe('3:30 PM');
+    expect(clockAt('x', 0)).toBe('12:00 AM');
   });
 
   it('writes the shot list for sharing (P5)', () => {
@@ -345,7 +345,7 @@ describe('text', () => {
       minutes: [{ key: 'b', start: 5 }, { key: 'a', start: 8 }],
     });
     expect(text).toBe(
-      ['The Testers, Sat, Dec 5, from 4:00 pm', '', '1. ★ Kids (4:05 pm)', '   Y', '   Note: By the gate', '2. Everyone (4:08 pm)', '   X, Y'].join('\n'),
+      ['The Testers, Sat, Dec 5, from 4:00 PM', '', '1. ★ Kids (4:05 PM)', '   Y', '   Note: By the gate', '2. Everyone (4:08 PM)', '   X, Y'].join('\n'),
     );
     expect(shotListText({ title: 'T', date: 'D', shots, order: [], nameOf: (id) => id })).toBe(
       'T, D\n\n1. Everyone\n   x, y\n2. ★ Kids\n   y\n   Note: By the gate',
@@ -393,5 +393,19 @@ describe('shotListText with poses (PL5)', () => {
     expect(text).toContain('Poses: Huddle, Walk');
     expect(text).toContain('Pose: Huddle');
     expect(text.match(/Pose/g)).toHaveLength(2);
+  });
+});
+
+describe('everyoneWaitsFor (O9)', () => {
+  const mk = (id: string, personIds: string[], reasons: Shot['reasons'] = []): Shot => ({ id, name: id, nameEdited: false, personIds, source: 'custom', reasons, mustHave: false, notes: '', status: 'todo' });
+  it('names the Late people who are in an everyone shot, and nobody when it is off', async () => {
+    const { everyoneWaitsFor } = await import('./shotView');
+    const shots = [mk('all', ['a', 'b', 'c'], ['fullGroup']), mk('ab', ['a', 'b']), mk('c', ['c'])];
+    expect(everyoneWaitsFor(shots, { c: 'late' }, {})).toEqual(['c']);
+    expect(everyoneWaitsFor(shots, { c: 'early' }, {})).toEqual([]);
+    expect(everyoneWaitsFor(shots, { c: 'late' }, { everyoneFirst: false })).toEqual([]);
+    expect(everyoneWaitsFor(shots, undefined, {})).toEqual([]);
+    // A shot with everybody counts even without the template.
+    expect(everyoneWaitsFor([mk('x', ['a', 'b']), mk('y', ['a'])], { b: 'late' }, {})).toEqual(['b']);
   });
 });

@@ -238,6 +238,11 @@ const ALL: Topic[] = [
         <p>Under <b>Order options</b>:</p>
         <ul>
           <li>
+            <b>Everyone first</b> (on by default): the full-group shots open the shoot, largest first, while everyone is
+            fresh. If you mark someone in the full group <b>Late</b>, it says “Full group waits for …” and that shot comes
+            later.
+          </li>
+          <li>
             <b>Kids first</b>: little ones before they tire.
           </li>
           <li>

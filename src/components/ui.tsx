@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { BETA } from '../beta';
-import { canGoBack } from '../router';
+import { canGoBack, paths } from '../router';
+import { ChevronLeftIcon, GearIcon } from './icons';
 
 /** Small shared building blocks used across screens. */
 
@@ -32,7 +33,7 @@ export function TopBar({
             window.history.back();
           }}
         >
-          ‹
+          <ChevronLeftIcon />
         </a>
       ) : (
         <span className="topbar-spacer">{lead}</span>
@@ -42,6 +43,15 @@ export function TopBar({
       {/* A preview build of a branch, not the real app (REL5). */}
       {BETA && <span className="beta-badge">Beta</span>}
     </header>
+  );
+}
+
+/** The Settings gear for the top bar of the three home screens. */
+export function SettingsLink() {
+  return (
+    <a href={paths.settings()} className="icon-btn" aria-label="Settings">
+      <GearIcon />
+    </a>
   );
 }
 

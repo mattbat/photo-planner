@@ -28,6 +28,7 @@ function plural(n: number, word: string) {
 export function SettingsScreen({ reload = () => window.location.reload() }: { reload?: () => void }) {
   const [theme, setTheme] = useState(themePreference);
   const [message, setMessage] = useState<string | null>(null);
+  const everyoneFirst = useLiveQuery(async () => (await getSettings()).defaultOrderOptions.everyoneFirst !== false) ?? true;
   const treatAll = useLiveQuery(async () => (await getSettings()).treatEveryoneAsHere !== false) ?? true;
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Backup | null>(null);
@@ -178,6 +179,15 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
           Match phone follows your iPhone’s light or dark setting. On the Home Screen app, the clock and battery at the
           top update the next time you open Photo Planner.
         </p>
+      </Section>
+
+      <Section title="New shoots">
+        <Toggle
+          label="Everyone shots first"
+          checked={everyoneFirst}
+          onChange={async (v) => void updateSettings({ defaultOrderOptions: { ...(await getSettings()).defaultOrderOptions, everyoneFirst: v } })}
+        />
+        <p className="hint">On: the full-group shots open each new shoot, largest first, so you get them done while everyone is fresh. You can change it on any shoot.</p>
       </Section>
 
       <Section title="Shoot day">

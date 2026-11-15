@@ -2,6 +2,7 @@ import type { AppSettings, Extra, Partnership, Person, Shoot, Shot, TemplateId, 
 import {
   buildFamily,
   describeRelationship,
+  everyoneShotKeys,
   generateShots,
   orderShots,
   previewCounts,
@@ -13,6 +14,7 @@ import {
   type PreviewCount,
   type Shot as EngineShot,
 } from '../engine';
+import { formatClock } from '../sun';
 import { poseIdsOf } from './shotPoses';
 import { orderedPeople, toTreePeople } from './familyView';
 
@@ -208,7 +210,7 @@ function runOrder(input: OrderInput, fixedPrefix: string[], useOptions: boolean)
     ordered.map((s) => toEngineShot(s, extraSet)),
     toEnginePeople(input.people, input.partnerships, input.thisYear),
     {
-      ...(useOptions ? { kidsFirst: o.kidsFirst, releaseOlderEarly: o.releaseOlderEarly, bigGroupFirst: o.bigGroupFirst, mustHavesEarly: o.mustHavesEarly } : {}),
+      ...(useOptions ? { kidsFirst: o.kidsFirst, releaseOlderEarly: o.releaseOlderEarly, bigGroupFirst: o.bigGroupFirst, mustHavesEarly: o.mustHavesEarly, everyoneFirst: o.everyoneFirst !== false } : {}),
       mustHaveKeys: ordered.filter((s) => s.mustHave).map((s) => s.id),
       ...(input.priorities ? { priorities: input.priorities } : {}),
       fixedPrefix,
@@ -241,6 +243,20 @@ export function suggestDayOrder(input: OrderInput, currentShotId?: string): stri
   return ordered.map((s) => (todo.has(s.id) ? queue.shift()! : s.id));
 }
 
+/**
+ * People marked Late who are in an "everyone" shot, so that shot waits for
+ * them instead of opening the shoot (O9). Empty when everyone-first is off.
+ */
+export function everyoneWaitsFor(shots: Shot[], priorities: Record<string, 'early' | 'late'> | undefined, options: { everyoneFirst?: boolean | undefined }): string[] {
+  if (options.everyoneFirst === false || !priorities) return [];
+  const extra = new Set<string>();
+  const eng = shots.filter((s) => s.status === 'todo').map((s) => toEngineShot(s, extra));
+  const everyone = everyoneShotKeys(eng);
+  const late = new Set<string>();
+  for (const s of eng) if (everyone.has(s.key)) for (const id of s.peopleIds) if (priorities[id] === 'late') late.add(id);
+  return [...late];
+}
+
 /** The short note after priorities change on shoot day: "Reordered: Grandma's 4 shots are next". */
 export function reorderNote(name: string, how: 'early' | 'late' | 'normal', shots: number): string {
   const n = `${shots} shot${shots === 1 ? '' : 's'}`;
@@ -254,13 +270,12 @@ export function analyzeOrder(input: OrderInput): OrderResult {
   return runOrder(input, inOrder(input.shots, input.order).map((s) => s.id), false);
 }
 
-/** "9:05 am" for a start time (HH:mm) plus minutes; the day wraps. */
+/** "9:05 AM" for a start time (HH:mm) plus minutes; the day wraps. */
 export function clockAt(startTime: string, minutes: number): string {
   const [h = '0', m = '0'] = startTime.split(':');
   const total = ((((Number(h) || 0) * 60 + (Number(m) || 0) + Math.round(minutes)) % 1440) + 1440) % 1440;
   const hh = Math.floor(total / 60);
-  const mm = String(total % 60).padStart(2, '0');
-  return `${hh % 12 === 0 ? 12 : hh % 12}:${mm} ${hh < 12 ? 'am' : 'pm'}`;
+  return formatClock(hh, total % 60);
 }
 
 /** Plain-text shot list to paste into a message (P5). */

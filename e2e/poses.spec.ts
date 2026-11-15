@@ -16,8 +16,8 @@ test('opens Poses, filters Couples, opens a pose and favourites it', async ({ pa
   await grid.getByRole('link').first().click();
   await expect(page.getByRole('heading', { name: 'How to direct it' })).toBeVisible();
   await expect(page.getByRole('img', { name: /^Illustration of / })).toBeVisible();
-  await page.getByRole('button', { name: 'Add to favourites' }).click();
-  await expect(page.getByRole('button', { name: 'Remove from favourites' })).toBeVisible();
+  await page.getByRole('button', { name: 'Add to favorites' }).click();
+  await expect(page.getByRole('button', { name: 'Remove from favorites' })).toBeVisible();
 
   // The favourite survives going back and shows in the grid.
   await page.getByRole('link', { name: 'Back' }).click();

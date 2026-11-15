@@ -57,7 +57,7 @@ export function PoseDetailScreen({ poseId }: { poseId: string }) {
             type="button"
             className="pl-fav"
             aria-pressed={pose.favorite}
-            aria-label={pose.favorite ? 'Remove from favourites' : 'Add to favourites'}
+            aria-label={pose.favorite ? 'Remove from favorites' : 'Add to favorites'}
             onClick={() => void setPoseFavorite(pose.id, !pose.favorite)}
           >
             {pose.favorite ? '★' : '☆'}

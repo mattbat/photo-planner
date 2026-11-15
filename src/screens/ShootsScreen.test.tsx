@@ -90,7 +90,7 @@ describe('ShootsScreen', () => {
     expect(upcoming).toHaveTextContent('The Testers');
     expect(upcoming).toHaveTextContent('Winter');
     expect(upcoming).toHaveTextContent('Elm Park');
-    expect(upcoming).toHaveTextContent('9:00 am');
+    expect(upcoming).toHaveTextContent('9:00 AM');
     expect(upcoming).toHaveTextContent(`2/${a.shots.length}`);
   });
 });

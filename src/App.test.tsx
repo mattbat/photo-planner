@@ -28,7 +28,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Shoots' })).toBeInTheDocument();
     expect(await screen.findByText('No shoots yet')).toBeInTheDocument();
     const tabs = within(screen.getByRole('navigation', { name: 'Main' })).getAllByRole('link');
-    expect(tabs.map((t) => t.textContent)).toEqual(['📷Shoots', '👪Families', '🧍Poses']);
+    expect(tabs.map((t) => t.textContent)).toEqual(['Shoots', 'Families', 'Poses']);
     expect(tabs[0]).toHaveAttribute('aria-current', 'page');
   });
 

@@ -2,7 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
 import { InstallHint } from '../components/InstallHint';
 import { NewShootSheet } from '../components/NewShootSheet';
-import { Empty, Section, TopBar } from '../components/ui';
+import { ProgressRing } from '../components/icons';
+import { Empty, Section, SettingsLink, TopBar } from '../components/ui';
 import { db } from '../data/db';
 import { dataFromText, encodeHandoff, parseHandoff } from '../data/handoff';
 import type { Shoot } from '../data/types';
@@ -60,11 +61,7 @@ export function ShootsScreen() {
     <main className="screen">
       <TopBar
         title="Shoots"
-        action={
-          <a href={paths.settings()} aria-label="Settings">
-            ⚙︎
-          </a>
-        }
+        action={<SettingsLink />}
       />
       <InstallHint />
       {data && families.length > 0 && (
@@ -96,18 +93,26 @@ export function ShootsScreen() {
                       <span className="list-title">
                         {familyName.get(shoot.familyId) ?? 'Shoot'}
                         {shoot.title && <span className="list-sub">{shoot.title}</span>}
-                        <span className="list-sub">
-                          {formatDate(shoot.date)}
-                          {shoot.startTime ? ` · ${clockAt(shoot.startTime, 0)}` : ''}
-                          {place ? ` · ${place.name}` : ''}
-                          {golden ? ` · ${golden}` : ''}
+                        <span className="list-sub meta">
+                          <span className="meta-in">
+                            {[formatDate(shoot.date), shoot.startTime ? clockAt(shoot.startTime, 0) : '', place?.name ?? '', golden ?? '']
+                              .filter(Boolean)
+                              .map((bit) => (
+                                <span key={bit} className="meta-bit">
+                                  {bit}
+                                </span>
+                              ))}
+                          </span>
                         </span>
                       </span>
                       {shoot.handoff && (
                         <span className="chip muted">Shared</span>
                       )}
-                      <span className="list-meta" aria-label={`${done} of ${shoot.shots.length} shots done`}>
-                        {done}/{shoot.shots.length}
+                      <span className="list-meta progress-meta" aria-label={`${done} of ${shoot.shots.length} shots done`}>
+                        <ProgressRing done={done} total={shoot.shots.length} />
+                        <span>
+                          {done}/{shoot.shots.length}
+                        </span>
                       </span>
                       <span className="chevron" aria-hidden>
                         ›

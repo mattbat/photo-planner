@@ -163,6 +163,8 @@ export interface OrderOptions {
   bigGroupFirst: boolean;
   /** Must-haves early (O2). */
   mustHavesEarly: boolean;
+  /** Everyone shots open the shoot, largest first (O9). Missing in older data, which counts as on. */
+  everyoneFirst?: boolean;
 }
 
 /** Who to finish first or push to the end on a shoot (O7); anyone not listed is normal. */

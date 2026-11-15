@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { NameSheet } from '../components/NameSheet';
 import { QuickAddFamilySheet } from '../components/QuickAddFamilySheet';
-import { Empty, Sheet, TopBar } from '../components/ui';
+import { Empty, Sheet, SettingsLink, TopBar } from '../components/ui';
 import { HelpLink } from '../help/parts';
 import { db } from '../data/db';
 import { createDemoFamily, createFamily, deleteFamily, setFamilyArchived, updateFamily } from '../data/repo';
@@ -35,11 +35,7 @@ export function FamiliesScreen() {
     <main className="screen">
       <TopBar
         title="Families"
-        action={
-          <a href={paths.settings()} aria-label="Settings">
-            ⚙︎
-          </a>
-        }
+        action={<SettingsLink />}
       />
       {families && (
         <div className="action-row">

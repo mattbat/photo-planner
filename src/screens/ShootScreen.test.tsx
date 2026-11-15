@@ -34,7 +34,7 @@ describe('ShootScreen', () => {
   it('shows the header: date, start time, family, attendees and time estimate (P3)', async () => {
     await open();
     const head = screen.getByRole('region', { name: 'Shoot' });
-    expect(head).toHaveTextContent('4:00 pm');
+    expect(head).toHaveTextContent('4:00 PM');
     expect(head).toHaveTextContent('The Testers');
     expect(head).toHaveTextContent('6 attending');
     expect(head).toHaveTextContent(/about \d+ min/);
@@ -45,7 +45,7 @@ describe('ShootScreen', () => {
     const { user, shoot } = await open();
     expect(shotNames()).toContain('Everyone');
     const first = rows()[0]!;
-    expect(first).toHaveTextContent(/4:0\d pm/);
+    expect(first).toHaveTextContent(/4:0\d PM/);
     expect(first).toHaveTextContent(/\d min/);
     expect(within(first).getByText('Gran')).toBeInTheDocument();
     const star = within(first).getByRole('button', { name: /^Must-have:/ });
@@ -249,7 +249,7 @@ describe('ShootScreen', () => {
       await waitFor(() => expect(share).toHaveBeenCalled());
       const { text, title } = share.mock.calls[0]![0] as { text: string; title: string };
       expect(title).toBe('Winter');
-      expect(text).toMatch(/^The Testers: Winter, .*from 4:00 pm\n\n1\. /);
+      expect(text).toMatch(/^The Testers: Winter, .*from 4:00 PM\n\n1\. /);
       expect(text).toContain('Everyone');
       expect(await screen.findByText('Shot list shared.')).toBeInTheDocument();
     } finally {
@@ -328,3 +328,22 @@ function fireDate(input: HTMLElement, value: string) {
   setter.call(input, value);
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }
+
+describe('ShootScreen everyone first (O9)', () => {
+  it('has an Everyone first option, on by default, and says when the full group waits for someone', async () => {
+    const { shoot, user, ivy } = await open();
+    expect((await reload(shoot.id)).orderOptions.everyoneFirst).toBe(true);
+    await user.click(screen.getByText(/^Order options/));
+    const toggle = screen.getByRole('switch', { name: 'Everyone first' });
+    expect(toggle).toBeChecked();
+    expect(shotNames()[0]).toMatch(/everyone|full|group/i);
+    await user.click(screen.getByRole('button', { name: 'Early or late people' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Who goes first or last' });
+    await user.click(within(within(sheet).getByRole('radiogroup', { name: 'Ivy Tester goes' })).getByRole('radio', { name: 'Late' }));
+    expect(await within(sheet).findByRole('status')).toHaveTextContent(/Full group waits for Ivy/);
+    await user.click(within(sheet).getByRole('button', { name: 'Done' }));
+    expect(await screen.findByText(/Full group waits for Ivy\./)).toBeInTheDocument();
+    expect((await reload(shoot.id)).priorities).toEqual({ [ivy.id]: 'late' });
+  });
+});
+

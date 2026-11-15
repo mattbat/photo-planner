@@ -6,15 +6,23 @@ export interface OrderOptions {
   releaseOlderEarly?: boolean;
   bigGroupFirst?: boolean;
   mustHavesEarly?: boolean;
+  /**
+   * The "everyone" shots open the shoot, largest first: the full-group
+   * templates (with or without pets and guests) and any shot with all the
+   * people. A shot with someone marked Late is not one of them (it waits for
+   * that person, see `priorities`). Everything after is ordered as usual.
+   */
+  everyoneFirst?: boolean;
   mustHaveKeys?: Iterable<string>;
   /**
    * People to finish first ("early", e.g. an older guest) or push to the end
    * ("late", e.g. someone called away briefly). Anyone else is normal.
    *
-   * Guarantee (after the `fixedPrefix`): shots are grouped in three tiers and
-   * the tiers never interleave. Tier 0 has an early person and no late one,
-   * tier 2 has a late person and no early one, tier 1 is every other shot
-   * (no priority person, or both kinds). So when no shot mixes an early and a
+   * Guarantee (after the `fixedPrefix`): shots are grouped in tiers that
+   * never interleave. With `everyoneFirst`, the everyone shots without a late
+   * person come first of all. Then: a shot with an early person and no late
+   * one, then every other shot (no priority person, or both kinds), then a
+   * shot with a late person and no early one. So when no shot mixes an early and a
    * late person, every shot with an early person comes before every shot
    * without one, and every shot with a late person comes after every shot
    * without one. Inside a tier the usual objective applies (fewest changes
@@ -64,6 +72,17 @@ function pop(x: number): number {
   return Math.imul(x, 0x01010101) >>> 24;
 }
 
+/** Keys of the "everyone" shots: full-group templates, or a shot with every person in the shoot (2 or more people). */
+export function everyoneShotKeys(shots: Shot[]): Set<string> {
+  const all = new Set(shots.flatMap((s) => s.peopleIds));
+  const out = new Set<string>();
+  for (const s of shots) {
+    const template = s.templateIds.includes('fullGroup') || s.templateIds.includes('fullGroupNoPartners');
+    if (template || (all.size >= 2 && s.peopleIds.length >= all.size)) out.add(s.key);
+  }
+  return out;
+}
+
 const A_KIDS = 0.2, A_BIG = 0.3, A_MUST = 0.4, G_OLDER = 0.25, G_EARLY = 0.5;
 
 export function orderShots(shots: Shot[], people: EnginePerson[], options: OrderOptions = {}): OrderResult {
@@ -91,15 +110,16 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
     if (b === undefined) continue;
     (how === 'early' ? earlyMask : lateMask)[b >> 5]! |= 1 << (b & 31);
   }
-  const tier = new Uint8Array(n); // 0 early only, 1 neither or both, 2 late only
+  const everyone = options.everyoneFirst ? everyoneShotKeys(shots) : new Set<string>();
+  const tier = new Uint8Array(n); // 0 everyone, 1 early only, 2 neither or both, 3 late only
   const earlyCount = new Int32Array(n);
   let tiered = false;
   for (let i = 0; i < n; i++) {
     let e = 0, l = 0;
     for (let k = 0; k < W; k++) { e += pop(M[i * W + k]! & earlyMask[k]!); l += pop(M[i * W + k]! & lateMask[k]!); }
     earlyCount[i]! = e;
-    tier[i]! = e > 0 && l === 0 ? 0 : l > 0 && e === 0 ? 2 : 1;
-    if (tier[i]! !== 1) tiered = true;
+    tier[i]! = everyone.has(shots[i]!.key) && l === 0 ? 0 : e > 0 && l === 0 ? 1 : l > 0 && e === 0 ? 3 : 2;
+    if (tier[i]! !== 2) tiered = true;
   }
   const hasEarly = earlyMask.some((m) => m !== 0);
   const must = new Set(options.mustHaveKeys ?? []);
@@ -164,11 +184,12 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
     const lowTier = tiered ? Math.min(...free.map((i) => tier[i]!)) : 0;
     const allowed = tiered ? bySize.filter((i) => tier[i]! === lowTier) : bySize;
     if (options.bigGroupFirst && !P) starts = [allowed[0]!];
+    else if (lowTier === 0 && tiered) starts = [allowed[0]!]; // everyone shots: largest first, no choice
     else if (free.length <= 60) starts = tiered ? free.filter((i) => tier[i]! === lowTier) : free;
     else starts = [...allowed.slice(0, 15), ...allowed.slice(-15)];
     let bestCost: number;
     // the plain input order is always a candidate, so we never come out worse than it
-    const tierSorted = tiered ? [...free].sort((a, b) => tier[a]! - tier[b]! || a - b) : free;
+    const tierSorted = tiered ? [...free].sort((a, b) => tier[a]! - tier[b]! || (tier[a]! === 0 ? sizes[b]! - sizes[a]! : 0) || a - b) : free;
     const identity = Int32Array.from([...prefix, ...tierSorted]);
     best = identity;
     bestCost = objective(identity);
@@ -179,11 +200,12 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
       let cur = s, pos = P;
       ord[pos++]! = cur; taken[cur]! = 1;
       while (pos < n) {
-        let bj = -1, bc = Infinity, minTier = 2;
+        let bj = -1, bc = Infinity, minTier = 3;
         if (tiered) for (const j of free) if (!taken[j]! && tier[j]! < minTier) minTier = tier[j]!;
         for (const j of free) {
           if (taken[j]! || (tiered && tier[j]! !== minTier)) continue;
-          const cst = ham(cur, j) + (wPos[j]! + (options.releaseOlderEarly ? G_OLDER * olderCount[j]! : 0) + G_EARLY * earlyCount[j]!) * pos;
+          // everyone shots go largest first (ties by input order)
+          const cst = minTier === 0 ? -sizes[j]! * 1e6 + j : ham(cur, j) + (wPos[j]! + (options.releaseOlderEarly ? G_OLDER * olderCount[j]! : 0) + G_EARLY * earlyCount[j]!) * pos;
           if (cst < bc) { bc = cst; bj = j; }
         }
         ord[pos++]! = bj; taken[bj]! = 1; cur = bj;
@@ -199,6 +221,7 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
     for (let pass = 0; improved && pass < 25 && budget > 0; pass++) {
       improved = false;
       for (let i = lo; i < n - 1; i++) {
+        if (tiered && tier[best[i]!]! === 0) continue; // everyone shots keep their order
         for (let j = i + 1; j < n; j++) {
           if (tiered && tier[best[i]!]! !== tier[best[j]!]!) break; // tiers stay in order: only reverse inside one
           if (weighted) {

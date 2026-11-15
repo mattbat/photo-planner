@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CustomShotSheet } from '../components/CustomShotSheet';
 import { PriorityBadge, PriorityControl } from '../components/PrioritySheet';
+import { MoreIcon } from '../components/icons';
 import { applyPriority } from '../components/priority';
 import { ShareShootSheet, SharedBanner } from '../components/ShareShoot';
 import { lockedAway } from '../data/handoff';
@@ -141,8 +142,8 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
         title="Shoot day"
         back={paths.shoot(shoot.id)}
         action={
-          <button type="button" className="link" aria-label="Shoot day menu" onClick={() => setDialog('menu')}>
-            ⋯
+          <button type="button" className="icon-btn" aria-label="Shoot day menu" onClick={() => setDialog('menu')}>
+            <MoreIcon />
           </button>
         }
       />

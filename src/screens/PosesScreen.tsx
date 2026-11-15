@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useState } from 'react';
-import { Empty, TopBar } from '../components/ui';
+import { Empty, SettingsLink, TopBar } from '../components/ui';
 import { db } from '../data/db';
 import { seedStarterPoses } from '../data/repo';
 import { POSE_CATEGORIES, POSE_TAGS, type Pose, type PoseCategory, type PoseTag } from '../data/types';
@@ -42,11 +42,7 @@ export function PosesScreen() {
     <main className="screen">
       <TopBar
         title="Poses"
-        action={
-          <a href={paths.settings()} aria-label="Settings">
-            ⚙︎
-          </a>
-        }
+        action={<SettingsLink />}
       />
       <div className="pl-cats" role="group" aria-label="Category">
         <button type="button" className="pl-pill" aria-pressed={category === null} onClick={() => setCategory(null)}>

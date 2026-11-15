@@ -93,11 +93,16 @@ export function sunTimes(date: YMD, lat: number, lng: number, timeZone: string):
   return res;
 }
 
+/** The one clock format of the app, US style: "7:42 PM" for 19 hours 42 minutes. Every time shown goes through here. */
+export function formatClock(hh: number, mm: number): string {
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${h12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;
+}
+
 /** "7:42 PM" in the given zone. */
 export function formatLocalTime(date: Date, timeZone: string): string {
   const p = zonedParts(date, timeZone);
-  const h12 = p.hh % 12 === 0 ? 12 : p.hh % 12;
-  return `${h12}:${String(p.mm).padStart(2, '0')} ${p.hh < 12 ? 'AM' : 'PM'}`;
+  return formatClock(p.hh, p.mm);
 }
 
 export { sunBearingAt, compassLabel } from './position';
