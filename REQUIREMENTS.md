@@ -222,7 +222,7 @@ Hand-off details (adapted from next5's SH1–SH6): share the shoot by link or Ai
 | L4 | **Suggested start time**: so the planned shoot ends as golden hour ends (evening) or starts as it begins (morning), with must-have and big-group shots in the best light. A warning if the shot list is longer than golden hour. |
 | L5 | **Sun direction**: the sun's compass bearing at the planned time, shown as a sun symbol on a rose with N, E, S and W labelled and a caption ("Where the sun will be at 4:45 PM"); "Use compass" turns the rose with the phone and marks where you are facing so the photographer knows where to put the family relative to the sun. |
 | L6 | **Pick a date**: a small calendar or list showing golden-hour times for the next weeks, to help choose a date. |
-| L7 | **Weather forecast** (cloud cover, rain chance, wind) for shoots in the next ~14 days from Open-Meteo (free, no key). Online only; cached for offline viewing. |
+| L7 | **Weather forecast** (cloud cover, rain chance, wind, temperature; **US units, °F and mph, by default**, metric in Settings. The saved forecast stays as the service sends it and is converted when shown, so switching needs no new download) for shoots in the next ~14 days from Open-Meteo (free, no key). Online only; cached for offline viewing. |
 | L8 | Shoot day shows a countdown to the end of golden hour (D7). |
 
 The sun calculation lives in a pure module (`src/sun`) with tests against published NOAA times for a few cities and dates, including polar and daylight-saving edge cases.
@@ -332,6 +332,7 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 | 2026-11-15 | Everyone (full-group) shots come first by default; a Late person in the full group makes it wait for them (O9). |
 | 2026-11-15 | One time format app-wide, US style ("3:53 PM"); form fields, top-bar icons and tab icons share one style (polish pass). |
 | 2026-11-15 | Blue hour removed from the UI; the Light section focuses on the shoot's session (evening or morning) with golden hour and sunset at a glance (L2, L3). |
+| 2026-11-15 | Weather shows °F and mph by default; metric is a Settings choice (L7). American English throughout. |
 | 2026-11-15 | Build started; the Q12 default shot types are used until changed. Built by Claude with subagents, milestone by milestone. |
 
 ## 18. Risks

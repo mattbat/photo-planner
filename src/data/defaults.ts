@@ -22,5 +22,6 @@ export function defaultSettings(): AppSettings {
     defaultTemplates: defaultTemplates(),
     defaultOrderOptions: { ...DEFAULT_ORDER_OPTIONS },
     timeEstimates: { ...DEFAULT_TIME_ESTIMATES },
+    units: 'us',
   };
 }

@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
 import { BETA, versionLabel } from '../beta';
 import { ReleaseNotes } from '../components/WhatsNew';
+import { UNIT_LABELS, unitsOf, type Units } from '../domain/units';
 import { Info, Section, Segmented, TopBar, Toggle } from '../components/ui';
 import {
   backUp,
@@ -28,6 +29,7 @@ function plural(n: number, word: string) {
 export function SettingsScreen({ reload = () => window.location.reload() }: { reload?: () => void }) {
   const [theme, setTheme] = useState(themePreference);
   const [message, setMessage] = useState<string | null>(null);
+  const units = unitsOf(useLiveQuery(async () => (await getSettings()).units, []));
   const everyoneFirst = useLiveQuery(async () => (await getSettings()).defaultOrderOptions.everyoneFirst !== false) ?? true;
   const treatAll = useLiveQuery(async () => (await getSettings()).treatEveryoneAsHere !== false) ?? true;
   const [error, setError] = useState<string | null>(null);
@@ -179,6 +181,19 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
           Match phone follows your iPhone’s light or dark setting. On the Home Screen app, the clock and battery at the
           top update the next time you open Photo Planner.
         </p>
+      </Section>
+
+      <Section title="Units">
+        <Segmented<Units>
+          label="Units"
+          value={units}
+          onChange={(v) => void updateSettings({ units: v })}
+          options={[
+            { value: 'us', label: UNIT_LABELS.us },
+            { value: 'metric', label: UNIT_LABELS.metric },
+          ]}
+        />
+        <p className="hint">Used for the weather forecast. It is kept as the service sends it, so switching never needs a new download.</p>
       </Section>
 
       <Section title="New shoots">

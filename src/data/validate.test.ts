@@ -94,5 +94,10 @@ describe('validators', () => {
     expect(isValidPosePhoto({ id: 'pp', ...stamps, poseId: 'x', dataUrl: 'javascript:alert(1)', width: 1, height: 1 })).toBe(false);
     expect(isValidSettings({ key: 'app', value: {}, updatedAt: 1 })).toBe(false);
     expect(isValidSettings({ id: 'app', value: defaultSettings(), updatedAt: 1 })).toBe(false);
+    expect(isValidSettings({ key: 'app', value: { ...defaultSettings(), units: 'metric' }, updatedAt: 1 })).toBe(true);
+    const { units, ...older } = defaultSettings();
+    void units;
+    expect(isValidSettings({ key: 'app', value: older, updatedAt: 1 })).toBe(true); // older backups
+    expect(isValidSettings({ key: 'app', value: { ...defaultSettings(), units: 'imperial' }, updatedAt: 1 })).toBe(false);
   });
 });

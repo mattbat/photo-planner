@@ -382,6 +382,8 @@ export interface AppSettings {
   timeEstimates: TimeEstimates;
   /** Start shoots with everyone marked here, so nobody has to be ticked off (D5). Default on. */
   treatEveryoneAsHere?: boolean;
+  /** Weather units: US (°F, mph) by default, or metric. Older settings without it read as US. */
+  units?: 'us' | 'metric';
 }
 
 /** The `settings` table is a small key-value store; today it holds one row, `app`. */

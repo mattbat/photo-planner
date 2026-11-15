@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LightBanner } from '../components/LightBanner';
 import { db } from '../data/db';
-import { addLocation, createShoot, today } from '../data/repo';
+import { addLocation, createShoot, today, updateSettings } from '../data/repo';
 import { goldenHourCountdown, sunTimes } from '../sun';
 import { clearDb, seedFamily } from '../test/helpers';
 import { ShootScreen } from './ShootScreen';
@@ -248,9 +248,19 @@ describe('Light section', () => {
     await user.click(await screen.findByRole('button', { name: 'Get forecast' }));
     const weather = await screen.findByTestId('weather');
     expect(weather).toHaveTextContent('40%');
-    expect(weather).toHaveTextContent('12 km/h');
+    // US units by default: 12 km/h is 7 mph and 9 °C is 48 °F.
+    expect(weather).toHaveTextContent('7 mph');
+    expect(weather).toHaveTextContent('48°F');
+    expect(weather).not.toHaveTextContent('km/h');
     expect(weather).toHaveTextContent(/Fetched just now/);
     expect((await db.shoots.get(shoot.id))!.forecast!.hours).toHaveLength(24);
+    // Switching to metric changes what is shown without fetching again, and the stored forecast stays metric.
+    await updateSettings({ units: 'metric' });
+    await waitFor(() => expect(screen.getByTestId('weather')).toHaveTextContent('12 km/h'));
+    expect(screen.getByTestId('weather')).toHaveTextContent('9°C');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((await db.shoots.get(shoot.id))!.forecast!.hours[0]!.tempC).toBe(9);
+    await updateSettings({ units: 'us' });
     // Offline later: the cached forecast is still shown, and the button says so instead of failing.
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
     await user.click(screen.getByRole('button', { name: 'Refresh forecast' }));

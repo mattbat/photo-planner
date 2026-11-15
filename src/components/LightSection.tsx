@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { formatTemp, formatWind, unitsOf } from '../domain/units';
 import { fetchForecast, isOnline, NeedsConnection } from '../data/online';
-import { today, updateShoot } from '../data/repo';
+import { getSettings, today, updateShoot } from '../data/repo';
 import type { Location, Shoot } from '../data/types';
 import { formatDate } from '../domain/dates';
 import {
@@ -195,13 +197,13 @@ function DatePicker({ shoot, location, tz }: { shoot: Shoot; location: Location;
   );
 }
 
-const temp = (c: number | null) => (c === null ? '–' : `${Math.round(c)}°C`);
 const pct = (n: number | null) => (n === null ? '–' : `${n}%`);
 
 /** L7: forecast on demand, cached on the shoot for offline viewing. */
 function Weather({ shoot, location, totalMinutes }: { shoot: Shoot; location: Location; totalMinutes: number }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const units = unitsOf(useLiveQuery(async () => (await getSettings()).units, []));
   const inRange = inForecastRange(shoot.date, today());
   const cached = shoot.forecast && shoot.forecast.date === shoot.date ? shoot.forecast : null;
   const summary = cached ? forecastForShoot(cached, shoot.startTime, totalMinutes) : null;
@@ -248,13 +250,13 @@ function Weather({ shoot, location, totalMinutes }: { shoot: Shoot; location: Lo
               <div className="weather-grid">
                 <span>Cloud<b>{pct(summary.cloudPercent)}</b></span>
                 <span>Rain chance<b>{pct(summary.rainPercent)}</b></span>
-                <span>Wind<b>{summary.windKmh === null ? '–' : `${summary.windKmh} km/h`}</b></span>
-                <span>Temperature<b>{temp(summary.tempC)}</b></span>
+                <span>Wind<b>{formatWind(summary.windKmh, units)}</b></span>
+                <span>Temperature<b>{formatTemp(summary.tempC, units)}</b></span>
               </div>
               <ul className="weather-hours">
                 {summary.hours.map((h) => (
                   <li key={h.time}>
-                    {h.time} · cloud {pct(h.cloudPercent)} · rain {pct(h.rainPercent)} · wind {h.windKmh ?? '–'} km/h · {temp(h.tempC)}
+                    {h.time} · cloud {pct(h.cloudPercent)} · rain {pct(h.rainPercent)} · wind {formatWind(h.windKmh, units)} · {formatTemp(h.tempC, units)}
                   </li>
                 ))}
               </ul>

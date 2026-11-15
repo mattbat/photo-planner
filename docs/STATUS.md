@@ -148,7 +148,7 @@ Option B, hand-off like next5 (decided 2026-11-15). Code: `src/data/handoff.ts`,
 | L4 | ✅ | Morning/Evening choice, suggested start and end, warning from `suggestStart` when the list is longer than golden hour, "Use this start time" sets `startTime` (M5). Must-have-first weighting is not exposed. |
 | L5 | ✅ | Bearing, 16-point label and altitude at the planned time, sun symbol on a labelled N/E/S/W rose with a caption under it; "Use compass" ("Compass on", a facing marker at the top) turns the rose live (iOS permission asked on the tap; hidden when the phone has no orientation sensor) (M5). 📱 Compass to check on iPhone. |
 | L6 | ✅ | "Pick a date" fold lists the next 21 days with evening and morning golden hours; tap one to set the shoot date (M5). |
-| L7 | ✅ | "Get forecast" for shoots within 14 days (cloud, rain chance, wind, temperature for the shoot hours). Stored on the shoot as `forecast` (no schema change; backup validates it) and shown offline with its fetch time (M5). |
+| L7 | ✅ | Units: `AppSettings.units` (`us` default, `metric`; missing reads as US; validated on restore), a Units row in Settings, converted at display time by `src/domain/units.ts`; the stored forecast stays metric. "Get forecast" for shoots within 14 days (cloud, rain chance, wind, temperature for the shoot hours). Stored on the shoot as `forecast` (no schema change; backup validates it) and shown offline with its fetch time (M5). |
 | L8 | ✅ | `LightBanner({shoot, location, now})` in `src/components/LightBanner.tsx` for the live screen's `lightBanner` slot; not wired into the live screen yet (M5). |
 
 ## 11. Pose library

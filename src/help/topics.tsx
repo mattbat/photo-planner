@@ -327,7 +327,7 @@ const ALL: Topic[] = [
         <p>Pick a date lists the next three weeks with golden hour for each day, so you can choose a good one.</p>
         <h2>Weather forecast</h2>
         <p>
-          For shoots in the next 14 days you’ll see cloud cover, rain chance, temperature and wind. This <b>needs a
+          For shoots in the next 14 days you’ll see cloud cover, rain chance, temperature (°F) and wind (mph). Switch to °C and km/h in Settings › Units. This <b>needs a
           connection</b>; the last forecast is kept so you can still read it offline, and it tells you if it no longer
           covers your shoot time.
         </p>

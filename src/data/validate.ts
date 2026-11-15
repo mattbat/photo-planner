@@ -190,6 +190,8 @@ export const isValidSettings = record(
       defaultTemplates: isTemplateSettings,
       defaultOrderOptions: isOrderOptions,
       timeEstimates: exact({ small: isNumber, medium: isNumber, large: isNumber, setup: isNumber }),
+      // Added later: older backups don't have it.
+      units: (v) => v === undefined || v === 'us' || v === 'metric',
     }),
   },
   {},
