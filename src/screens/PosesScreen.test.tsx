@@ -141,7 +141,6 @@ describe('PoseDetailScreen', () => {
       favorite: false,
       builtIn: false,
     });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<PoseDetailScreen poseId={own.id} />);
     await user.click(await screen.findByRole('button', { name: 'Edit pose' }));
     const sheet = screen.getByRole('dialog', { name: 'Edit pose' });
@@ -150,6 +149,7 @@ describe('PoseDetailScreen', () => {
     await user.click(within(sheet).getByRole('button', { name: 'Save' }));
     expect(await screen.findByRole('heading', { name: 'Mine again' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Delete pose' }));
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }));
     await waitFor(async () => expect(await db.poses.get(own.id)).toBeUndefined());
     expect(window.location.hash).toBe('#/poses');
   });

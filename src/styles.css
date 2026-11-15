@@ -358,6 +358,7 @@ textarea:focus {
 
 .btn {
   display: inline-flex;
+  text-align: center;
   align-items: center;
   justify-content: center;
   gap: 6px;
@@ -645,6 +646,7 @@ textarea:focus {
 
 /* Every field label, whether it sits in a .field or a stacked .row. */
 .field > span,
+.field > label,
 .row.stack > .row-label {
   display: block;
   margin: 0 0 6px;
@@ -2440,4 +2442,97 @@ textarea::placeholder {
 .pose-sheet-thumbs {
   display: flex;
   gap: 4px;
+}
+
+/* Confirm sheet: a question with full-width stacked buttons. */
+
+.confirm-backdrop {
+  z-index: 40;
+}
+
+.confirm-sheet {
+  max-width: 480px;
+  padding: 24px 16px calc(var(--safe-bottom) + 16px);
+  outline: none;
+  text-align: left;
+}
+
+.confirm-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.confirm-body {
+  margin: 0 0 20px;
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.confirm-btn {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font-size: 17px;
+  box-sizing: border-box;
+}
+
+.confirm-btn.destructive {
+  background: color-mix(in srgb, var(--out) 82%, #000);
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.confirm-btn.destructive:active:not(:disabled) {
+  background: color-mix(in srgb, var(--out) 65%, #000);
+}
+
+/* Plain destructive button: red label on the secondary surface, same size as its neighbors. */
+.btn.danger-row {
+  background: var(--surface-2);
+  color: var(--out);
+  border: 1px solid var(--line);
+}
+
+/* Start time with a "Not set" hint and a clear button. */
+.time-wrap {
+  position: relative;
+}
+
+.time-wrap input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.time-empty {
+  position: absolute;
+  inset: 0 44px 0 14px;
+  display: flex;
+  align-items: center;
+  color: var(--text-2);
+  opacity: 0.7;
+  font-size: 17px;
+  pointer-events: none;
+}
+
+.time-clear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 24px;
+  line-height: 1;
 }

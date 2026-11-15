@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
 import { BETA, versionLabel } from '../beta';
+import { useConfirm } from '../components/ConfirmSheet';
 import { ReleaseNotes } from '../components/WhatsNew';
 import { UNIT_LABELS, unitsOf, type Units } from '../domain/units';
 import { Info, Section, Segmented, TopBar, Toggle } from '../components/ui';
@@ -27,6 +28,7 @@ function plural(n: number, word: string) {
 
 /** Settings: appearance (§14), backup and restore (B1–B4), updates and app info, and beta builds (REL5). */
 export function SettingsScreen({ reload = () => window.location.reload() }: { reload?: () => void }) {
+  const { confirm, choose, confirmSheet } = useConfirm();
   const [theme, setTheme] = useState(themePreference);
   const [message, setMessage] = useState<string | null>(null);
   const units = unitsOf(useLiveQuery(async () => (await getSettings()).units, []));
@@ -70,7 +72,15 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
   const onRestore = async (mode: RestoreMode) => {
     if (!pending) return;
     const lost = lostFamilies.length > 0 ? ` These families aren’t in the backup and will be deleted: ${lostFamilies.join(', ')}.` : '';
-    if (mode === 'replace' && !window.confirm(`Replace all families and shoots on this phone with the backup?${lost} This can’t be undone.`)) {
+    if (
+      mode === 'replace' &&
+      !(await confirm({
+        title: 'Replace everything?',
+        body: `Everything on this phone is replaced by the backup.${lost} This can’t be undone.`,
+        confirmLabel: 'Replace',
+        destructive: true,
+      }))
+    ) {
       return;
     }
     const result = await restoreBackup(pending, mode);
@@ -84,7 +94,20 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
 
   // Beta only: start over, after offering a backup (REL5).
   const onErase = async () => {
-    if ((localFamilies?.length ?? 0) > 0 && window.confirm('Back up this beta copy first? Choose Cancel to skip the backup.')) {
+    const first =
+      (localFamilies?.length ?? 0) > 0
+        ? await choose({
+            title: 'Back up first?',
+            body: 'Save a backup of this beta copy before it’s erased.',
+            choices: [
+              { label: 'Back up', value: 'backup' },
+              { label: 'Skip backup', value: 'skip' },
+              { label: 'Cancel', value: 'cancel' },
+            ],
+          })
+        : 'skip';
+    if (first === null) return;
+    if (first === 'backup') {
       const before = lastBackupAt();
       const result = await backUp();
       setLast(lastBackupAt());
@@ -93,9 +116,13 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
         return;
       }
     }
-    if (!window.confirm('Erase every family, shoot and setting in this beta copy? The real Photo Planner isn’t affected. This can’t be undone.')) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Erase beta data?',
+      body: 'Every family, shoot and setting in this beta copy is erased. The real Photo Planner isn’t affected.',
+      confirmLabel: 'Erase',
+      destructive: true,
+    });
+    if (!ok) return;
     await eraseEverything();
     reload();
   };
@@ -311,6 +338,7 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
           </button>
         )}
       </Section>
+      {confirmSheet}
     </main>
   );
 }

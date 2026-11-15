@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { addExtra, deleteExtra, updateExtra } from '../data/repo';
 import type { Extra, ExtraKind } from '../data/types';
+import { useConfirm } from './ConfirmSheet';
 import { Segmented, Sheet } from './ui';
 
 /** Add or edit a guest or pet (F8). */
 export function ExtraSheet({ familyId, extra, onClose }: { familyId: string; extra?: Extra; onClose: () => void }) {
+  const { confirm, confirmSheet } = useConfirm();
   const [name, setName] = useState(extra?.name ?? '');
   const [kind, setKind] = useState<ExtraKind>(extra?.kind ?? 'pet');
   const [emoji, setEmoji] = useState(extra?.emoji ?? '');
@@ -18,7 +20,9 @@ export function ExtraSheet({ familyId, extra, onClose }: { familyId: string; ext
     onClose();
   };
   const remove = async () => {
-    if (!extra || !window.confirm(`Delete ${extra.name}?`)) return;
+    if (!extra) return;
+    const ok = await confirm({ title: `Delete ${extra.name}?`, body: 'They’re taken out of the family and any shoots.', confirmLabel: 'Delete', destructive: true });
+    if (!ok) return;
     await deleteExtra(extra.id);
     onClose();
   };
@@ -53,6 +57,7 @@ export function ExtraSheet({ familyId, extra, onClose }: { familyId: string; ext
           Delete {extra.name}
         </button>
       )}
+      {confirmSheet}
     </Sheet>
   );
 }

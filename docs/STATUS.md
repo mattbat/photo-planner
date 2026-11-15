@@ -219,4 +219,4 @@ The template ids and their starting on/off choices (Q12) are defined in `src/dat
 | iPhone 17 layout, safe areas, 44 pt targets | 🟡 | Tab bar, top bar and sheets respect safe areas; checked in WebKit at 402×874 (M0). 📱 |
 | Theme follows the phone, Light and Dark in Settings | ✅ | Default "Match phone"; no flash on launch (M0). |
 | Warm photographic look | 🟡 | Amber accent and warm neutral palette; aperture icon (M0). |
-| Destructive actions confirm first | ✅ | Replace everything and beta erase confirm (M0). |
+| Destructive actions confirm first | ✅ | Every delete, replace and erase asks in one bottom ConfirmSheet (full-width stacked buttons, alertdialog, Escape cancels); no `window.confirm` left. Shoot start time can be cleared. |

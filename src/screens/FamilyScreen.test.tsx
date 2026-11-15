@@ -225,15 +225,17 @@ describe('FamilyScreen', () => {
 
   it('deletes a person after confirming, and cleans up the links', async () => {
     const { family, max, ivy, nia } = await seedFamily();
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
     const { user, sheet } = await open(family.id, 'Max Tester');
     await user.click(within(sheet).getByRole('button', { name: 'Delete Max Tester' }));
+    let ask = await screen.findByRole('alertdialog', { name: 'Delete Max Tester?' });
+    await user.click(within(ask).getByRole('button', { name: 'Cancel' }));
     expect(await db.people.get(max.id)).toBeDefined();
     await user.click(within(sheet).getByRole('button', { name: 'Delete Max Tester' }));
+    ask = await screen.findByRole('alertdialog');
+    await user.click(within(ask).getByRole('button', { name: 'Delete' }));
     await waitFor(async () => expect(await db.people.get(max.id)).toBeUndefined());
     expect((await db.people.get(ivy.id))!.parentIds).toEqual([nia.id]);
     expect(await db.partnerships.count()).toBe(1);
-    expect(confirm).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
@@ -268,7 +270,6 @@ describe('FamilyScreen', () => {
 
   it('adds, edits and deletes extras', async () => {
     const { family, dog } = await seedFamily();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
     render(<FamilyScreen familyId={family.id} />);
     await user.click(await screen.findByRole('button', { name: /Biscuit/ }));
@@ -289,6 +290,7 @@ describe('FamilyScreen', () => {
 
     await user.click(await screen.findByRole('button', { name: /Bix/ }));
     await user.click(screen.getByRole('button', { name: 'Delete Bix' }));
+    await user.click(within(await screen.findByRole('alertdialog', { name: 'Delete Bix?' })).getByRole('button', { name: 'Delete' }));
     await waitFor(async () => expect(await db.extras.get(dog.id)).toBeUndefined());
   });
 

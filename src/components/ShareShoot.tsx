@@ -1,3 +1,4 @@
+import { useConfirm } from './ConfirmSheet';
 import { useState } from 'react';
 import { buildHandoff, encodeHandoff, handoffFileName, handoffLink, lockedAway, sharedAway, changedSinceSent } from '../data/handoff';
 import { markSent, takeBack } from '../data/repo';
@@ -77,7 +78,7 @@ function whatHappens(shoot: Shoot): string {
 
 /** "Shared with the other phone", with Take back control for a live shoot (SH5). Nothing for a shoot that isn't away. */
 export function SharedBanner({ shoot, onShareAgain }: { shoot: Shoot; onShareAgain?: () => void }) {
-  const [confirming, setConfirming] = useState(false);
+  const { confirm, confirmSheet } = useConfirm();
   if (!sharedAway(shoot)) return null;
   const locked = lockedAway(shoot);
   return (
@@ -94,22 +95,23 @@ export function SharedBanner({ shoot, onShareAgain }: { shoot: Shoot; onShareAga
           Share again
         </button>
       )}
-      {locked && !confirming && (
-        <button type="button" className="btn secondary wide" onClick={() => setConfirming(true)}>
+      {locked && (
+        <button
+          type="button"
+          className="btn secondary wide"
+          onClick={() =>
+            void confirm({
+              title: 'Take back control?',
+              body: 'If the other phone has been marking shots, those marks won’t reach this phone unless you open its copy afterwards.',
+              confirmLabel: 'Take back control',
+              destructive: true,
+            }).then((ok) => (ok ? takeBack(shoot.id) : undefined))
+          }
+        >
           Take back control
         </button>
       )}
-      {locked && confirming && (
-        <div className="problems">
-          <p>If the other phone has been marking shots, those marks won’t reach this phone unless you open its copy afterwards. Take back control anyway?</p>
-          <button type="button" className="btn danger wide" onClick={() => void takeBack(shoot.id).then(() => setConfirming(false))}>
-            Yes, take back control
-          </button>
-          <button type="button" className="btn secondary wide" onClick={() => setConfirming(false)}>
-            Cancel
-          </button>
-        </div>
-      )}
+      {confirmSheet}
     </aside>
   );
 }

@@ -286,7 +286,11 @@ describe('ShootScreen', () => {
     const again = await screen.findByRole('dialog', { name: 'Shoot options' });
     await user.click(within(again).getByRole('button', { name: 'Delete shoot' }));
     expect(await db.shoots.get(shoot.id)).toBeDefined();
-    await user.click(within(again).getByRole('button', { name: 'Yes, delete shoot' }));
+    const ask = await screen.findByRole('alertdialog', { name: 'Delete shoot?' });
+    await user.click(within(ask).getByRole('button', { name: 'Cancel' }));
+    expect(await db.shoots.get(shoot.id)).toBeDefined();
+    await user.click(within(again).getByRole('button', { name: 'Delete shoot' }));
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete shoot' }));
     await waitFor(async () => expect(await db.shoots.get(shoot.id)).toBeUndefined());
     expect(window.location.hash).toBe('#/');
   });

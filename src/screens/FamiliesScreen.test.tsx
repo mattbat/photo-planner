@@ -69,14 +69,17 @@ describe('FamiliesScreen', () => {
     const user = userEvent.setup();
     const { family } = await seedFamily();
     await createFamily('Other');
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
     render(<FamiliesScreen />);
     await user.click(await screen.findByRole('button', { name: 'Options for The Testers' }));
     await user.click(screen.getByRole('button', { name: 'Delete' }));
+    let ask = await screen.findByRole('alertdialog', { name: 'Delete The Testers?' });
+    await user.click(within(ask).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(await db.families.get(family.id)).toBeDefined();
     await user.click(screen.getByRole('button', { name: 'Delete' }));
+    ask = await screen.findByRole('alertdialog');
+    await user.click(within(ask).getByRole('button', { name: 'Delete' }));
     await waitFor(async () => expect(await db.families.get(family.id)).toBeUndefined());
-    expect(confirm).toHaveBeenCalledTimes(2);
     expect(await db.people.count()).toBe(0);
   });
 

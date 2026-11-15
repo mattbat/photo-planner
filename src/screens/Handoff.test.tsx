@@ -190,8 +190,8 @@ describe('a live shoot on the other phone is locked (SH5)', () => {
     expect(screen.getByRole('button', { name: /Undo/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /^Who’s here/ })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Take back control' }));
-    expect(screen.getByText(/Take back control anyway/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Yes, take back control' }));
+    const ask = await screen.findByRole('alertdialog', { name: 'Take back control?' });
+    await user.click(within(ask).getByRole('button', { name: 'Take back control' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Done ✓' })).toBeEnabled());
     expect(screen.queryByRole('complementary', { name: 'Shared with the other phone' })).not.toBeInTheDocument();
     expect((await db.shoots.get(shootId))!.handoff).toMatchObject({ n: 2, away: false });

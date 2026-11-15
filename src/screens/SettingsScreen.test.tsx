@@ -82,11 +82,14 @@ describe('SettingsScreen', () => {
     expect(await db.families.count()).toBe(2);
 
     await user.upload(screen.getByLabelText('Backup file'), file(backup));
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
     await user.click(await screen.findByRole('button', { name: 'Replace everything' }));
-    expect(confirm).toHaveBeenLastCalledWith(expect.stringContaining('Only on this phone'));
+    let ask = await screen.findByRole('alertdialog', { name: 'Replace everything?' });
+    expect(ask).toHaveTextContent('Only on this phone');
+    await user.click(within(ask).getByRole('button', { name: 'Cancel' }));
     expect(await db.families.count()).toBe(2);
     await user.click(screen.getByRole('button', { name: 'Replace everything' }));
+    ask = await screen.findByRole('alertdialog');
+    await user.click(within(ask).getByRole('button', { name: 'Replace' }));
     await waitFor(async () => expect(await db.families.count()).toBe(1));
     expect(await db.families.get(family.id)).toBeDefined();
     expect(await db.families.get(only.id)).toBeUndefined();
@@ -141,13 +144,17 @@ describe('SettingsScreen', () => {
     expect(screen.getByText('See the family tree.')).toBeInTheDocument();
 
     // Declining the backup offer, then the erase itself: nothing is erased.
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(false);
     await user.click(screen.getByRole('button', { name: 'Erase beta data' }));
+    await user.click(within(await screen.findByRole('alertdialog', { name: 'Back up first?' })).getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Erase beta data' }));
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Skip backup' }));
+    await user.click(within(await screen.findByRole('alertdialog', { name: 'Erase beta data?' })).getByRole('button', { name: 'Cancel' }));
     expect(await db.families.count()).toBe(1);
     expect(reload).not.toHaveBeenCalled();
 
-    confirm.mockReset().mockReturnValueOnce(true).mockReturnValueOnce(true);
     await user.click(screen.getByRole('button', { name: 'Erase beta data' }));
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Skip backup' }));
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Erase' }));
     await waitFor(() => expect(reload).toHaveBeenCalled());
     expect(await db.families.count()).toBe(0);
   });
@@ -162,10 +169,10 @@ describe('SettingsScreen', () => {
         throw new DOMException('canceled', 'AbortError');
       },
     });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     const reload = vi.fn();
     render(<SettingsScreen reload={reload} />);
     await user.click(screen.getByRole('button', { name: 'Erase beta data' }));
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Back up' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Nothing was erased.');
     expect(await db.families.count()).toBe(1);
     expect(reload).not.toHaveBeenCalled();

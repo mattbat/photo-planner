@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { MoreIcon } from '../components/icons';
 import { AttendanceList } from '../components/AttendanceList';
+import { useConfirm } from '../components/ConfirmSheet';
 import { LiveControls } from '../components/LiveControls';
 import { LightSection } from '../components/LightSection';
 import { CustomShotSheet } from '../components/CustomShotSheet';
@@ -389,7 +390,20 @@ function ShotRow({
 
 function OptionsSheet({ data, onClose, onShare }: { data: ShootData; onClose: () => void; onShare: () => void }) {
   const { shoot } = data;
-  const [confirming, setConfirming] = useState(false);
+  const { confirm, confirmSheet } = useConfirm();
+  const [start, setStart] = useState(shoot.startTime ?? '');
+  const onDelete = async () => {
+    const ok = await confirm({
+      title: 'Delete shoot?',
+      body: 'The shoot and its shot list will be gone for good.',
+      confirmLabel: 'Delete shoot',
+      destructive: true,
+    });
+    if (!ok) return;
+    await deleteShoot(shoot.id);
+    onClose();
+    navigate(paths.shoots());
+  };
   return (
     <Sheet title="Shoot options" onClose={onClose}>
       <label className="row stack">
@@ -401,14 +415,38 @@ function OptionsSheet({ data, onClose, onShare }: { data: ShootData; onClose: ()
           <span>Date</span>
           <input type="date" defaultValue={shoot.date} onChange={(e) => e.target.value && void updateShoot(shoot.id, { date: e.target.value })} />
         </label>
-        <label className="field">
-          <span>Start time</span>
-          <input
-            type="time"
-            defaultValue={shoot.startTime ?? ''}
-            onChange={(e) => e.target.value && void updateShoot(shoot.id, { startTime: e.target.value })}
-          />
-        </label>
+        <div className="field">
+          <label htmlFor="shoot-start-time">Start time</label>
+          <div className="time-wrap">
+            <input
+              id="shoot-start-time"
+              type="time"
+              value={start}
+              onChange={(e) => {
+                setStart(e.target.value);
+                if (e.target.value) void updateShoot(shoot.id, { startTime: e.target.value });
+              }}
+            />
+            {!start && (
+              <span className="time-empty" aria-hidden="true">
+                Not set
+              </span>
+            )}
+            {start && (
+              <button
+                type="button"
+                className="time-clear"
+                aria-label="Clear start time"
+                onClick={() => {
+                  setStart('');
+                  void updateShoot(shoot.id, { startTime: undefined });
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
       </div>
       <button type="button" className="btn secondary wide" onClick={onShare}>
         Share shot list as text
@@ -425,27 +463,10 @@ function OptionsSheet({ data, onClose, onShare }: { data: ShootData; onClose: ()
       >
         Duplicate shoot
       </button>
-      {confirming ? (
-        <div className="problems">
-          <p>Delete this shoot and its shot list? This can’t be undone.</p>
-          <button
-            type="button"
-            className="btn danger wide"
-            onClick={() =>
-              void deleteShoot(shoot.id).then(() => {
-                onClose();
-                navigate(paths.shoots());
-              })
-            }
-          >
-            Yes, delete shoot
-          </button>
-        </div>
-      ) : (
-        <button type="button" className="btn danger wide" onClick={() => setConfirming(true)}>
-          Delete shoot
-        </button>
-      )}
+      <button type="button" className="btn danger-row wide" onClick={() => void onDelete()}>
+        Delete shoot
+      </button>
+      {confirmSheet}
     </Sheet>
   );
 }
