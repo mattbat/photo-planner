@@ -1,3 +1,4 @@
+import changelog from '../changelog.json';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -120,11 +121,13 @@ describe('SettingsScreen', () => {
     Object.defineProperty(navigator, 'serviceWorker', { value: undefined, configurable: true });
   });
 
-  it('shows the version, a Diagnostics link and an empty What’s new on the first version', () => {
+  it('shows the version, a Diagnostics link and the latest release in What’s new', () => {
     render(<SettingsScreen />);
-    expect(screen.getByText(/Photo Planner version 0\.1\.0/)).toBeInTheDocument();
+    expect(screen.getByText(/Photo Planner version \d+\.\d+\.\d+/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Diagnostics' })).toHaveAttribute('href', '#/diagnostics');
-    expect(screen.getByText('Nothing yet. This is the first version.')).toBeInTheDocument();
+    // Releases come from src/changelog.json, newest first.
+    expect(screen.getByText(changelog[0]!.version)).toBeInTheDocument();
+    expect(screen.queryByText('Nothing yet. This is the first version.')).not.toBeInTheDocument();
   });
 
   it('on a beta build, lists what is coming next and can erase the beta data', async () => {

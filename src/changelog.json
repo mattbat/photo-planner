@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "version": "0.2.0",
+    "date": "2026-11-15",
+    "new": [
+      "A new app, Photo Planner, that installs on your Home Screen: Shoots, Families and Poses tabs, Settings with back up and restore, and light or dark to match your phone.",
+      "Hand a shoot to your assistant. Tap Share shoot, then Text a link or AirDrop a file, and their phone opens the family, the date and the shot list, with your own poses (no photos, so the link stays small). One phone runs the checklist at a time: after you share a shoot that has started, your phone shows Shared with the other phone and locks until you share it back or tap Take back control. Send it back at the end and your copy has every check mark. A copy with fewer done shots than yours is never accepted by accident. On Shoots, Paste shoot and Open shoot file receive one.",
+      "Add your clients' families: a guided Quick add, or load a demo family. Each family is drawn as a tree you can pinch, drag and tap to edit, with a List view, guests and pets, plain-words warnings if the relationships can't be right, and Share as a picture.",
+      "Set a location for each shoot (your position, a search, typed coordinates or a pin on the map) and see golden hour on a coloured timeline with your shoot drawn on it. Get a suggested start time, the sun direction with a compass, a 3-week date helper and the weather forecast, saved for when you are offline.",
+      "A short intro the first time you open Photo Planner, ending in \"Try the demo family\" or \"Add my own family\". There is now a Help and guide in Settings, with pictures in light and dark: getting started, families and the tree, shot types, building the shot list, golden hour, shoot day, working with an assistant, poses, backups and common questions. Screens have a \"?\" link to the right page, and the order options now explain themselves. Shoot times in the Shoots list now match the rest of the app.",
+      "The Poses tab now has a library of 60 illustrated poses, with words you can say to direct each one. Filter by category, group size and style, search, star your favourites, and add your own poses and example photos. It all works offline.",
+      "Shoot day: tap Start shoot and the shot list becomes a checklist. A big Done button moves to the next shot, Skip and Needs retake are beside it, and Undo takes back the last tap. See who is in each shot grouped by family branch, who to call in and who can leave next, and mark people as here or left so shots that need them wait. Add a shot on the spot, finish with a summary to share, and reopen a finished shoot. You can also pick a suggested pose for each shot and see them all on the Pose sheet.",
+      "Plan a shoot: pick a family and who is coming, switch shot templates on and off (each shows how many shots it adds), and the shot list builds itself. Add your own shots, rename, star must-haves, remove and restore shots, get a suggested order with who to call in and who can leave, share the list as text, and duplicate a shoot. On the family screen, \"How are they related?\" tells you how two people are connected, and the tree now opens centred with a different colour for each branch."
+    ]
+  }
+]
