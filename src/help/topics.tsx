@@ -287,12 +287,20 @@ const ALL: Topic[] = [
           The <b>Light</b> section of a shoot shows the sun for your date and place. Set the place and everything else
           appears.
         </p>
-        <Shot name="light" caption="The Light section: times, a bar across the day and a suggested start." />
+        <Shot name="light" caption="The Light section: golden hour at a glance, a bar for the session and a suggested start." />
         <h2>Setting the place</h2>
         <p>
           Choose <b>Set a new place</b> and use your phone’s position, search for an address, type coordinates, or drop a
           pin on a map. Save the place (“Riverside Park”) to reuse it. The map and search need a connection; saved places
           and the sun times work offline.
+        </p>
+        <h2>Reading the section</h2>
+        <p>
+          The big line gives golden hour and sunset (or sunrise). Under it, one sentence says how your planned shoot
+          fits: “✓ All of your shoot is in golden hour”, or how many minutes it starts before or ends after. The bar
+          shows just that evening (or morning, if your start is before noon, or if you tap <b>Morning</b>): daylight,
+          golden hour and “too dark”, with the hours marked, your shoot underneath, and a red line for now on the day.
+          Sun direction, weather and other dates are under <b>More</b>.
         </p>
         <h2>Words you’ll see</h2>
         <dl className="help-terms">
@@ -301,8 +309,6 @@ const ALL: Topic[] = [
             The soft, warm light when the sun is between about 6° above and 4° below the horizon: just after sunrise and
             before sunset.
           </dd>
-          <dt>Blue hour</dt>
-          <dd>The cool, even light just after golden hour, with the sun 4° to 6° below the horizon.</dd>
           <dt>Suggested start</dt>
           <dd>
             When to begin so your planned shoot ends as evening golden hour ends, or starts as the morning one begins,
@@ -311,8 +317,10 @@ const ALL: Topic[] = [
           </dd>
           <dt>Sun direction</dt>
           <dd>
-            Where the sun will be as a compass bearing, with an arrow. Face the family so the sun is behind or beside
-            you, or put it behind them for a glowing edge.
+            The little sun on the compass shows where the sun will be at your start time (“Where the sun will be at 4:45
+            PM”). Tap <b>Use compass</b> and turn your phone: the sun marker then points the real way, and the top of the
+            rose is the way you are facing. Put the sun behind the family for a glowing edge, or beside you for soft light
+            on faces.
           </dd>
         </dl>
         <h2>Pick a date</h2>

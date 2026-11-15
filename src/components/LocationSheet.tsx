@@ -93,6 +93,7 @@ export function LocationSheet({ shootId, currentId, onClose }: { shootId: string
                       <span className="list-sub">
                         {l.address ? `${l.address} · ` : ''}
                         {l.latitude.toFixed(3)}, {l.longitude.toFixed(3)}
+                        {l.id === currentId && l.timeZone ? ` · ${l.timeZone}` : ''}
                       </span>
                     </span>
                     {l.id === currentId && <span className="list-meta">In use</span>}

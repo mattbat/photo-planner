@@ -1784,77 +1784,87 @@ textarea:focus {
 }
 .timeline-bar {
   position: relative;
-  height: 34px;
-  border-radius: 8px;
+  height: 44px;
+  border-radius: 10px;
   overflow: hidden;
-  background: #0b1020;
+  background: #1c2233;
   border: 1px solid var(--line);
 }
 .seg {
   position: absolute;
   top: 0;
   bottom: 0;
-}
-.seg.night { background: #0b1020; }
-.seg.blue { background: #3b5bdb; }
-.seg.golden { background: #f2a93b; }
-.seg.day { background: #8ecbf2; }
-.timeline-key .seg,
-.shoot-swatch {
-  position: static;
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  vertical-align: -1px;
-  border: 1px solid var(--line);
-}
-.shoot-swatch {
-  background: rgba(255, 255, 255, 0.35);
-  border: 2px solid var(--text);
-}
-.shoot-span {
-  position: absolute;
-  top: 2px;
-  bottom: 2px;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px #000;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.28);
-}
-.timeline-axis {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
+}
+.seg.dark { background: #2a3146; }
+.seg.golden { background: #f2a93b; }
+.seg.day { background: #cfe6f5; }
+.seg-label {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.seg.dark .seg-label { color: #c9d0e4; }
+.seg.golden .seg-label,
+.seg.day .seg-label { color: #2b2110; }
+.now-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1.5px;
+  background: #e5322d;
+  box-shadow: 0 0 0 1px #fff;
+}
+.timeline-ticks {
+  position: relative;
+  height: 20px;
   margin-top: 4px;
   font-size: 12px;
   color: var(--text-2);
 }
-.timeline-key {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
+.timeline-ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.shoot-row {
   margin-top: 6px;
-  font-size: 12px;
-  color: var(--text-2);
 }
-.light-times {
-  list-style: none;
+.shoot-track {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface-2);
+}
+.shoot-span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 5px;
+  background: var(--text);
+}
+.shoot-caption {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.light-headline {
   margin: 12px 0 4px;
-  padding: 0;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
-.light-times li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-}
-.light-times li.missing b {
+.light-fit {
+  margin: 0 0 12px;
   color: var(--text-2);
-  font-weight: 500;
+  font-size: 15px;
 }
-.light-times b {
-  text-align: right;
+.light-more > summary {
+  min-height: 44px;
 }
 .light-suggest {
   margin: 8px 0;
@@ -1871,7 +1881,7 @@ textarea:focus {
 .compass {
   flex: none;
   text-align: center;
-  max-width: 160px;
+  max-width: 190px;
 }
 .compass svg {
   display: block;
@@ -1879,10 +1889,16 @@ textarea:focus {
 }
 .rose-ring { fill: var(--surface-2); stroke: var(--line); stroke-width: 2; }
 .rose-tick { stroke: var(--text-2); stroke-width: 2; }
-.rose-n { fill: var(--text); font-weight: 700; font-size: 12px; }
-.rose-l { fill: var(--text-2); font-size: 10px; }
-.rose-arrow { stroke: #f2a93b; stroke-width: 4; stroke-linecap: round; }
-.rose-head { fill: #f2a93b; }
+.rose-n { fill: var(--text); font-weight: 800; font-size: 13px; }
+.rose-l { fill: var(--text); font-weight: 700; font-size: 12px; }
+.rose-arrow { stroke: #f2a93b; stroke-width: 3; stroke-linecap: round; }
+.rose-sun { fill: #f2a93b; stroke: #b36b00; stroke-width: 1; }
+.rose-ray { stroke: #f2a93b; stroke-width: 2.5; stroke-linecap: round; }
+.rose-hub { fill: var(--text-2); }
+.rose-facing { fill: var(--accent); }
+.compass-caption { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.compass-controls { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.compass-controls .muted-note { margin: 0; }
 .map-box {
   height: 260px;
   border-radius: var(--radius-sm);

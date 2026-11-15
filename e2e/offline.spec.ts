@@ -62,6 +62,7 @@ test('a whole shoot runs with no connection, and online-only buttons say so', as
   await loc.getByLabel('Longitude').fill('-87.63');
   await loc.getByRole('button', { name: 'Use these coordinates' }).click();
   await expect(page.getByTestId('timeline')).toBeVisible();
+  await page.getByText(/^More: sun direction/).click();
   await page.getByRole('button', { name: 'Get forecast' }).click();
   await expect(page.getByText('Needs a connection.')).toBeVisible();
 

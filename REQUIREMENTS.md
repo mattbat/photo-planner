@@ -217,10 +217,10 @@ Hand-off details (adapted from next5's SH1–SH6): share the shoot by link or Ai
 | ID | Requirement |
 |----|-------------|
 | L1 | **Location** for each shoot, set by: current GPS position; searching an address or place (online, e.g. Open-Meteo or OpenStreetMap geocoding, no API key); or typing coordinates, or dropping a pin on a map (OpenStreetMap tiles via Leaflet; online only). All three were wanted (decided 2026-11-15). Saved locations can be reused ("Riverside Park"). |
-| L2 | **Light timeline** for the date and place: sunrise, morning golden hour, sunset, evening golden hour, blue hour, and solar noon, shown as a coloured bar across the day, with the shoot's planned span (O5) drawn on it. Times in the location's time zone. |
-| L3 | Definitions shown in help: golden hour = sun between about 6° above and 4° below the horizon; blue hour = 4° to 6° below. |
+| L2 | **Light for the shoot's session.** One headline sentence ("Golden hour 4:56–5:48 PM · sunset 5:32 PM"), one line on how the planned shoot fits ("✓ All of your shoot is in golden hour", "starts 11 min before golden hour and ends during it"), and a zoomed timeline of just that session: about 2.5 hours before golden hour to 30 minutes after it (mirrored for the morning, widened to hold the shoot), in daylight, golden hour and "too dark", with hour ticks, the shoot's span (O5) as a bar labelled with its times, and a "now" marker on the day. Evening by default, morning when the planned start is before noon, with a toggle. Times in the location's zone, with a note when that differs from the phone's. The place shows by name only. Sun direction, weather and other dates sit in a **More** fold (decided 2026-11-15). |
+| L3 | Definition shown in help: golden hour = sun between about 6° above and 4° below the horizon. Blue hour is not shown anywhere in the UI (the sun module still computes it). |
 | L4 | **Suggested start time**: so the planned shoot ends as golden hour ends (evening) or starts as it begins (morning), with must-have and big-group shots in the best light. A warning if the shot list is longer than golden hour. |
-| L5 | **Sun direction**: the sun's compass bearing at the planned time, with a compass arrow (using the phone's compass when allowed) so the photographer knows where to put the family relative to the sun. |
+| L5 | **Sun direction**: the sun's compass bearing at the planned time, shown as a sun symbol on a rose with N, E, S and W labelled and a caption ("Where the sun will be at 4:45 PM"); "Use compass" turns the rose with the phone and marks where you are facing so the photographer knows where to put the family relative to the sun. |
 | L6 | **Pick a date**: a small calendar or list showing golden-hour times for the next weeks, to help choose a date. |
 | L7 | **Weather forecast** (cloud cover, rain chance, wind) for shoots in the next ~14 days from Open-Meteo (free, no key). Online only; cached for offline viewing. |
 | L8 | Shoot day shows a countdown to the end of golden hour (D7). |
@@ -331,6 +331,7 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 | 2026-11-15 | A shot can have several poses, in order (`Shot.poseIds`, replacing the single `poseId`); old data, backups and hand-off files are converted (Dexie version 2, restore, receive) (PL5). |
 | 2026-11-15 | Everyone (full-group) shots come first by default; a Late person in the full group makes it wait for them (O9). |
 | 2026-11-15 | One time format app-wide, US style ("3:53 PM"); form fields, top-bar icons and tab icons share one style (polish pass). |
+| 2026-11-15 | Blue hour removed from the UI; the Light section focuses on the shoot's session (evening or morning) with golden hour and sunset at a glance (L2, L3). |
 | 2026-11-15 | Build started; the Q12 default shot types are used until changed. Built by Claude with subagents, milestone by milestone. |
 
 ## 18. Risks

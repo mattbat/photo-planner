@@ -27,8 +27,6 @@ import {
 import type { Shoot, Shot } from '../data/types';
 import { formatDate } from '../domain/dates';
 import { shortNames } from '../domain/shortNames';
-import { goldenHourLabel } from '../domain/light';
-import { guessTimeZone } from '../sun';
 import { branchColors, toTreePeople } from '../domain/familyView';
 import {
   analyzeOrder,
@@ -139,7 +137,6 @@ function Shoot({ data }: { data: ShootData }) {
         <div className="shoot-sub">
           {family?.name}
           {location ? ` · ${location.name}` : ''}
-          {location ? ` · ${goldenHourLabel(shoot.date, location, guessTimeZone()) ?? 'No golden hour'}` : ''}
         </div>
         <div className="shoot-facts">
           <button type="button" className="link" onClick={() => setDialog('attendance')}>
