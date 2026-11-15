@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CustomShotSheet } from '../components/CustomShotSheet';
+import { ShareShootSheet, SharedBanner } from '../components/ShareShoot';
+import { lockedAway } from '../data/handoff';
 import { FamilyTree } from '../components/FamilyTree';
 import { treeCss } from '../components/treeStyles';
 import { Empty, Section, Segmented, Sheet, TopBar, Toggle } from '../components/ui';
@@ -80,11 +82,13 @@ function useNow(everyMs = 30_000): number {
   return now;
 }
 
-type Dialog = 'who' | 'add' | 'menu' | { shotId: string } | null;
+type Dialog = 'who' | 'add' | 'menu' | 'share' | { shotId: string } | null;
 type View = 'now' | 'list' | 'tree';
 
 function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }) {
   const { shoot, people, partnerships, extras, settings } = data;
+  const locked = lockedAway(shoot);
+  const [message, setMessage] = useState('');
   const wake = useWakeLock(true);
   const poses = usePoseMap();
   const now = useNow();
@@ -136,6 +140,12 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
         }
       />
       {banner}
+      <SharedBanner shoot={shoot} />
+      {message && (
+        <p className="status-msg" role="status">
+          {message}
+        </p>
+      )}
       {wake.failed && <p className="callout-small">The screen may lock. Keep the phone awake in Settings › Display.</p>}
 
       <section className="live-progress" aria-label="Progress">
@@ -163,10 +173,10 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
           ]}
         />
         <div className="live-tool-row">
-          <button type="button" className="btn secondary" onClick={() => setDialog('who')}>
+          <button type="button" className="btn secondary" disabled={locked} onClick={() => setDialog('who')}>
             Who’s here{notHere.length > 0 ? ` · ${notHere.length} away` : ''}
           </button>
-          <button type="button" className="btn secondary" onClick={() => setDialog('add')}>
+          <button type="button" className="btn secondary" disabled={locked} onClick={() => setDialog('add')}>
             + Shot
           </button>
         </div>
@@ -209,17 +219,17 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
       )}
 
       <footer className="footer live-footer">
-        <button type="button" className="btn big wide done-btn" disabled={!current} onClick={() => current && void markShotOnDay(shoot.id, current.id, 'done')}>
+        <button type="button" className="btn big wide done-btn" disabled={!current || locked} onClick={() => current && void markShotOnDay(shoot.id, current.id, 'done')}>
           Done ✓
         </button>
         <div className="footer-row">
-          <button type="button" className="btn secondary grow" disabled={!current} onClick={() => current && void markShotOnDay(shoot.id, current.id, 'skip')}>
+          <button type="button" className="btn secondary grow" disabled={!current || locked} onClick={() => current && void markShotOnDay(shoot.id, current.id, 'skip')}>
             Skip
           </button>
-          <button type="button" className="btn secondary grow" disabled={!current} onClick={() => current && void markShotOnDay(shoot.id, current.id, 'retake')}>
+          <button type="button" className="btn secondary grow" disabled={!current || locked} onClick={() => current && void markShotOnDay(shoot.id, current.id, 'retake')}>
             Needs retake
           </button>
-          <button type="button" className="btn secondary grow" disabled={!last} aria-label={last ? `Undo ${last}` : 'Undo'} title={last ? `Undo ${last}` : undefined} onClick={() => void undoLastOnDay(shoot.id)}>
+          <button type="button" className="btn secondary grow" disabled={!last || locked} aria-label={last ? `Undo ${last}` : 'Undo'} title={last ? `Undo ${last}` : undefined} onClick={() => void undoLastOnDay(shoot.id)}>
             ↶ Undo
           </button>
         </div>
@@ -253,12 +263,28 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
           />
         </Sheet>
       )}
+      {dialog === 'share' && (
+        <ShareShootSheet
+          shoot={shoot}
+          familyName={data.family?.name ?? 'Shoot'}
+          onClose={() => setDialog(null)}
+          onSent={(m) => {
+            setDialog(null);
+            setMessage(m);
+          }}
+        />
+      )}
       {dialog === 'menu' && (
         <Sheet title="Shoot day" onClose={() => setDialog(null)}>
-          <button type="button" className="btn wide" onClick={() => void finishShoot(shoot.id)}>
+          <button type="button" className="btn wide" disabled={locked} onClick={() => void finishShoot(shoot.id)}>
             Finish shoot
           </button>
           <p className="hint">Shows the summary. You can reopen the shoot afterwards.</p>
+          {!locked && (
+            <button type="button" className="btn secondary wide" onClick={() => setDialog('share')}>
+              Share shoot
+            </button>
+          )}
           <a className="btn secondary wide" href={paths.shoot(shoot.id)}>
             Back to the shot list
           </a>
@@ -536,6 +562,7 @@ function WhoSheet({ data, nameOf, onClose }: { data: ShootData; nameOf: (id: str
 function Finished({ data }: { data: ShootData }) {
   const { shoot, family, people, extras } = data;
   const [status, setStatus] = useState('');
+  const [sharing, setSharing] = useState(false);
   const nameOf = (id: string) => shortNames(people, extras).get(id) ?? 'Someone';
   const sum = summarize(shoot);
   const minutes = shoot.startedAt && shoot.finishedAt ? Math.max(1, Math.round((shoot.finishedAt - shoot.startedAt) / 60000)) : undefined;
@@ -582,6 +609,20 @@ function Finished({ data }: { data: ShootData }) {
       <button type="button" className="btn wide" onClick={async () => setStatus(await shareText(title, text, 'Shoot summary'))}>
         Share summary as text
       </button>
+      <button type="button" className="btn secondary wide" onClick={() => setSharing(true)}>
+        Share shoot
+      </button>
+      {sharing && (
+        <ShareShootSheet
+          shoot={shoot}
+          familyName={family?.name ?? 'Shoot'}
+          onClose={() => setSharing(false)}
+          onSent={(m) => {
+            setSharing(false);
+            setStatus(m);
+          }}
+        />
+      )}
       <button type="button" className="btn secondary wide" onClick={() => void reopenShoot(shoot.id)}>
         Reopen shoot
       </button>

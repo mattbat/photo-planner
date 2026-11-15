@@ -141,7 +141,7 @@ function Shoot({ data }: { data: ShootData }) {
           <span>about {minutesText(analysis.totalMinutes)}</span>
         </div>
       </section>
-      <LiveControls shoot={shoot} people={people} extras={extras} />
+      <LiveControls shoot={shoot} people={people} extras={extras} familyName={family?.name ?? 'Shoot'} />
       {status && (
         <p className="status-msg" role="status">
           {status}

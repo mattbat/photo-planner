@@ -1,9 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { InstallHint } from '../components/InstallHint';
 import { NewShootSheet } from '../components/NewShootSheet';
 import { Empty, Section, TopBar } from '../components/ui';
 import { db } from '../data/db';
+import { dataFromText, encodeHandoff, parseHandoff } from '../data/handoff';
 import type { Shoot } from '../data/types';
 import { formatDate } from '../domain/dates';
 import { goldenHourLabel } from '../domain/light';
@@ -18,6 +19,31 @@ export function ShootsScreen() {
     locations: await db.locations.toArray(),
   }));
   const [creating, setCreating] = useState(false);
+  const [receiveError, setReceiveError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  // Receiving a shoot from the photographer or assistant (SH3).
+  const pasteShoot = async () => {
+    let text: string;
+    try {
+      text = await navigator.clipboard.readText();
+    } catch {
+      return setReceiveError('Couldn’t read what you copied. Copy the shoot link again, then tap Paste shoot.');
+    }
+    const data = dataFromText(text);
+    if (!data) return setReceiveError('What you copied isn’t a Photo Planner shoot link. Copy the link from the message, then try again.');
+    setReceiveError(null);
+    navigate(paths.receive(data));
+  };
+
+  const openFile = async (file: File | undefined) => {
+    if (!file) return;
+    const parsed = parseHandoff(await file.text());
+    if (fileInput.current) fileInput.current.value = '';
+    if (!parsed.ok) return setReceiveError(parsed.message);
+    setReceiveError(null);
+    navigate(paths.receive(await encodeHandoff(parsed.handoff)));
+  };
 
   const familyName = new Map((data?.families ?? []).map((f) => [f.id, f.name]));
   const locationById = new Map((data?.locations ?? []).map((l) => [l.id, l]));
@@ -76,6 +102,9 @@ export function ShootsScreen() {
                           {golden ? ` · ${golden}` : ''}
                         </span>
                       </span>
+                      {shoot.handoff && (
+                        <span className="chip muted">Shared</span>
+                      )}
                       <span className="list-meta" aria-label={`${done} of ${shoot.shots.length} shots done`}>
                         {done}/{shoot.shots.length}
                       </span>
@@ -89,6 +118,29 @@ export function ShootsScreen() {
             </ul>
           </Section>
         ))}
+      <Section title="Receive a shared shoot">
+        <div className="footer-row">
+          <button type="button" className="btn secondary grow" onClick={() => void pasteShoot()}>
+            Paste shoot
+          </button>
+          <button type="button" className="btn secondary grow" onClick={() => fileInput.current?.click()}>
+            Open shoot file
+          </button>
+        </div>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="application/json,.json"
+          className="file-input"
+          aria-label="Shoot file"
+          onChange={(e) => void openFile(e.target.files?.[0])}
+        />
+        {receiveError && (
+          <p className="error" role="alert">
+            {receiveError}
+          </p>
+        )}
+      </Section>
       {creating && (
         <NewShootSheet
           families={families}

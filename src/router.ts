@@ -15,6 +15,7 @@ export type Route =
   | { name: 'family'; id: string }
   | { name: 'poses' }
   | { name: 'pose'; id: string }
+  | { name: 'receive'; data: string }
   | { name: 'settings' }
   | { name: 'diagnostics' };
 
@@ -32,6 +33,8 @@ export function parseRoute(hash: string): Route {
       return parts[1] ? { name: 'family', id: decodeURIComponent(parts[1]) } : { name: 'families' };
     case 'poses':
       return parts[1] ? { name: 'pose', id: decodeURIComponent(parts[1]) } : { name: 'poses' };
+    case 'receive':
+      return parts[1] ? { name: 'receive', data: parts[1] } : { name: 'shoots' };
     case 'settings':
       return { name: 'settings' };
     case 'diagnostics':
@@ -50,6 +53,8 @@ export const paths = {
   family: (id: string) => `#/families/${encodeURIComponent(id)}`,
   poses: () => '#/poses',
   pose: (id: string) => `#/poses/${encodeURIComponent(id)}`,
+  /** A shared shoot, packed after the # (§9). */
+  receive: (data: string) => `#/receive/${data}`,
   settings: () => '#/settings',
   diagnostics: () => '#/diagnostics',
 };

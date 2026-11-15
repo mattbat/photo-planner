@@ -196,6 +196,8 @@ export interface Handoff {
   role: 'photographer' | 'assistant';
   /** True while the other phone has the checklist. */
   away: boolean;
+  /** Epoch ms of this phone's last send; an edit after it means "changed since you shared it". */
+  sentAt?: number;
 }
 
 export interface Shoot extends Stamped {

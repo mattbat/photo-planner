@@ -4,6 +4,7 @@ import { starterPoses } from '../poses/starterPoses';
 import { demoFamily } from '../tree/fixtures';
 import { ALL_TABLES, db } from './db';
 import { defaultSettings } from './defaults';
+import { lockedAway, receivedHandoff, roleOf, type ShootHandoff } from './handoff';
 import type {
   AppSettings,
   Extra,
@@ -346,10 +347,12 @@ async function planInput(shoot: Shoot): Promise<PlanInput> {
  * edit is applied first, then the shots are generated again with the
  * photographer's edits put back. Nothing is written if nothing changed.
  */
-async function editShoot(id: string, edit: (shoot: Shoot) => void): Promise<void> {
+async function editShoot(id: string, edit: (shoot: Shoot) => void, { day = false } = {}): Promise<void> {
   await db.transaction('rw', [...SHOOT_TABLES()], async () => {
     const shoot = await db.shoots.get(id);
     if (!shoot) return;
+    // A live shoot that is on the other phone is locked: no Done, Undo or presence changes here (SH5).
+    if (day && lockedAway(shoot)) return;
     const before = JSON.stringify(shoot);
     edit(shoot);
     const plan = planShoot(await planInput(shoot));
@@ -407,7 +410,7 @@ export async function addCustomShot(id: string, fields: { name: string; personId
     if (shoot.status === 'live') return applyDay(shoot, addShot(shoot, shot, Date.now()));
     shoot.shots = [...shoot.shots, shot];
     shoot.order = [...shoot.order, shotId];
-  });
+  }, { day: true });
   return shotId;
 }
 
@@ -451,10 +454,14 @@ export async function startShoot(id: string): Promise<void> {
 
 /** Finish shoot (D9). */
 export function finishShoot(id: string): Promise<void> {
-  return editShoot(id, (shoot) => {
-    shoot.status = 'done';
-    shoot.finishedAt = Date.now();
-  });
+  return editShoot(
+    id,
+    (shoot) => {
+      shoot.status = 'done';
+      shoot.finishedAt = Date.now();
+    },
+    { day: true },
+  );
 }
 
 /** Reopens a finished shoot where it was (D9). */
@@ -467,30 +474,34 @@ export function reopenShoot(id: string): Promise<void> {
 
 /** Done, Skip, Needs retake, or back to to-do (D3). */
 export function markShotOnDay(id: string, shotId: string, how: 'done' | 'skip' | 'retake' | 'reset'): Promise<void> {
-  return editShoot(id, (shoot) => applyDay(shoot, markShot(shoot, shotId, how, Date.now())));
+  return editShoot(id, (shoot) => applyDay(shoot, markShot(shoot, shotId, how, Date.now())), { day: true });
 }
 
 /** "Do this now" (D4). */
 export function doShotNow(id: string, shotId: string): Promise<void> {
-  return editShoot(id, (shoot) => applyDay(shoot, makeCurrent(shoot, shotId, Date.now())));
+  return editShoot(id, (shoot) => applyDay(shoot, makeCurrent(shoot, shotId, Date.now())), { day: true });
 }
 
 /** Marks someone here, not here yet or left (D5). */
 export function setShootPresence(id: string, personId: string, to: Presence): Promise<void> {
-  return editShoot(id, (shoot) => applyDay(shoot, setPresence(shoot, personId, to, Date.now())));
+  return editShoot(id, (shoot) => applyDay(shoot, setPresence(shoot, personId, to, Date.now())), { day: true });
 }
 
 /** ↶ Undo: reverses the last thing that happened (D3). */
 export function undoLastOnDay(id: string): Promise<void> {
-  return editShoot(id, (shoot) => applyDay(shoot, undoDay(shoot)));
+  return editShoot(id, (shoot) => applyDay(shoot, undoDay(shoot)), { day: true });
 }
 
 /** "Move all of Dan's shots up next" (D5). */
 export function moveShotsUpNext(id: string, personId: string): Promise<void> {
-  return editShoot(id, (shoot) => {
-    shoot.order = moveShotsUp(shoot, personId);
-    shoot.manualOrder = true;
-  });
+  return editShoot(
+    id,
+    (shoot) => {
+      shoot.order = moveShotsUp(shoot, personId);
+      shoot.manualOrder = true;
+    },
+    { day: true },
+  );
 }
 
 /** Partial edit of one shot: must-have, notes, pose (E6). */
@@ -593,6 +604,65 @@ export async function deleteShoot(id: string): Promise<void> {
   await db.transaction('rw', [db.shoots, db.extras], async () => {
     await db.extras.where('shootId').equals(id).delete();
     await db.shoots.delete(id);
+  });
+}
+
+// Handing a shoot to the assistant and back (§9, SH1–SH6)
+
+/**
+ * Records that this phone shared the shoot. Until it comes back (or Take back
+ * control), the other phone runs it (SH5); a finished shoot is shared only
+ * for the records, so this phone keeps it and nothing locks. The shoot's
+ * updatedAt is set to the same moment, so any later edit shows as "changed
+ * since you shared it".
+ */
+export async function markSent(shootId: string, n: number, now = Date.now()): Promise<void> {
+  await db.transaction('rw', db.shoots, async () => {
+    const shoot = await db.shoots.get(shootId);
+    if (!shoot) return;
+    const away = shoot.status !== 'done';
+    await db.shoots.update(shootId, { handoff: { n, role: roleOf(shoot), away, sentAt: now }, updatedAt: now });
+  });
+}
+
+/** Take back control (SH5): this phone runs the shoot again. Raising the number makes a crossing copy ask first. */
+export async function takeBack(shootId: string): Promise<void> {
+  await db.transaction('rw', db.shoots, async () => {
+    const shoot = await db.shoots.get(shootId);
+    if (!shoot?.handoff) return;
+    await db.shoots.update(shootId, { handoff: { n: shoot.handoff.n + 1, role: shoot.handoff.role, away: false }, updatedAt: Date.now() });
+  });
+}
+
+/**
+ * Keeps a received shoot (SH4). The family, people, partnerships, extras,
+ * location and poses are upserted by id (the more recently changed copy
+ * wins; nothing else is deleted, and photos already here stay); the shoot
+ * replaces this phone's copy. Call `decideReceive` first.
+ */
+export async function receiveShoot(incoming: ShootHandoff): Promise<void> {
+  await db.transaction('rw', [db.families, db.people, db.partnerships, db.extras, db.locations, db.poses, db.shoots], async () => {
+    const upsert = async <T extends { id: string; updatedAt: number; photo?: string }>(table: unknown, records: T[]) => {
+      const t = table as { get(id: string): Promise<T | undefined>; put(r: T): Promise<unknown> };
+      for (const record of records) {
+        const existing = await t.get(record.id);
+        if (existing && record.updatedAt <= existing.updatedAt) continue;
+        await t.put(existing?.photo && record.photo === undefined ? { ...record, photo: existing.photo } : record);
+      }
+    };
+    await upsert(db.families, [incoming.family]);
+    await upsert(db.people, incoming.people);
+    await upsert(db.partnerships, incoming.partnerships);
+    await upsert(db.extras, incoming.extras);
+    if (incoming.location) await upsert(db.locations, [incoming.location]);
+    await upsert(db.poses, incoming.poses);
+    const existing = await db.shoots.get(incoming.shoot.id);
+    // Keep the sender's updatedAt, so opening the same link twice is recognised. A forecast already here stays.
+    await db.shoots.put({
+      ...incoming.shoot,
+      ...(existing?.forecast ? { forecast: existing.forecast } : {}),
+      handoff: receivedHandoff(incoming),
+    });
   });
 }
 

@@ -4,9 +4,9 @@ Tracks every requirement in [REQUIREMENTS.md](../REQUIREMENTS.md). Update this f
 
 **Legend:** ✅ Done · 🟡 Partial · ⬜ Not started · ➖ Dropped · 📱 Needs checking on a real iPhone
 
-**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 27 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **M4 (shoot day)** is done: Start shoot, the live checklist (`#/shoots/:id/live`), who's here, undo, finish and summary, poses on shots. **Next:** M5 light (golden hour), M6 hand-off.
+**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 27 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **M4 (shoot day)** is done: Start shoot, the live checklist (`#/shoots/:id/live`), who's here, undo, finish and summary, poses on shots. **M6 (hand-off)** is done: share a shoot by link or file, receive, one phone at a time. **Next:** M8 help and polish.
 
-Last updated: 2026-11-15 (M4)
+Last updated: 2026-11-15 (M6)
 
 ## Milestones
 
@@ -18,7 +18,7 @@ Last updated: 2026-11-15 (M4)
 | M3 | Shoots + shot list | ✅ |
 | M4 | Ordering + shoot day | ✅ |
 | M5 | Light | ✅ |
-| M6 | Assistant hand-off | ⬜ |
+| M6 | Assistant hand-off | ✅ |
 | M7 | Pose library | ✅ |
 | M8 | Help + polish → 1.0 | ⬜ |
 
@@ -118,6 +118,19 @@ Last updated: 2026-11-15 (M4)
 | D8 | ✅ | `useWakeLock` while live; everything is in Dexie, so a reload resumes on the same shot (e2e). 📱 check on a real iPhone. |
 | D9 | ✅ | Finish shoot shows a summary (done, retakes owed, skipped, not reached, added) with share as text; Reopen shoot goes back to live. |
 | D10 | ✅ | Every tap is one atomic `editShoot` write; no Save button. |
+
+## 9. Photographer and assistant
+
+Option B, hand-off like next5 (decided 2026-11-15). Code: `src/data/handoff.ts`, `src/components/ShareShoot.tsx`, `src/screens/ReceiveScreen.tsx`.
+
+| ID | Status | Notes |
+|----|--------|-------|
+| SH1 | ✅ | Share shoot sheet (Text a link / AirDrop a file) from the shoot screen, the live menu and the finished summary; roles photographer / assistant (M6). 📱 |
+| SH2 | ✅ | Format `photo-planner-shoot` v1: the shoot (no hand-off state, forecast or undo log beyond add-shot), family, people, partnerships, used extras, location, and only the user's own poses on shots; no photos. Link = `#/receive/` + deflate-raw base64url (`z`) or plain JSON (`j`) where compression is missing; or a `.json` file (M6). |
+| SH3 | ✅ | `#/receive/<data>` shows family, date, progress and Open here; Copy for the app in Safari; Paste shoot and Open shoot file on Shoots. Merging upserts the family by id and deletes nothing (M6). |
+| SH4 | ✅ | The hand-off number decides, never clocks; a copy with fewer done shots is refused unless Replace anyway; both changed since the last share asks which to keep; every incoming record is validated first (M6). |
+| SH5 | ✅ | After sharing, Shared with the other phone; a planned shoot can still be edited and shared again; a live one is locked (Done, Skip, Undo, who's here, add shot, finish) until Take back control (confirmed). Finished shoots lock nothing (M6). |
+| SH6 | ✅ | Shoots list marks shared shoots "Shared" (M6). |
 
 ## 10. Light: golden hour and location
 

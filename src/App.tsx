@@ -6,6 +6,7 @@ import { FamiliesScreen } from './screens/FamiliesScreen';
 import { LiveScreen } from './screens/LiveScreen';
 import { PoseDetailScreen } from './screens/PoseDetailScreen';
 import { PosesScreen } from './screens/PosesScreen';
+import { ReceiveScreen } from './screens/ReceiveScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { ShootScreen } from './screens/ShootScreen';
 import { ShootsScreen } from './screens/ShootsScreen';
@@ -38,6 +39,8 @@ export function App() {
       return <FamilyScreen key={route.id} familyId={route.id} />;
     case 'pose':
       return <PoseDetailScreen key={route.id} poseId={route.id} />;
+    case 'receive':
+      return <ReceiveScreen data={route.data} />;
     case 'settings':
       return <SettingsScreen />;
     case 'diagnostics':

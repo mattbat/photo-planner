@@ -1849,3 +1849,16 @@ textarea:focus {
   background: var(--surface-2);
   color: var(--text-2);
 }
+
+/* Hand-off (M6) */
+.handoff-banner {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border, currentColor);
+}
+.handoff-banner p {
+  margin: 0;
+}

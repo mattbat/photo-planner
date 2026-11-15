@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { lockedAway } from '../data/handoff';
 import { finishShoot, reopenShoot, startShoot } from '../data/repo';
 import type { Extra, Person, Shoot } from '../data/types';
 import { shortNames } from '../domain/shortNames';
@@ -6,14 +7,19 @@ import { inOrder } from '../domain/shotView';
 import { usePoseMap } from '../hooks/usePoseMap';
 import { navigate, paths } from '../router';
 import { PoseThumb } from './PoseThumb';
+import { ShareShootSheet, SharedBanner } from './ShareShoot';
 import { Sheet } from './ui';
 
 /** Start shoot / carry on / reopen (§8), and the pose sheet (PL7), on the shoot screen. */
-export function LiveControls({ shoot, people, extras }: { shoot: Shoot; people: Person[]; extras: Extra[] }) {
+export function LiveControls({ shoot, people, extras, familyName = 'Shoot' }: { shoot: Shoot; people: Person[]; extras: Extra[]; familyName?: string }) {
   const [poseSheet, setPoseSheet] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [message, setMessage] = useState('');
+  const locked = lockedAway(shoot);
   const withPose = shoot.shots.filter((s) => s.poseId).length;
   return (
     <div className="live-start">
+      <SharedBanner shoot={shoot} onShareAgain={() => setSharing(true)} />
       {shoot.status === 'planned' && (
         <button
           type="button"
@@ -24,7 +30,7 @@ export function LiveControls({ shoot, people, extras }: { shoot: Shoot; people: 
           Start shoot
         </button>
       )}
-      {shoot.status === 'live' && (
+      {shoot.status === 'live' && !locked && (
         <a className="btn big wide" href={paths.live(shoot.id)}>
           Continue shoot day
         </a>
@@ -39,14 +45,35 @@ export function LiveControls({ shoot, people, extras }: { shoot: Shoot; people: 
           </button>
         </>
       )}
-      {shoot.status === 'live' && (
+      {shoot.status === 'live' && !locked && (
         <button type="button" className="btn secondary wide" onClick={() => void finishShoot(shoot.id).then(() => navigate(paths.live(shoot.id)))}>
           Finish shoot
         </button>
       )}
+      {!locked && (
+        <button type="button" className="btn secondary wide" onClick={() => setSharing(true)}>
+          Share shoot
+        </button>
+      )}
+      {message && (
+        <p className="status-msg" role="status">
+          {message}
+        </p>
+      )}
       <button type="button" className="btn secondary wide" onClick={() => setPoseSheet(true)}>
         Pose sheet{withPose > 0 ? ` (${withPose})` : ''}
       </button>
+      {sharing && (
+        <ShareShootSheet
+          shoot={shoot}
+          familyName={familyName}
+          onClose={() => setSharing(false)}
+          onSent={(m) => {
+            setSharing(false);
+            setMessage(m);
+          }}
+        />
+      )}
       {poseSheet && <PoseSheet shoot={shoot} people={people} extras={extras} onClose={() => setPoseSheet(false)} />}
     </div>
   );
