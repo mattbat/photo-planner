@@ -14,9 +14,12 @@ describe('router', () => {
   });
 
   it('builds paths that parse back to the same route', () => {
-    for (const [name, path] of Object.entries(paths)) {
+    const { family, ...plain } = paths;
+    for (const [name, path] of Object.entries(plain)) {
       expect(parseRoute(path())).toEqual({ name });
     }
+    expect(parseRoute(family('a b/1'))).toEqual({ name: 'family', id: 'a b/1' });
+    expect(parseRoute('#/families/f1')).toEqual({ name: 'family', id: 'f1' });
   });
 
   it('has one tab per top-level screen, in tab-bar order', () => {

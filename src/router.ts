@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 export type Route =
   | { name: 'shoots' }
   | { name: 'families' }
+  | { name: 'family'; id: string }
   | { name: 'poses' }
   | { name: 'settings' }
   | { name: 'diagnostics' };
@@ -22,7 +23,7 @@ export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   switch (parts[0]) {
     case 'families':
-      return { name: 'families' };
+      return parts[1] ? { name: 'family', id: decodeURIComponent(parts[1]) } : { name: 'families' };
     case 'poses':
       return { name: 'poses' };
     case 'settings':
@@ -37,6 +38,7 @@ export function parseRoute(hash: string): Route {
 export const paths = {
   shoots: () => '#/',
   families: () => '#/families',
+  family: (id: string) => `#/families/${encodeURIComponent(id)}`,
   poses: () => '#/poses',
   settings: () => '#/settings',
   diagnostics: () => '#/diagnostics',

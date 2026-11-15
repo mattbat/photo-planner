@@ -4,7 +4,11 @@ import { clearDb, seedFamily } from '../test/helpers';
 import { db, PhotoPlannerDb } from './db';
 import { DEFAULT_ENABLED_TEMPLATES, defaultSettings } from './defaults';
 import {
+  addChild,
   addExtra,
+  createDemoFamily,
+  ensurePartnership,
+  quickAddFamily,
   addLocation,
   addPartnership,
   addPerson,
@@ -296,5 +300,65 @@ describe('schema (T4)', () => {
     expect(await again.families.get('f1')).toMatchObject({ name: 'The Testers' });
     again.close();
     await Dexie.delete(name);
+  });
+});
+
+describe('children, partnerships and bulk creation (M1)', () => {
+  it('addChild makes a kid under at most two parents', async () => {
+    const { family, max, nia } = await seedFamily();
+    const kid = await addChild(family.id, '  Zed ', [max.id, nia.id, 'third']);
+    expect(await db.people.get(kid.id)).toMatchObject({ name: 'Zed', parentIds: [max.id, nia.id], grown: false, ageGroup: 'child' });
+  });
+
+  it('ensurePartnership reuses an existing pair and updates its status', async () => {
+    const { family, max, nia } = await seedFamily();
+    const again = await ensurePartnership(family.id, [nia.id, max.id], 'separated');
+    expect(again.status).toBe('separated');
+    expect(await db.partnerships.where('familyId').equals(family.id).count()).toBe(2);
+    expect((await ensurePartnership(family.id, [max.id, nia.id], 'separated')).id).toBe(again.id);
+    const other = await addPerson(family.id, { name: 'Pat' });
+    await ensurePartnership(family.id, [max.id, other.id]);
+    expect(await db.partnerships.where('familyId').equals(family.id).count()).toBe(3);
+  });
+
+  it('quickAddFamily creates the whole family in one go and skips blanks', async () => {
+    const family = await quickAddFamily({
+      familyName: ' The Rivers ',
+      grandparents: ['Ann Rivers', ' ', 'Bo Rivers'],
+      children: [
+        { name: 'Cy', partner: 'Di', kids: ['Eli', ' ', 'Fay'] },
+        { name: 'Gus', grown: false },
+        { name: 'Hal' },
+        { name: '  ' },
+      ],
+    });
+    expect(family.name).toBe('The Rivers');
+    const people = await db.people.where('familyId').equals(family.id).toArray();
+    const id = (name: string) => people.find((p) => p.name === name)!.id;
+    expect(people.map((p) => p.name).sort()).toEqual(['Ann Rivers', 'Bo Rivers', 'Cy', 'Di', 'Eli', 'Fay', 'Gus', 'Hal']);
+    expect(people.find((p) => p.name === 'Cy')!.parentIds).toEqual([id('Ann Rivers'), id('Bo Rivers')]);
+    expect(people.find((p) => p.name === 'Eli')).toMatchObject({ parentIds: [id('Cy'), id('Di')], grown: false });
+    expect(people.find((p) => p.name === 'Gus')!.grown).toBe(false);
+    expect(people.find((p) => p.name === 'Hal')!.grown).toBe(true);
+    expect(await db.partnerships.where('familyId').equals(family.id).count()).toBe(2);
+  });
+
+  it('quickAddFamily works with one grandparent, no children and no name', async () => {
+    const family = await quickAddFamily({ familyName: '', grandparents: ['Solo'], children: [] });
+    expect(family.name).toBe('New family');
+    expect(await db.people.where('familyId').equals(family.id).count()).toBe(1);
+    expect(await db.partnerships.count()).toBe(0);
+  });
+
+  it('createDemoFamily adds the made-up family with couples, separations and a pet', async () => {
+    const family = await createDemoFamily();
+    const people = await db.people.where('familyId').equals(family.id).toArray();
+    const partnerships = await db.partnerships.where('familyId').equals(family.id).toArray();
+    expect(people.length).toBeGreaterThanOrEqual(20);
+    expect(partnerships.some((p) => p.status === 'separated')).toBe(true);
+    expect(new Set(partnerships.map((p) => p.personIds.join())).size).toBe(partnerships.length);
+    const ids = new Set(people.map((p) => p.id));
+    expect(people.every((p) => p.parentIds.every((x) => ids.has(x)))).toBe(true);
+    expect((await db.extras.where('familyId').equals(family.id).toArray()).map((e) => e.kind)).toEqual(['pet']);
   });
 });

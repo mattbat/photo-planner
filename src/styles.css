@@ -1060,3 +1060,139 @@ input[type='date'] {
 .error-banner {
   bottom: calc(var(--safe-bottom) + var(--tabbar) + 12px);
 }
+
+/* Families and the tree (M1) */
+
+textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font: inherit;
+  font-size: 17px;
+  resize: vertical;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: var(--accent);
+}
+
+.tree-box {
+  height: calc(var(--app-height, 100dvh) - 360px);
+  min-height: 300px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.view-switch {
+  margin: 4px 0 12px;
+}
+
+.action-row {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.action-row .btn {
+  flex: 1;
+  padding: 0 10px;
+}
+
+.search {
+  margin: 4px 0 12px;
+}
+
+.list-item.with-options {
+  padding-right: 0;
+}
+
+.inline-add {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.inline-add input,
+.inline-add select {
+  flex: 1;
+  min-width: 0;
+}
+
+.mini-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mini-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--surface-2);
+}
+
+.mini-list .grow {
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 8px 0;
+  min-height: 44px;
+  font-weight: 600;
+}
+
+.problems {
+  margin: 8px 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+}
+
+.problems h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.problems button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: left;
+  font-size: 15px;
+}
+
+.gen-head {
+  margin: 14px 4px 6px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.status-msg {
+  color: var(--text-2);
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.step-dots {
+  color: var(--text-2);
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.qa-child {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--surface-2);
+}

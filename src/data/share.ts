@@ -6,7 +6,12 @@
 export type ShareOutcome = 'shared' | 'downloaded' | 'cancelled';
 
 export async function shareFile(name: string, text: string, type = 'application/json'): Promise<ShareOutcome> {
-  const file = new File([text], name, { type });
+  return shareBlob(name, new Blob([text], { type }));
+}
+
+/** The same for any file's contents, such as a PNG picture. */
+export async function shareBlob(name: string, blob: Blob): Promise<ShareOutcome> {
+  const file = new File([blob], name, { type: blob.type });
   if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: name });

@@ -1,6 +1,7 @@
 import { TabBar } from './components/TabBar';
 import { useRoute, type TabName } from './router';
 import { DiagnosticsScreen } from './screens/DiagnosticsScreen';
+import { FamilyScreen } from './screens/FamilyScreen';
 import { FamiliesScreen } from './screens/FamiliesScreen';
 import { PosesScreen } from './screens/PosesScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -26,6 +27,8 @@ export function App() {
         </div>
       );
     }
+    case 'family':
+      return <FamilyScreen key={route.id} familyId={route.id} />;
     case 'settings':
       return <SettingsScreen />;
     case 'diagnostics':

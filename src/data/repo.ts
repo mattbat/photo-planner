@@ -1,3 +1,4 @@
+import { demoFamily } from '../tree/fixtures';
 import { ALL_TABLES, db } from './db';
 import { defaultSettings } from './defaults';
 import type {
@@ -87,6 +88,11 @@ export async function addPerson(
   return person;
 }
 
+/** Adds a child (a kid) under one or two parents. */
+export async function addChild(familyId: string, name: string, parentIds: string[]): Promise<Person> {
+  return addPerson(familyId, { name, parentIds: parentIds.slice(0, 2), grown: false, ageGroup: 'child' });
+}
+
 export async function updatePerson(id: string, changes: Changes<Omit<Person, 'familyId'>>): Promise<void> {
   await db.people.update(id, { ...changes, updatedAt: Date.now() });
 }
@@ -133,6 +139,121 @@ export async function updatePartnership(id: string, changes: Pick<Partial<Partne
 
 export async function deletePartnership(id: string): Promise<void> {
   await db.partnerships.delete(id);
+}
+
+/** Adds a partnership unless these two people already have one, in which case it is updated. */
+export async function ensurePartnership(
+  familyId: string,
+  personIds: [string, string],
+  status: Partnership['status'] = 'together',
+): Promise<Partnership> {
+  const [a, b] = personIds;
+  const existing = (await db.partnerships.where('personIds').equals(a).toArray()).find(
+    (p) => p.personIds.includes(b) && p.familyId === familyId,
+  );
+  if (existing) {
+    if (existing.status !== status) await updatePartnership(existing.id, { status });
+    return { ...existing, status };
+  }
+  return addPartnership(familyId, personIds, status);
+}
+
+/** A person to create in `quickAddFamily` / the demo: names only, the rest optional. */
+export interface QuickAddChild {
+  name: string;
+  /** A grown child who is still single and childless (the default is true). */
+  grown?: boolean;
+  partner?: string;
+  kids?: string[];
+}
+
+export interface QuickAddInput {
+  familyName: string;
+  /** One or two names; two are made partners. */
+  grandparents: string[];
+  children: QuickAddChild[];
+}
+
+const clean = (names: string[] | undefined): string[] => (names ?? []).map((n) => n.trim()).filter(Boolean);
+
+/**
+ * Creates a whole family in one transaction (F2): the top couple (or single
+ * person), their children, each child's partner and kids. Blank names are
+ * skipped. Returns the new family.
+ */
+export async function quickAddFamily(input: QuickAddInput): Promise<Family> {
+  const family: Family = stamp({ name: input.familyName.trim() || 'New family', archived: false });
+  const people: Person[] = [];
+  const partnerships: Partnership[] = [];
+  const person = (name: string, fields: Partial<Person> = {}): Person => {
+    const p: Person = stamp({ familyId: family.id, name, parentIds: [], ...fields });
+    people.push(p);
+    return p;
+  };
+  const couple = (a: Person, b: Person) => partnerships.push(stamp({ familyId: family.id, personIds: [a.id, b.id] as [string, string], status: 'together' as const }));
+
+  const tops = clean(input.grandparents).slice(0, 2).map((name) => person(name, { grown: true }));
+  if (tops.length === 2) couple(tops[0]!, tops[1]!);
+  for (const child of input.children) {
+    const name = child.name.trim();
+    if (!name) continue;
+    const partnerName = child.partner?.trim();
+    const kids = clean(child.kids);
+    const grown = child.grown ?? true;
+    const c = person(name, { parentIds: tops.map((t) => t.id), grown: grown || !!partnerName || kids.length > 0 });
+    const partner = partnerName ? person(partnerName, { grown: true }) : undefined;
+    if (partner) couple(c, partner);
+    for (const kid of kids) person(kid, { parentIds: partner ? [c.id, partner.id] : [c.id], grown: false, ageGroup: 'child' });
+  }
+  await db.transaction('rw', [db.families, db.people, db.partnerships], async () => {
+    await db.families.add(family);
+    await db.people.bulkAdd(people);
+    await db.partnerships.bulkAdd(partnerships);
+  });
+  return family;
+}
+
+/**
+ * Adds the made-up demo family (about 20 people over four generations, with
+ * a pet), so a new user can see the tree straight away.
+ */
+export async function createDemoFamily(): Promise<Family> {
+  const family: Family = stamp({ name: 'The Pike–Vega family (demo)', archived: false });
+  const ids = new Map(demoFamily.map((t) => [t.id, newId()]));
+  const people: Person[] = demoFamily.map((t) => {
+    const p: Person = stamp({
+      id: ids.get(t.id)!,
+      familyId: family.id,
+      name: t.name,
+      parentIds: t.parentIds.map((id) => ids.get(id)!),
+      grown: t.grown,
+    });
+    if (t.sex) p.sex = t.sex;
+    if (!t.grown) p.ageGroup = 'child';
+    return p;
+  });
+  const partnerships: Partnership[] = [];
+  const seen = new Set<string>();
+  for (const t of demoFamily) {
+    const pairs = [
+      ...t.partnerIds.map((q) => [q, 'together'] as const),
+      ...(t.separatedPartnerIds ?? []).map((q) => [q, 'separated'] as const),
+    ];
+    for (const [q, status] of pairs) {
+      const key = [t.id, q].sort().join('|');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      partnerships.push(stamp({ familyId: family.id, personIds: [ids.get(t.id)!, ids.get(q)!] as [string, string], status }));
+    }
+  }
+  const dog: Extra = stamp({ familyId: family.id, name: 'Rex', kind: 'pet' as const, emoji: '🐶' });
+  await db.transaction('rw', [db.families, db.people, db.partnerships, db.extras], async () => {
+    await db.families.add(family);
+    await db.people.bulkAdd(people);
+    await db.partnerships.bulkAdd(partnerships);
+    await db.extras.add(dog);
+  });
+  return family;
 }
 
 // Extra people (guests and pets)
