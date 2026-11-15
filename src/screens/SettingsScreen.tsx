@@ -33,6 +33,7 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
   const [message, setMessage] = useState<string | null>(null);
   const units = unitsOf(useLiveQuery(async () => (await getSettings()).units, []));
   const everyoneFirst = useLiveQuery(async () => (await getSettings()).defaultOrderOptions.everyoneFirst !== false) ?? true;
+  const groupHouseholds = useLiveQuery(async () => (await getSettings()).defaultOrderOptions.groupHouseholds !== false) ?? true;
   const treatAll = useLiveQuery(async () => (await getSettings()).treatEveryoneAsHere !== false) ?? true;
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Backup | null>(null);
@@ -230,6 +231,12 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
           onChange={async (v) => void updateSettings({ defaultOrderOptions: { ...(await getSettings()).defaultOrderOptions, everyoneFirst: v } })}
         />
         <p className="hint">On: the full-group shots open each new shoot, largest first, so you get them done while everyone is fresh. You can change it on any shoot.</p>
+        <Toggle
+          label="Group each household"
+          checked={groupHouseholds}
+          onChange={async (v) => void updateSettings({ defaultOrderOptions: { ...(await getSettings()).defaultOrderOptions, groupHouseholds: v } })}
+        />
+        <p className="hint">On: after the grandparents and the cousins, each household's shots come in one run, so families aren't called back and forth. You can change it on any shoot.</p>
       </Section>
 
       <Section title="Shoot day">

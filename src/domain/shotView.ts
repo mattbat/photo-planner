@@ -210,7 +210,7 @@ function runOrder(input: OrderInput, fixedPrefix: string[], useOptions: boolean)
     ordered.map((s) => toEngineShot(s, extraSet)),
     toEnginePeople(input.people, input.partnerships, input.thisYear),
     {
-      ...(useOptions ? { kidsFirst: o.kidsFirst, releaseOlderEarly: o.releaseOlderEarly, bigGroupFirst: o.bigGroupFirst, mustHavesEarly: o.mustHavesEarly, everyoneFirst: o.everyoneFirst !== false } : {}),
+      ...(useOptions ? { kidsFirst: o.kidsFirst, releaseOlderEarly: o.releaseOlderEarly, bigGroupFirst: o.bigGroupFirst, mustHavesEarly: o.mustHavesEarly, everyoneFirst: o.everyoneFirst !== false, groupHouseholds: o.groupHouseholds !== false } : {}),
       mustHaveKeys: ordered.filter((s) => s.mustHave).map((s) => s.id),
       ...(input.priorities ? { priorities: input.priorities } : {}),
       fixedPrefix,

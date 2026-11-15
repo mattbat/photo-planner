@@ -243,6 +243,12 @@ const ALL: Topic[] = [
             later.
           </li>
           <li>
+            <b>Group each household</b> (on by default): after the everyone shots and the grandparents’ shots come the
+            shots that mix families (cousins, siblings, all the grandkids). Then each household’s shots come in one run:
+            the biggest shot first, solos last. Anyone marked <b>Late</b> still has their shots moved to the end, and
+            <b>Early</b> people still come first.
+          </li>
+          <li>
             <b>Kids first</b>: little ones before they tire.
           </li>
           <li>
