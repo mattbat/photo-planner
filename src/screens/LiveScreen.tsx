@@ -26,6 +26,8 @@ import {
   currentShot,
   dayLists,
   progress,
+  shotCounter,
+  type ShotCounter,
   summarize,
   summaryText,
   transition,
@@ -186,7 +188,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
       {view === 'now' && (
         <>
           {current ? (
-            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} pose={current.poseId ? poses.get(current.poseId) : undefined} waiting={waitingFor(state, current)} number={shoot.shots.indexOf(current) + 1} total={stats.total} />
+            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} pose={current.poseId ? poses.get(current.poseId) : undefined} waiting={waitingFor(state, current)} counter={shotCounter(state)} />
           ) : (
             <section className="live-card live-empty" aria-label="Current shot">
               <h2>{open === 0 ? 'All shots handled' : 'Waiting for people'}</h2>
@@ -333,8 +335,7 @@ function CurrentCard({
   extras,
   pose,
   waiting,
-  number,
-  total,
+  counter,
 }: {
   shot: Shot;
   nameOf: (id: string) => string;
@@ -342,15 +343,14 @@ function CurrentCard({
   extras: Extra[];
   pose: Pose | undefined;
   waiting: string[];
-  number: number;
-  total: number;
+  counter: ShotCounter;
 }) {
   const extraById = new Map(extras.map((e) => [e.id, e]));
   const { groups, extra } = groupPeople(shot.personIds, nodes, new Set(extraById.keys()), nameOf);
   return (
     <section className="live-card" aria-label="Current shot">
       <p className="live-kicker">
-        Shot {number} of {total}
+        Shot {counter.number} of {counter.total} · {counter.left} left
         {shot.mustHave && (
           <span className="live-star" role="img" aria-label="Must-have">
             {' '}

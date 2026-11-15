@@ -118,6 +118,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | D8 | ✅ | `useWakeLock` while live; everything is in Dexie, so a reload resumes on the same shot (e2e). 📱 check on a real iPhone. |
 | D9 | ✅ | Finish shoot shows a summary (done, retakes owed, skipped, not reached, added) with share as text; Reopen shoot goes back to live. |
 | D10 | ✅ | Every tap is one atomic `editShoot` write; no Save button. |
+| D11 | ✅ | "Shot N of T · X left" from `shotCounter` in `src/domain/shootDay.ts`. The old header showed the shot's place in the stored list (`shots.indexOf(current) + 1`), which jumped with "Do this now", waiting shots and retakes. Unit, property (fast-check) and screen tests. |
 
 ## 9. Photographer and assistant
 

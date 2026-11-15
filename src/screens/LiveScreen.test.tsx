@@ -46,6 +46,19 @@ describe('LiveScreen', () => {
     expect(screen.getByRole('region', { name: 'Progress' })).toHaveTextContent(/0 of \d+ done/);
   });
 
+  it('counts Shot N of T and X left as progress, whatever the shot order (fix)', async () => {
+    const { shoot, user } = await open();
+    const total = (await reload(shoot.id)).shots.length;
+    const kicker = async () => (await card()).querySelector('.live-kicker')!.textContent;
+    expect(await kicker()).toContain(`Shot 1 of ${total} · ${total} left`);
+    await user.click(screen.getByRole('button', { name: 'Done ✓' }));
+    await waitFor(async () => expect(await kicker()).toContain(`Shot 2 of ${total} · ${total - 1} left`));
+    await user.click(screen.getByRole('button', { name: 'Skip' }));
+    await waitFor(async () => expect(await kicker()).toContain(`Shot 3 of ${total} · ${total - 2} left`));
+    await user.click(screen.getByRole('button', { name: /^Undo Skip/ }));
+    await waitFor(async () => expect(await kicker()).toContain(`Shot 2 of ${total} · ${total - 1} left`));
+  });
+
   it('groups the people in the shot by branch with big names, and shows extras with emoji', async () => {
     const { shoot } = await open();
     await updateShot(shoot.id, (await reload(shoot.id)).order[0]!, { mustHave: true });

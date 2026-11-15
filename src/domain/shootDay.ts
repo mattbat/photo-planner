@@ -280,6 +280,30 @@ export function progress(state: DayState, opts: { now: number; startedAt?: numbe
   };
 }
 
+/**
+ * "Shot N of T · X left" for the checklist header (D1).
+ *
+ * N is progress, not the shot's place in the list: the shots finished so far
+ * (done or skipped) plus one. So it counts 1, 2, 3 to the end whatever order
+ * the shots are taken in ("Do this now", waiting shots, retakes, shots added
+ * on the day). It only changes when a shot is finished or put back, so Undo,
+ * which restores the shot's status, restores the number exactly.
+ * `left` is every shot not yet done or skipped (the current one, waiting shots
+ * and retakes included).
+ */
+export interface ShotCounter {
+  /** Between 1 and `total`. */
+  number: number;
+  total: number;
+  left: number;
+}
+
+export function shotCounter(state: Pick<DayState, 'shots'>): ShotCounter {
+  const total = state.shots.length;
+  const finished = state.shots.filter((s) => s.status === 'done' || s.status === 'skipped').length;
+  return { number: Math.min(finished + 1, Math.max(total, 1)), total, left: total - finished };
+}
+
 export interface Summary {
   done: Shot[];
   skipped: Shot[];

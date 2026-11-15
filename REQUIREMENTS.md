@@ -193,6 +193,7 @@ Designed for the assistant's thumb and outdoor glare: large text, big targets, h
 | D8 | Keeps the screen awake (Wake Lock, reusing next5's `useWakeLock`) and resumes exactly where it was after the phone locks or the app is closed. |
 | D9 | **Finish shoot** shows a summary: done, skipped, retakes still owed, custom shots added, and a text to share. Finished shoots can be reopened. |
 | D10 | Every tap saves immediately; no Save button. |
+| D11 | The current-shot card says **"Shot N of T · X left"**: N is progress (shots done or skipped, plus one), T the shots in the list, X the shots not yet done or skipped. N counts 1, 2, 3 to the end, never drops on Done or Skip, and Undo restores it. It does not depend on the order the shots are taken in (decided 2026-11-15). |
 
 ## 9. Photographer and assistant
 
