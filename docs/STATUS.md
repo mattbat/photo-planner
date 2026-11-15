@@ -6,7 +6,7 @@ Tracks every requirement in [REQUIREMENTS.md](../REQUIREMENTS.md). Update this f
 
 **Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 27 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **M4 (shoot day)** is done: Start shoot, the live checklist (`#/shoots/:id/live`), who's here, undo, finish and summary, poses on shots. **M6 (hand-off)** is done: share a shoot by link or file, receive, one phone at a time. **M5 (light)**, **M7 (poses)** and **M8 (help, intro, README, polish)** are done. **Next:** check on a real iPhone, then release 1.0.
 
-Last updated: 2026-11-15 (M6 + M8)
+Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md](IDEAS.md))
 
 ## Milestones
 
