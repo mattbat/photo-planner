@@ -52,9 +52,9 @@ function betaPage(): Plugin {
 /** Unit tests that need no DOM (see `test.projects`). */
 const LOGIC_TESTS = ['src/engine/**/*.test.ts', 'src/tree/**/*.test.ts', 'src/sun/**/*.test.ts', 'src/domain/**/*.test.ts', 'src/poses/**/*.test.ts'];
 
-/** 95% line coverage for each pure folder that has code (they are empty until M1/M2/M5, and a threshold for a folder with no files fails the run). */
+/** 95% line coverage for each pure folder (engine, tree, sun, domain) that has code (they are empty until M1/M2/M5, and a threshold for a folder with no files fails the run). */
 const PURE_THRESHOLDS = Object.fromEntries(
-  ['src/engine', 'src/tree', 'src/sun']
+  ['src/engine', 'src/tree', 'src/sun', 'src/domain']
     .filter((dir) => existsSync(dir) && readdirSync(dir, { recursive: true }).some((f) => typeof f === 'string' && /\.tsx?$/.test(f) && !/\.test\.|testUtils/.test(f)))
     .map((dir) => [`${dir}/**`, { lines: 95 }]),
 );
@@ -121,9 +121,9 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.test.{ts,tsx}', 'src/**/testUtils.ts', 'src/test/**', 'src/main.tsx', 'src/vite-env.d.ts'],
-      // 80% overall, plus 95% for each pure folder once it has code (PURE_THRESHOLDS).
+      // 90% overall, plus 95% for each pure folder once it has code (PURE_THRESHOLDS).
       thresholds: {
-        lines: 80,
+        lines: 90,
         ...PURE_THRESHOLDS,
       },
     },

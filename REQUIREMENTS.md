@@ -261,7 +261,7 @@ As next5 §12: README for users and developers; a skippable first-run intro endi
 
 Same as next5 §14 (Q-1…Q-7, REL1…REL5):
 - `npm run check` runs lint, types, unit + property tests with coverage, build, and e2e. Must pass before every commit.
-- Engine (§6) and sun (§10) ≥ 95% line coverage; app ≥ 80%.
+- Engine (§6), sun (§10) and domain helpers ≥ 95% line coverage; app ≥ 90%.
 - Property tests: every generated shot only contains attending people; no two shots have identical people; regenerating keeps manual edits; an ordering contains every shot exactly once; respecting "release older people early" never schedules a grandparent shot after one they're not in once they're released; Undo exactly reverses Done.
 - E2E in WebKit at iPhone 17: create a family → generate shots → plan a shoot → run it with a late arrival, a skip, an added shot and Undo → finish. Offline launch in Chromium.
 - GitHub Actions CI; deploy to GitHub Pages only on a release; changelog notes in `changes/`; Cloudflare Pages beta previews for draft PRs.

@@ -31,7 +31,7 @@ Last updated: 2026-11-15 (M6 + M8)
 | REL3 | ✅ | What's new sheet after an update, and under Settings (M0). |
 | REL4 | ✅ | CI checks that a pull request has a note or is a complete release (M0). |
 | REL5 | 🟡 | Beta builds on Cloudflare Pages: `CF_PAGES=1` builds are marked Beta, kept apart and list "Coming next" (M0). The Cloudflare project itself still has to be connected. |
-| Q-1…Q-7 | 🟡 | `npm run check` runs lint, types, unit tests with coverage, build and e2e (M0). Coverage thresholds: 80% overall; 95% for `src/engine`, `src/tree` and `src/sun` switch on automatically once each folder has code. |
+| Q-1…Q-7 | 🟡 | `npm run check` runs lint, types, unit tests with coverage, build and e2e (M0). Coverage thresholds: 90% overall; 95% for `src/engine`, `src/tree`, `src/sun` and `src/domain` switch on automatically once each folder has code. |
 
 
 ## 3. Platform and technical constraints
