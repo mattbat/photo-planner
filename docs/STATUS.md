@@ -59,6 +59,8 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | F5 | ✅ | "Not usually at shoots" switch on the person sheet; used when a shoot is created (M1). |
 | F6 | ✅ | Several top couples joined by marriage in one tree (demo family). Templates that start from each couple come with M2. |
 | F7 | ✅ | Engine `validateFamily` (via `checkFamily` in `src/domain/shotView.ts`; the old `familyChecks.ts` was removed): own ancestor, own parent, more than two parents, child of a person and their parent, parent who is also a partner; shown as a list on the family screen (M1). |
+| F9 | ✅ | `ChoosePerson` (searchable list) in the person sheet (parent, partner, child), "+ child" on a couple (`NameSheet`) and Quick add people into an existing family (`QuickAddFamilySheet` `into`). Candidates from `linkCandidates` (`src/domain/links.ts`); `linkParent`, `linkChild`, `linkPartner` and `quickAddFamily` (with `familyId`) in `repo.ts` run `validateFamily` and refuse a link that would add a problem. Unit, property, repo, screen and e2e tests. |
+| F10 | ✅ | `DuplicateHint` ("Is this the same Emma? Link instead") from `similarPeople`; never blocks adding. |
 | F8 | ✅ | Guests and pets with a name, kind and emoji, per family (per-shoot extras arrive with shoots, M3). |
 
 ## 5a. Family tree diagram

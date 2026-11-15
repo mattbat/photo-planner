@@ -3,12 +3,14 @@ import { useMemo, useState } from 'react';
 import { ExtraSheet } from '../components/ExtraSheet';
 import { FamilyTree } from '../components/FamilyTree';
 import { NameSheet } from '../components/NameSheet';
+import { QuickAddFamilySheet } from '../components/QuickAddFamilySheet';
 import { PersonSheet } from '../components/PersonSheet';
 import { shareTreeImage } from '../components/treeImage';
 import { Empty, Section, Segmented, TopBar } from '../components/ui';
 import { HelpLink } from '../help/parts';
 import { db } from '../data/db';
-import { addChild, addPerson } from '../data/repo';
+import { addChild, addPerson, linkChild } from '../data/repo';
+import { linkCandidates } from '../domain/links';
 import type { Extra } from '../data/types';
 import { checkFamily, describePair } from '../domain/shotView';
 import { displayName, groupByGeneration, indexFamily, toTreePeople } from '../domain/familyView';
@@ -17,6 +19,7 @@ import { paths } from '../router';
 type View = 'tree' | 'list';
 type Dialog =
   | { kind: 'addPerson' }
+  | { kind: 'quickAdd' }
   | { kind: 'addChild'; parentIds: [string, string] }
   | { kind: 'extra'; extra?: Extra }
   | null;
@@ -189,6 +192,11 @@ export function FamilyScreen({ familyId }: { familyId: string }) {
       <button type="button" className="btn secondary wide" onClick={() => setDialog({ kind: 'addPerson' })}>
         + Person
       </button>
+      {data.people.length > 0 && (
+        <button type="button" className="btn secondary wide" onClick={() => setDialog({ kind: 'quickAdd' })}>
+          Quick add people
+        </button>
+      )}
 
       <Section title="Extras (guests and pets)">
         {extras.length === 0 && <p className="status-msg">Pets and guests aren’t part of the tree. Add them here to put them in shots.</p>}
@@ -219,12 +227,24 @@ export function FamilyScreen({ familyId }: { familyId: string }) {
           onOpen={setPersonId}
         />
       )}
+      {dialog?.kind === 'quickAdd' && (
+        <QuickAddFamilySheet into={{ familyId, people: data.people }} onClose={() => setDialog(null)} onCreated={() => setDialog(null)} />
+      )}
       {dialog?.kind === 'addPerson' && (
         <NameSheet
           title="Add a person"
           label="Name"
           submitLabel="Add"
           onClose={() => setDialog(null)}
+          existing={{
+            people: data.people,
+            action: 'Open',
+            onPick: (p) => {
+              setDialog(null);
+              setPersonId(p.id);
+              return { ok: true };
+            },
+          }}
           onSubmit={async (name) => {
             const p = await addPerson(familyId, { name, grown: true });
             setDialog(null);
@@ -238,6 +258,14 @@ export function FamilyScreen({ familyId }: { familyId: string }) {
           label="Child’s name"
           submitLabel="Add child"
           onClose={() => setDialog(null)}
+          existing={{
+            people: linkCandidates(data.people, data.partnerships, dialog.parentIds[0], 'child', dialog.parentIds[1]),
+            onPick: async (p) => {
+              const result = await linkChild(dialog.parentIds[0], p.id, dialog.parentIds[1]);
+              if (result.ok) setDialog(null);
+              return result;
+            },
+          }}
           onSubmit={async (name) => {
             await addChild(familyId, name, dialog.parentIds);
             setDialog(null);

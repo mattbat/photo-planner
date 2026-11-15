@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../data/db';
-import { createFamily, updatePerson } from '../data/repo';
+import { addPerson, createFamily, updatePerson } from '../data/repo';
 import { clearDb, seedFamily } from '../test/helpers';
 
 const share = vi.hoisted(() => vi.fn());
@@ -86,15 +86,19 @@ describe('FamilyScreen', () => {
   });
 
   it('manages parents, partners and children from the sheet', async () => {
-    const { family, ivy, max, nia, gran } = await seedFamily();
+    const { family, ivy, max, nia } = await seedFamily();
+    const joe = await addPerson(family.id, { name: 'Uncle Joe' });
     const { user, sheet } = await open(family.id, 'Ivy Tester');
+    // Gran is Max's parent, so she can't also be Ivy's second parent: she isn't offered.
     // Parents: remove one, add another.
     await user.click(within(sheet).getByRole('button', { name: 'Remove parent Nia Tester' }));
     await waitFor(async () => expect((await db.people.get(ivy.id))!.parentIds).toEqual([max.id]));
-    await user.selectOptions(await within(sheet).findByLabelText('Add parent'), gran.id);
-    await waitFor(async () => expect((await db.people.get(ivy.id))!.parentIds).toEqual([max.id, gran.id]));
-    // The sheet re-renders from a live query, so wait for it to drop the picker.
-    await waitFor(() => expect(within(sheet).queryByLabelText('Add parent')).not.toBeInTheDocument());
+    await user.click(await within(sheet).findByRole('button', { name: 'Choose someone already in the family (parent)' }));
+    expect(within(sheet).queryByRole('button', { name: 'Gran Tester' })).not.toBeInTheDocument();
+    await user.click(await within(sheet).findByRole('button', { name: 'Uncle Joe' }));
+    await waitFor(async () => expect((await db.people.get(ivy.id))!.parentIds).toEqual([max.id, joe.id]));
+    // The sheet re-renders from a live query, so wait for it to drop the parent form.
+    await waitFor(() => expect(within(sheet).queryByLabelText('New parent’s name')).not.toBeInTheDocument());
 
     // Partners: a new person, then toggle status, then remove.
     await user.type(within(sheet).getByLabelText('New partner’s name'), 'Sky');
@@ -106,7 +110,9 @@ describe('FamilyScreen', () => {
     });
     await user.click(await within(sheet).findByRole('button', { name: /Sky is together/ }));
     await waitFor(async () => expect((await db.partnerships.toArray()).find((p) => p.personIds.includes(sky.id))!.status).toBe('separated'));
-    await user.selectOptions(await within(sheet).findByLabelText('Add existing partner'), nia.id);
+    await user.click(await within(sheet).findByRole('button', { name: 'Choose someone already in the family (partner)' }));
+    await user.type(await within(sheet).findByLabelText('Search the family'), 'nia');
+    await user.click(await within(sheet).findByRole('button', { name: 'Nia Tester' }));
     await waitFor(async () => expect(await db.partnerships.count()).toBe(4));
     await user.click(within(sheet).getByRole('button', { name: 'Remove partner Sky' }));
     await waitFor(async () => expect(await db.partnerships.count()).toBe(3));
@@ -124,6 +130,97 @@ describe('FamilyScreen', () => {
     // Tapping a relative opens them in the same sheet.
     await user.click(within(sheet).getByRole('button', { name: 'Tiny' }));
     expect(await screen.findByRole('dialog', { name: 'Tiny' })).toBeInTheDocument();
+  });
+
+  it('adds a new parent, and picks existing people as parent, partner and child without duplicates (F9)', async () => {
+    const { family, ivy, gran, grandad, max } = await seedFamily();
+    const sam = await addPerson(family.id, { name: 'Sam Other' });
+    const { user, sheet } = await open(family.id, 'Sam Other');
+    // A new parent.
+    await user.type(within(sheet).getByLabelText('New parent’s name'), 'Pip');
+    await user.click(within(sheet).getByRole('button', { name: 'Add parent' }));
+    const pip = await waitFor(async () => {
+      const found = (await db.people.toArray()).find((p) => p.name === 'Pip');
+      expect(found).toBeDefined();
+      return found!;
+    });
+    expect((await db.people.get(sam.id))!.parentIds).toEqual([pip.id]);
+    // The picker lists only possible people: not Sam, Pip (a parent) and nobody who would make a loop.
+    await user.click(within(sheet).getByRole('button', { name: 'Choose someone already in the family (parent)' }));
+    const list = within(sheet).getByRole('group', { name: 'Choose someone already in the family' });
+    expect(within(list).queryByRole('button', { name: 'Sam Other' })).not.toBeInTheDocument();
+    expect(within(list).queryByRole('button', { name: 'Pip' })).not.toBeInTheDocument();
+    expect(within(list).getByRole('button', { name: 'Gran Tester' })).toBeInTheDocument();
+    await user.click(within(list).getByRole('button', { name: 'Cancel' }));
+    // A child: pick Ivy's grandfather as a child of Sam? He is a parentless adult, so he can be.
+    await user.click(within(sheet).getByRole('button', { name: 'Choose someone already in the family (child)' }));
+    const group = within(sheet).getByRole('group', { name: 'Choose someone already in the family' });
+    expect(within(group).queryByRole('button', { name: 'Ivy Tester' })).not.toBeInTheDocument(); // Ivy already has two parents
+    expect(within(group).queryByRole('button', { name: 'Pip' })).not.toBeInTheDocument(); // Pip is Sam's parent
+    await user.click(within(group).getByRole('button', { name: 'Grandad Tester' }));
+    await waitFor(async () => expect((await db.people.get(grandad.id))!.parentIds).toEqual([sam.id]));
+    expect(await db.people.count()).toBe(7);
+    void ivy;
+    void gran;
+    void max;
+  });
+
+  it('warns about a possible duplicate and links instead (F10), and says why a link is refused', async () => {
+    const { family, nia } = await seedFamily();
+    await addPerson(family.id, { name: 'Emma Rivera' });
+    const { user, sheet } = await open(family.id, 'Nia Tester');
+    // Nia's partner is Max already; typing "Emma" offers the existing Emma.
+    await user.type(within(sheet).getByLabelText('New child’s name'), 'Emma');
+    expect(await within(sheet).findByText(/Is this the same Emma Rivera\?/)).toBeInTheDocument();
+    await user.click(within(sheet).getByRole('button', { name: 'Link Emma Rivera instead' }));
+    await waitFor(async () => {
+      const emma = (await db.people.toArray()).find((p) => p.name === 'Emma Rivera')!;
+      expect(emma.parentIds).toEqual([nia.id]);
+    });
+    expect((await db.people.toArray()).filter((p) => p.name.startsWith('Emma'))).toHaveLength(1);
+    // A hint never blocks adding a new person with that name.
+    await user.click(within(sheet).getByRole('button', { name: 'Add child' }));
+    await waitFor(async () => expect((await db.people.toArray()).filter((p) => p.name === 'Emma')).toHaveLength(1));
+  });
+
+  it('adds a child to a couple from the tree by choosing someone already there', async () => {
+    const { family, gran, grandad } = await seedFamily();
+    const lone = await addPerson(family.id, { name: 'Lone Kid', parentIds: [gran.id] });
+    const user = userEvent.setup();
+    render(<FamilyScreen familyId={family.id} />);
+    await screen.findByRole('button', { name: /^Gran Tester,/ });
+    const add = await screen.findAllByRole('button', { name: /add child/i });
+    await user.click(add[0]!);
+    const sheet = await screen.findByRole('dialog');
+    await user.click(within(sheet).getByRole('button', { name: 'Choose someone already in the family' }));
+    const group = within(sheet).getByRole('group', { name: 'Choose someone already in the family' });
+    expect(within(group).queryByRole('button', { name: 'Max Tester' })).not.toBeInTheDocument(); // already their child
+    await user.click(within(group).getByRole('button', { name: 'Lone Kid' }));
+    await waitFor(async () => expect((await db.people.get(lone.id))!.parentIds).toEqual([gran.id, grandad.id]));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('quick add people into an existing family can pick someone already there', async () => {
+    const { family, ivy } = await seedFamily();
+    const user = userEvent.setup();
+    render(<FamilyScreen familyId={family.id} />);
+    await user.click(await screen.findByRole('button', { name: 'Quick add people' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Quick add people' });
+    expect(within(sheet).queryByText(/What is the family called/)).not.toBeInTheDocument();
+    expect(within(sheet).getByText(/Step 1 of 3/)).toBeInTheDocument();
+    await user.click(within(sheet).getByRole('button', { name: 'Choose someone already in the family (First grandparent)' }));
+    await user.click(within(sheet).getByRole('button', { name: 'Max Tester' }));
+    expect(within(sheet).getByText('Max Tester')).toBeInTheDocument();
+    await user.click(within(sheet).getByRole('button', { name: 'Next' }));
+    await user.type(within(sheet).getByLabelText('Children'), 'Wren');
+    await user.click(within(sheet).getByRole('button', { name: 'Next' }));
+    await user.click(within(sheet).getByRole('button', { name: 'Choose someone already in the family (kids of Wren)' }));
+    await user.click(within(sheet).getByRole('button', { name: 'Ivy Tester' }));
+    await user.click(within(sheet).getByRole('button', { name: 'Add them' }));
+    // Ivy already had two parents, so the third is refused and the sheet explains why.
+    expect(await within(sheet).findByRole('alert')).toHaveTextContent(/more than two parents/);
+    expect((await db.people.get(ivy.id))!.parentIds).toHaveLength(2);
+    expect((await db.people.toArray()).some((p) => p.name === 'Wren')).toBe(false);
   });
 
   it('deletes a person after confirming, and cleans up the links', async () => {

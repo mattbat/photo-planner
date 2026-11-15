@@ -101,6 +101,14 @@ const ALL: Topic[] = [
           </li>
           <li>Children can have two parents, one parent, or a step-parent. Pick who the child is with.</li>
         </ul>
+        <h2>Someone who is already in the family</h2>
+        <p>
+          Wherever you link people (a parent, partner or child on a person, <b>+ child</b> on a couple, and{' '}
+          <b>Quick add people</b>), tap <b>Choose someone already in the family</b> instead of adding a new person. It is
+          a searchable list that leaves out anyone who can’t be chosen, such as the person themselves or their own
+          descendants as a parent. Use it to join two branches you added separately. If you start typing a name that
+          matches someone already there, the app asks “Is this the same Emma?” and <b>Link instead</b> links her rather than making a twin.
+        </p>
         <h2>Kids and grown children</h2>
         <p>
           Each person is a kid or grown. Anyone with a partner or children of their own is treated as grown. Kids sit

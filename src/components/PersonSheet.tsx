@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { displayName, indexFamily, isGrown } from '../domain/familyView';
-import { addChild, addPerson, deletePartnership, deletePerson, ensurePartnership, updatePartnership, updatePerson } from '../data/repo';
+import { addChild, addPerson, deletePartnership, deletePerson, ensurePartnership, linkChild, linkParent, linkPartner, updatePartnership, updatePerson, type LinkResult } from '../data/repo';
+import { linkCandidates, type LinkRole } from '../domain/links';
+import { ChoosePerson, DuplicateHint } from './ChoosePerson';
 import type { Partnership, Person, Sex } from '../data/types';
 import { Info, Segmented, Sheet, Toggle } from './ui';
 
@@ -34,9 +36,11 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
   const [childName, setChildName] = useState('');
   const [childWith, setChildWith] = useState('');
   const [partnerName, setPartnerName] = useState('');
+  const [parentName, setParentName] = useState('');
+  const [picking, setPicking] = useState<LinkRole | null>(null);
+  const [linkMsg, setLinkMsg] = useState<{ role: LinkRole; text: string } | null>(null);
 
   const index = indexFamily(people, partnerships);
-  const others = people.filter((p) => p.id !== person.id).sort((a, b) => a.name.localeCompare(b.name));
   const parents = person.parentIds.map((id) => index.byId.get(id)).filter((p): p is Person => !!p);
   const children = (index.childrenOf.get(person.id) ?? []).map((id) => index.byId.get(id)!);
   const myPartnerships = partnerships.filter((pt) => pt.personIds.includes(person.id));
@@ -61,9 +65,6 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
     if (next !== person.birthYear) void updatePerson(person.id, { birthYear: next });
   };
 
-  const addParent = (id: string) => {
-    if (id && person.parentIds.length < 2) void updatePerson(person.id, { parentIds: [...person.parentIds, id] });
-  };
   const removeParent = (id: string) => void updatePerson(person.id, { parentIds: person.parentIds.filter((p) => p !== id) });
 
   const addNewPartner = async () => {
@@ -73,8 +74,12 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
     await ensurePartnership(person.familyId, [person.id, partner.id]);
     setPartnerName('');
   };
-  const addExistingPartner = (id: string) => {
-    if (id) void ensurePartnership(person.familyId, [person.id, id]);
+  const addNewParent = async () => {
+    const n = parentName.trim();
+    if (!n || person.parentIds.length >= 2) return;
+    const parent = await addPerson(person.familyId, { name: n, grown: true });
+    await updatePerson(person.id, { parentIds: [...person.parentIds, parent.id] });
+    setParentName('');
   };
 
   const addNewChild = async () => {
@@ -90,7 +95,40 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
     onClose();
   };
 
-  const available = (excluded: string[]) => others.filter((p) => !excluded.includes(p.id));
+  /** People who can be picked for a role: no impossible links (F9). */
+  const candidates = (role: LinkRole) => linkCandidates(people, partnerships, person.id, role, role === 'child' ? childWith || undefined : undefined);
+  const pick = async (role: LinkRole, other: Person) => {
+    const result: LinkResult =
+      role === 'parent' ? await linkParent(person.id, other.id) : role === 'partner' ? await linkPartner(person.id, other.id) : await linkChild(person.id, other.id, childWith || undefined);
+    setLinkMsg(result.ok ? null : { role, text: result.message });
+    if (result.ok) setPicking(null);
+  };
+  const chooser = (role: LinkRole) => {
+    const list = candidates(role);
+    const alert = linkMsg?.role === role && (
+      <p className="problems" role="alert">
+        {linkMsg.text}
+      </p>
+    );
+    if (picking === role) {
+      return (
+        <>
+          {alert}
+          <ChoosePerson people={list} onPick={(p) => void pick(role, p)} onCancel={() => setPicking(null)} />
+        </>
+      );
+    }
+    return (
+      <>
+        {alert}
+        {list.length > 0 && (
+          <button type="button" className="btn secondary wide" aria-label={`Choose someone already in the family (${role})`} onClick={() => setPicking(role)}>
+            Choose someone already in the family
+          </button>
+        )}
+      </>
+    );
+  };
 
   return (
     <Sheet title={displayName(person)} onClose={onClose}>
@@ -172,14 +210,22 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
         ))}
       </ul>
       {person.parentIds.length < 2 && (
-        <select aria-label="Add parent" value="" onChange={(e) => addParent(e.target.value)}>
-          <option value="">Add a parent…</option>
-          {available(person.parentIds).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        <>
+          <form
+            className="inline-add"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void addNewParent();
+            }}
+          >
+            <input aria-label="New parent’s name" placeholder="New parent’s name" value={parentName} onChange={(e) => setParentName(e.target.value)} />
+            <button type="submit" className="btn small" disabled={!parentName.trim()}>
+              Add parent
+            </button>
+          </form>
+          <DuplicateHint people={candidates('parent')} typed={parentName} onLink={(p) => void pick('parent', p)} />
+          {chooser('parent')}
+        </>
       )}
 
       <h3 className="sheet-sub">Partners</h3>
@@ -219,16 +265,8 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
           Add partner
         </button>
       </form>
-      {available(myPartnerships.map((pt) => partnerOf(pt)?.id ?? '')).length > 0 && (
-        <select aria-label="Add existing partner" value="" onChange={(e) => addExistingPartner(e.target.value)}>
-          <option value="">Or pick someone already in the tree…</option>
-          {available(myPartnerships.map((pt) => partnerOf(pt)?.id ?? '')).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      )}
+      <DuplicateHint people={candidates('partner')} typed={partnerName} onLink={(p) => void pick('partner', p)} />
+      {chooser('partner')}
 
       <h3 className="sheet-sub">Children</h3>
       <ul className="mini-list">
@@ -252,6 +290,7 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
           Add child
         </button>
       </form>
+      <DuplicateHint people={candidates('child')} typed={childName} onLink={(p) => void pick('child', p)} />
       {myPartnerships.length > 0 && (
         <select aria-label="Child is with" value={childWith} onChange={(e) => setChildWith(e.target.value)}>
           <option value="">Child of {person.name} only</option>
@@ -265,6 +304,8 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
           })}
         </select>
       )}
+
+      {chooser('child')}
 
       <button type="button" className="btn danger wide" onClick={() => void remove()}>
         Delete {person.name}

@@ -2193,3 +2193,34 @@ textarea::placeholder {
   color: var(--text-3);
   opacity: 1;
 }
+
+/* Pick someone already in the family, and the possible-duplicate hint (F9, F10). */
+.choose-person {
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid var(--surface-2);
+  border-radius: 12px;
+}
+
+.choose-list {
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 8px 0;
+}
+
+.dup-hint {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--warn-text);
+}
+
+.qa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.qa-picked {
+  margin: 0;
+}

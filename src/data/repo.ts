@@ -1,4 +1,5 @@
 import { addShot, markShot, makeCurrent, moveShotsUp, pickNext, setPresence, undo as undoDay, type DayState } from '../domain/shootDay';
+import { newProblems } from '../domain/links';
 import { planShoot, suggestOrder, type PlanInput, type SoloScope } from '../domain/shotView';
 import { starterPoses } from '../poses/starterPoses';
 import { demoFamily } from '../tree/fixtures';
@@ -173,9 +174,76 @@ export async function ensurePartnership(
   return addPartnership(familyId, personIds, status);
 }
 
+// Linking people who are already in the family (F9)
+
+export type LinkResult = { ok: true } | { ok: false; message: string };
+
+const refuse = (problems: string[]): LinkResult => ({ ok: false, message: problems[0] ?? 'That link isn’t possible.' });
+
+/** Everyone in a family, read in the caller's transaction. */
+async function familyParts(familyId: string) {
+  return {
+    people: await db.people.where('familyId').equals(familyId).toArray(),
+    partnerships: await db.partnerships.where('familyId').equals(familyId).toArray(),
+  };
+}
+
+/**
+ * Makes `parentId` a parent of `childId`, both already in the family. Refused,
+ * with the reason in plain words, if it would give someone three parents or
+ * make a loop (validateFamily); nothing is written then.
+ */
+export function linkParent(childId: string, parentId: string): Promise<LinkResult> {
+  return linkChild(parentId, childId);
+}
+
+/**
+ * Makes `childId` a child of `parentId` (and of `withParentId`, when adding a
+ * child to a couple), both already in the family.
+ */
+export async function linkChild(parentId: string, childId: string, withParentId?: string): Promise<LinkResult> {
+  return db.transaction('rw', [db.people, db.partnerships], async () => {
+    const [parent, child] = await Promise.all([db.people.get(parentId), db.people.get(childId)]);
+    if (!parent || !child || parent.familyId !== child.familyId) return { ok: false, message: 'That person isn’t in this family.' } as LinkResult;
+    if (parentId === childId) return { ok: false, message: `${parent.name} can’t be their own parent.` } as LinkResult;
+    const parentIds = [...new Set([...child.parentIds, parentId, ...(withParentId ? [withParentId] : [])])];
+    if (parentIds.length > 2) return { ok: false, message: `${child.name} would have more than two parents.` } as LinkResult;
+    if (parentIds.length === child.parentIds.length) return { ok: true } as LinkResult;
+    const before = await familyParts(parent.familyId);
+    const after = { ...before, people: before.people.map((p) => (p.id === childId ? { ...p, parentIds } : p)) };
+    const problems = newProblems(before, after);
+    if (problems.length) return refuse(problems);
+    await db.people.update(childId, { parentIds, updatedAt: Date.now() });
+    return { ok: true } as LinkResult;
+  });
+}
+
+/** Makes two people already in the family partners, unless that would break the tree. */
+export async function linkPartner(aId: string, bId: string, status: Partnership['status'] = 'together'): Promise<LinkResult> {
+  return db.transaction('rw', [db.people, db.partnerships], async () => {
+    const [a, b] = await Promise.all([db.people.get(aId), db.people.get(bId)]);
+    if (!a || !b || a.familyId !== b.familyId) return { ok: false, message: 'That person isn’t in this family.' } as LinkResult;
+    if (aId === bId) return { ok: false, message: `${a.name} can’t be their own partner.` } as LinkResult;
+    const before = await familyParts(a.familyId);
+    const fake = { id: 'new', familyId: a.familyId, personIds: [aId, bId] as [string, string], status, createdAt: 0, updatedAt: 0 };
+    const exists = before.partnerships.some((pt) => pt.personIds.includes(aId) && pt.personIds.includes(bId));
+    const problems = exists ? [] : newProblems(before, { ...before, partnerships: [...before.partnerships, fake] });
+    if (problems.length) return refuse(problems);
+    await ensurePartnership(a.familyId, [aId, bId], status);
+    return { ok: true } as LinkResult;
+  });
+}
+
 /** A person to create in `quickAddFamily` / the demo: names only, the rest optional. */
 export interface QuickAddChild {
+  /** The name of a new child. Ignored when `existingId` is set. */
   name: string;
+  /** An existing person in the family, as the child (F9). */
+  existingId?: string;
+  /** An existing person as the partner, instead of `partner`. */
+  partnerId?: string;
+  /** Existing people as kids, as well as the new names in `kids`. */
+  kidIds?: string[];
   /** A grown child who is still single and childless (the default is true). */
   grown?: boolean;
   partner?: string;
@@ -184,8 +252,12 @@ export interface QuickAddChild {
 
 export interface QuickAddInput {
   familyName: string;
+  /** Add to this family instead of making a new one (F9). */
+  familyId?: string;
   /** One or two names; two are made partners. */
   grandparents: string[];
+  /** Existing people as the top couple, in place of or as well as `grandparents` (at most two in all). */
+  grandparentIds?: string[];
   children: QuickAddChild[];
 }
 
@@ -197,32 +269,72 @@ const clean = (names: string[] | undefined): string[] => (names ?? []).map((n) =
  * skipped. Returns the new family.
  */
 export async function quickAddFamily(input: QuickAddInput): Promise<Family> {
-  const family: Family = stamp({ name: input.familyName.trim() || 'New family', archived: false });
+  const existingFamily = input.familyId ? await db.families.get(input.familyId) : undefined;
+  if (input.familyId && !existingFamily) throw new Error('That family isn’t on this phone any more.');
+  const family: Family = existingFamily ?? stamp({ name: input.familyName.trim() || 'New family', archived: false });
+  const before = existingFamily ? await familyParts(family.id) : { people: [] as Person[], partnerships: [] as Partnership[] };
   const people: Person[] = [];
   const partnerships: Partnership[] = [];
+  /** Existing people who gain parents or a partner. */
+  const changed = new Map<string, Person>();
+  const known = new Map(before.people.map((p) => [p.id, p]));
   const person = (name: string, fields: Partial<Person> = {}): Person => {
     const p: Person = stamp({ familyId: family.id, name, parentIds: [], ...fields });
     people.push(p);
+    known.set(p.id, p);
     return p;
   };
-  const couple = (a: Person, b: Person) => partnerships.push(stamp({ familyId: family.id, personIds: [a.id, b.id] as [string, string], status: 'together' as const }));
+  const existing = (id: string): Person => {
+    const p = changed.get(id) ?? known.get(id);
+    if (!p || p.familyId !== family.id) throw new Error('That person isn’t in this family.');
+    return p;
+  };
+  const withParents = (id: string, parentIds: string[]) => {
+    const p = existing(id);
+    const next = { ...p, parentIds: [...new Set([...p.parentIds, ...parentIds])], updatedAt: Date.now() };
+    changed.set(id, next);
+    known.set(id, next);
+    return next;
+  };
+  const couple = (a: Person, b: Person) => {
+    if (a.id === b.id || partnerships.some((x) => x.personIds.includes(a.id) && x.personIds.includes(b.id))) return;
+    if (before.partnerships.some((x) => x.personIds.includes(a.id) && x.personIds.includes(b.id))) return;
+    partnerships.push(stamp({ familyId: family.id, personIds: [a.id, b.id] as [string, string], status: 'together' as const }));
+  };
 
-  const tops = clean(input.grandparents).slice(0, 2).map((name) => person(name, { grown: true }));
+  const tops = [...new Set(input.grandparentIds ?? [])].map(existing);
+  for (const name of clean(input.grandparents)) if (tops.length < 2) tops.push(person(name, { grown: true }));
   if (tops.length === 2) couple(tops[0]!, tops[1]!);
+  const topIds = tops.map((t) => t.id);
   for (const child of input.children) {
     const name = child.name.trim();
-    if (!name) continue;
-    const partnerName = child.partner?.trim();
+    if (!child.existingId && !name) continue;
+    const partnerName = child.partnerId ? undefined : child.partner?.trim();
     const kids = clean(child.kids);
+    const kidIds = child.kidIds ?? [];
     const grown = child.grown ?? true;
-    const c = person(name, { parentIds: tops.map((t) => t.id), grown: grown || !!partnerName || kids.length > 0 });
-    const partner = partnerName ? person(partnerName, { grown: true }) : undefined;
+    const hasPartner = !!(child.partnerId || partnerName);
+    const c = child.existingId
+      ? withParents(child.existingId, topIds)
+      : person(name, { parentIds: topIds, grown: grown || hasPartner || kids.length > 0 || kidIds.length > 0 });
+    const partner = child.partnerId ? existing(child.partnerId) : partnerName ? person(partnerName, { grown: true }) : undefined;
     if (partner) couple(c, partner);
-    for (const kid of kids) person(kid, { parentIds: partner ? [c.id, partner.id] : [c.id], grown: false, ageGroup: 'child' });
+    const kidParents = partner ? [c.id, partner.id] : [c.id];
+    for (const kid of kids) person(kid, { parentIds: kidParents, grown: false, ageGroup: 'child' });
+    for (const id of kidIds) withParents(id, kidParents);
+  }
+  if (existingFamily) {
+    const after = {
+      people: [...before.people.map((p) => changed.get(p.id) ?? p), ...people],
+      partnerships: [...before.partnerships, ...partnerships],
+    };
+    const problems = newProblems(before, after);
+    if (problems.length) throw new Error(problems[0]);
   }
   await db.transaction('rw', [db.families, db.people, db.partnerships], async () => {
-    await db.families.add(family);
+    if (!existingFamily) await db.families.add(family);
     await db.people.bulkAdd(people);
+    for (const p of changed.values()) await db.people.update(p.id, { parentIds: p.parentIds, updatedAt: p.updatedAt });
     await db.partnerships.bulkAdd(partnerships);
   });
   return family;

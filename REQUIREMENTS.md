@@ -84,6 +84,8 @@ Same as next5 unless noted.
 | F5 | A person can be marked "not usually at shoots" (e.g. lives abroad) so they're unchecked by default. |
 | F6 | **Several top couples in one tree:** both sets of grandparents (or a reunion with great-aunts and uncles) live in the same family, joined through marriages. Templates work from each top couple ("Jen's parents + all their grandkids"). |
 | F7 | Validation in plain language: "Emma is listed as a child of both Mike and Mike's mother." |
+| F9 | **Link people already in the family.** Wherever one person is linked to another (quick add, parent, partner, child on the person sheet, "+ child" on a couple), offer **Choose someone already in the family** next to adding a new person: a searchable list that leaves out impossible choices (themselves, own descendants as a parent, own ancestors as a child, existing links, a third parent). A link that would still break the tree (F7) is refused with the reason. Quick add can also add into an existing family and pick existing people (decided 2026-11-15). |
+| F10 | A new name that matches someone already in the family ("Emma") shows a light "Is this the same Emma?" hint with **Link instead**; it never blocks adding (decided 2026-11-15). |
 | F8 | Extra people (guests, pets) per family or per shoot, with a name and an optional photo or emoji. |
 
 ## 5a. Family tree diagram
@@ -321,6 +323,7 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 | 2026-11-15 | A family tree diagram (§5a) is part of v1, built with the families milestone (M1). |
 | 2026-11-15 | The biggest shoot is about 20 people. Design and test for 2–30 people and up to ~80 shots. |
 | 2026-11-15 | No deceased people in the tree. |
+| 2026-11-15 | People already in a family can be picked wherever people are linked, with a duplicate-name hint (F9, F10), so separately added branches can be joined. |
 | 2026-11-15 | Build started; the Q12 default shot types are used until changed. Built by Claude with subagents, milestone by milestone. |
 
 ## 18. Risks

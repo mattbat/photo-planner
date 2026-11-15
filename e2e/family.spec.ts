@@ -34,3 +34,24 @@ test('loads the demo family, opens the tree, taps a person and edits the name', 
   const file = await download;
   if (file) expect(file.suggestedFilename()).toMatch(/tree\.png$/);
 });
+
+test('picks someone already in the family as a parent, and warns about a possible duplicate', async ({ page }) => {
+  await page.goto('./#/families');
+  await page.getByRole('button', { name: 'Load demo family' }).click();
+  await expect(page.getByRole('heading', { name: /Pike–Vega family/ })).toBeVisible();
+  await page.getByRole('radio', { name: 'List' }).click();
+  await page.getByRole('button', { name: /^Ruth Pike/ }).first().click();
+  const sheet = page.getByRole('dialog', { name: /Ruth Pike/ });
+  // Typing the name of someone who is already there offers to link instead of making a twin.
+  await sheet.getByLabel('New partner’s name').fill('Dana');
+  await expect(sheet.getByText(/Is this the same/).first()).toBeVisible();
+  await sheet.getByLabel('New partner’s name').fill('');
+  // The picker is searchable and never offers the person themselves.
+  await sheet.getByRole('button', { name: 'Choose someone already in the family (child)' }).scrollIntoViewIfNeeded();
+  await sheet.getByRole('button', { name: 'Choose someone already in the family (child)' }).click();
+  const group = sheet.getByRole('group', { name: 'Choose someone already in the family' });
+  await expect(group).toBeVisible();
+  await expect(group.getByRole('button', { name: /^Ruth Pike$/ })).toHaveCount(0);
+  await group.getByLabel('Search the family').fill('zzzz');
+  await expect(group.getByText('No one matches.')).toBeVisible();
+});
