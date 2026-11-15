@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useState } from 'react';
-import { Empty, TopBar } from '../components/ui';
+import { Empty, SettingsLink, TopBar } from '../components/ui';
 import { db } from '../data/db';
 import { seedStarterPoses } from '../data/repo';
 import { POSE_CATEGORIES, POSE_TAGS, type Pose, type PoseCategory, type PoseTag } from '../data/types';
@@ -12,7 +12,7 @@ import { poseImageSrc } from './posePhoto';
 
 const SIZES = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15];
 
-/** The pose library (PL1–PL6): category chips, search, size and tag filters, favourites. */
+/** The pose library (PL1–PL6): category chips, search, size and tag filters, favorites. */
 export function PosesScreen() {
   const poses = useLiveQuery(() => db.poses.toArray());
   const [category, setCategory] = useState<PoseCategory | null>(null);
@@ -42,11 +42,7 @@ export function PosesScreen() {
     <main className="screen">
       <TopBar
         title="Poses"
-        action={
-          <a href={paths.settings()} aria-label="Settings">
-            ⚙︎
-          </a>
-        }
+        action={<SettingsLink />}
       />
       <div className="pl-cats" role="group" aria-label="Category">
         <button type="button" className="pl-pill" aria-pressed={category === null} onClick={() => setCategory(null)}>
@@ -71,7 +67,7 @@ export function PosesScreen() {
           Filters{activeFilters > 0 ? ` (${activeFilters})` : ''}
         </button>
         <button type="button" className="pl-pill" aria-pressed={favOnly} onClick={() => setFavOnly(!favOnly)}>
-          ★ Favourites
+          ★ Favorites
         </button>
         <button type="button" className="btn small" onClick={() => setAdding(true)}>
           + Add pose
@@ -125,7 +121,7 @@ function PoseCard({ pose }: { pose: Pose }) {
       <span className="pl-thumb">
         {pose.image ? <img src={poseImageSrc(pose.image)} alt="" loading="lazy" /> : <span className="pl-noimg" aria-hidden>🧍</span>}
         {pose.favorite && (
-          <span className="pl-star" aria-label="Favourite">
+          <span className="pl-star" aria-label="Favorite">
             ★
           </span>
         )}

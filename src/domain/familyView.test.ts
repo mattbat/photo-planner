@@ -74,10 +74,10 @@ describe('toTreePeople', () => {
 
 describe('groupByGeneration and displayName', () => {
   it('groups by the tree row, in name order', () => {
-    const people = [person('kid', { name: 'Kid', parentIds: ['mum'] }), person('mum', { name: 'Mum' }), person('dad', { name: 'Dad' })];
+    const people = [person('kid', { name: 'Kid', parentIds: ['mum'] }), person('mum', { name: 'Mom' }), person('dad', { name: 'Dad' })];
     const groups = groupByGeneration(people, [pair('mum', 'dad')]);
     expect(groups.map((g) => [g.generation, g.people.map((p) => p.name)])).toEqual([
-      [1, ['Dad', 'Mum']],
+      [1, ['Dad', 'Mom']],
       [2, ['Kid']],
     ]);
   });
@@ -87,7 +87,7 @@ describe('groupByGeneration and displayName', () => {
   });
 });
 
-describe('branch colours (V2)', () => {
+describe('branch colors (V2)', () => {
   /** The demo family as stored people, with random-looking ids in a shuffled order, as the database returns them. */
   const stored = (salt: string, shuffle: boolean) => {
     const ids = new Map(demoFamily.map((t, i) => [t.id, `${salt}-${(i * 7919) % 101}-${t.id}`]));
@@ -112,7 +112,7 @@ describe('branch colours (V2)', () => {
     expect(results[2]).toEqual(results[0]);
   });
 
-  it('give each branch of a fresh demo family its own colour', () => {
+  it('give each branch of a fresh demo family its own color', () => {
     const { people, partnerships } = stored('z', true);
     const colors = byName(people, branchColors(toTreePeople(people, partnerships)));
     const heads = ['Ben Pike', 'Dana Pike', 'Ruth Pike', 'Carla Vega', 'Gabe Vega'];

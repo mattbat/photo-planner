@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../data/db';
-import { createShoot, startShoot, updateSettings, updateShot, getSettings } from '../data/repo';
+import { createShoot, startShoot, togglePose, updateSettings, updateShot, getSettings } from '../data/repo';
 import { clearDb, seedFamily } from '../test/helpers';
 import { LiveScreen } from './LiveScreen';
 
@@ -44,6 +44,19 @@ describe('LiveScreen', () => {
     expect(await card()).toHaveTextContent(s.shots.find((x) => x.id === s.order[0])!.name);
     expect(screen.getByText('LIGHT SLOT')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Progress' })).toHaveTextContent(/0 of \d+ done/);
+  });
+
+  it('counts Shot N of T and X left as progress, whatever the shot order (fix)', async () => {
+    const { shoot, user } = await open();
+    const total = (await reload(shoot.id)).shots.length;
+    const kicker = async () => (await card()).querySelector('.live-kicker')!.textContent;
+    expect(await kicker()).toContain(`Shot 1 of ${total} · ${total} left`);
+    await user.click(screen.getByRole('button', { name: 'Done ✓' }));
+    await waitFor(async () => expect(await kicker()).toContain(`Shot 2 of ${total} · ${total - 1} left`));
+    await user.click(screen.getByRole('button', { name: 'Skip' }));
+    await waitFor(async () => expect(await kicker()).toContain(`Shot 3 of ${total} · ${total - 2} left`));
+    await user.click(screen.getByRole('button', { name: /^Undo Skip/ }));
+    await waitFor(async () => expect(await kicker()).toContain(`Shot 2 of ${total} · ${total - 1} left`));
   });
 
   it('groups the people in the shot by branch with big names, and shows extras with emoji', async () => {
@@ -208,5 +221,35 @@ describe('LiveScreen', () => {
     await db.shoots.update(shoot.id, { shots: (await reload(shoot.id)).shots.map((x) => ({ ...x, status: 'done' as const })) });
     await user.click(await screen.findByRole('button', { name: 'Finish shoot' }));
     await waitFor(async () => expect((await reload(shoot.id)).status).toBe('done'));
+  });
+
+  it('marking someone Early on the day re-orders only the shots still to do, and says so (O8)', async () => {
+    const { shoot, user, ivy } = await open();
+    await user.click(screen.getByRole('button', { name: 'Done ✓' }));
+    await waitFor(async () => expect((await reload(shoot.id)).shots.filter((x) => x.status === 'done')).toHaveLength(1));
+    const mid = await reload(shoot.id);
+    const doneId = mid.shots.find((x) => x.status === 'done')!.id;
+    await user.click(screen.getByRole('button', { name: /^Who’s here/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Who’s here' });
+    await user.click(within(within(dialog).getByRole('radiogroup', { name: 'Ivy Tester goes' })).getByRole('radio', { name: 'Early' }));
+    expect(await within(dialog).findByRole('status')).toHaveTextContent(/Reordered: Ivy’s \d+ shots? (is|are) next\./);
+    const after = await reload(shoot.id);
+    expect(after.priorities).toEqual({ [ivy.id]: 'early' });
+    expect(after.order.indexOf(doneId)).toBe(mid.order.indexOf(doneId));
+    expect(after.currentShotId).toBe(mid.currentShotId);
+  });
+
+  it('shows every pose on the current shot as a row, and a tap opens its directions (PL5)', async () => {
+    const { shoot, user } = await open();
+    const first = (await reload(shoot.id)).order[0]!;
+    await togglePose(shoot.id, first, 'cluster-by-household');
+    await togglePose(shoot.id, first, 'v-shape');
+    const row = await screen.findByRole('list', { name: 'Poses for this shot' });
+    expect(within(row).getAllByRole('listitem')).toHaveLength(2);
+    expect(await card()).toHaveTextContent('Suggested poses (2)');
+    await user.click(within(row).getAllByRole('button')[0]!);
+    const sheet = await screen.findByRole('dialog');
+    expect(within(sheet).getByRole('link', { name: 'Open the pose' })).toBeInTheDocument();
+    expect(within(sheet).getAllByRole('listitem').length).toBeGreaterThan(0);
   });
 });

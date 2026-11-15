@@ -93,6 +93,8 @@ const isOrderOptions = exact({
   releaseOlderEarly: isBoolean,
   bigGroupFirst: isBoolean,
   mustHavesEarly: isBoolean,
+  // Added later: older backups don't have it.
+  everyoneFirst: (v) => v === undefined || isBoolean(v),
 });
 const isShot: Check = (value) =>
   exact({
@@ -105,6 +107,9 @@ const isShot: Check = (value) =>
     mustHave: isBoolean,
     notes: isString,
     status: oneOf('todo', 'done', 'skipped', 'retake'),
+    // Poses: the new list, or the old single id from older files.
+    poseIds: (v) => v === undefined || listOf(isString, 100)(v),
+    poseId: (v) => v === undefined || isString(v),
   })(value);
 const isEvent = exact({
   at: isNumber,
@@ -135,6 +140,7 @@ export const isValidShoot = record(
     startedAt: isNumber,
     finishedAt: isNumber,
     handoff: exact({ n: isNumber, role: oneOf('photographer', 'assistant'), away: isBoolean }),
+    priorities: recordOf(oneOf('early', 'late')),
     forecast: exact({ fetchedAt: isNumber, date: isString, latitude: isNumber, longitude: isNumber, hours: Array.isArray }),
   },
 );
@@ -184,6 +190,8 @@ export const isValidSettings = record(
       defaultTemplates: isTemplateSettings,
       defaultOrderOptions: isOrderOptions,
       timeEstimates: exact({ small: isNumber, medium: isNumber, large: isNumber, setup: isNumber }),
+      // Added later: older backups don't have it.
+      units: (v) => v === undefined || v === 'us' || v === 'metric',
     }),
   },
   {},

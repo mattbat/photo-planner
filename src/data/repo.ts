@@ -1,5 +1,7 @@
-import { addShot, markShot, makeCurrent, moveShotsUp, pickNext, setPresence, undo as undoDay, type DayState } from '../domain/shootDay';
-import { planShoot, suggestOrder, type PlanInput, type SoloScope } from '../domain/shotView';
+import { currentShot, addShot, markShot, makeCurrent, moveShotsUp, pickNext, setPresence, undo as undoDay, type DayState } from '../domain/shootDay';
+import { newProblems } from '../domain/links';
+import { migrateShoot, poseIdsOf } from '../domain/shotPoses';
+import { planShoot, suggestDayOrder, suggestOrder, type PlanInput, type SoloScope } from '../domain/shotView';
 import { starterPoses } from '../poses/starterPoses';
 import { demoFamily } from '../tree/fixtures';
 import { ALL_TABLES, db } from './db';
@@ -15,6 +17,7 @@ import type {
   Pose,
   PosePhoto,
   Presence,
+  Priority,
   Shoot,
   Shot,
   TemplateId,
@@ -47,7 +50,7 @@ let lastStamp = 0;
 /**
  * New records get a creation time that is strictly later than the previous
  * one, so "oldest first" is the order they were added in (it fixes the order
- * of people in the tree, and so branch colours, whatever their random ids).
+ * of people in the tree, and so branch colors, whatever their random ids).
  */
 function stamp<T extends object>(fields: T): T & { id: string; createdAt: number; updatedAt: number } {
   const now = Math.max(Date.now(), lastStamp + 1);
@@ -132,6 +135,7 @@ export async function deletePerson(id: string): Promise<void> {
       shoot.attendingIds = shoot.attendingIds.filter((p) => p !== id);
       shoot.shots = shoot.shots.map((s) => ({ ...s, personIds: s.personIds.filter((p) => p !== id) }));
       delete shoot.presence[id];
+      if (shoot.priorities) delete shoot.priorities[id];
       shoot.updatedAt = now;
     });
     await db.people.delete(id);
@@ -173,9 +177,76 @@ export async function ensurePartnership(
   return addPartnership(familyId, personIds, status);
 }
 
+// Linking people who are already in the family (F9)
+
+export type LinkResult = { ok: true } | { ok: false; message: string };
+
+const refuse = (problems: string[]): LinkResult => ({ ok: false, message: problems[0] ?? 'That link isn’t possible.' });
+
+/** Everyone in a family, read in the caller's transaction. */
+async function familyParts(familyId: string) {
+  return {
+    people: await db.people.where('familyId').equals(familyId).toArray(),
+    partnerships: await db.partnerships.where('familyId').equals(familyId).toArray(),
+  };
+}
+
+/**
+ * Makes `parentId` a parent of `childId`, both already in the family. Refused,
+ * with the reason in plain words, if it would give someone three parents or
+ * make a loop (validateFamily); nothing is written then.
+ */
+export function linkParent(childId: string, parentId: string): Promise<LinkResult> {
+  return linkChild(parentId, childId);
+}
+
+/**
+ * Makes `childId` a child of `parentId` (and of `withParentId`, when adding a
+ * child to a couple), both already in the family.
+ */
+export async function linkChild(parentId: string, childId: string, withParentId?: string): Promise<LinkResult> {
+  return db.transaction('rw', [db.people, db.partnerships], async () => {
+    const [parent, child] = await Promise.all([db.people.get(parentId), db.people.get(childId)]);
+    if (!parent || !child || parent.familyId !== child.familyId) return { ok: false, message: 'That person isn’t in this family.' } as LinkResult;
+    if (parentId === childId) return { ok: false, message: `${parent.name} can’t be their own parent.` } as LinkResult;
+    const parentIds = [...new Set([...child.parentIds, parentId, ...(withParentId ? [withParentId] : [])])];
+    if (parentIds.length > 2) return { ok: false, message: `${child.name} would have more than two parents.` } as LinkResult;
+    if (parentIds.length === child.parentIds.length) return { ok: true } as LinkResult;
+    const before = await familyParts(parent.familyId);
+    const after = { ...before, people: before.people.map((p) => (p.id === childId ? { ...p, parentIds } : p)) };
+    const problems = newProblems(before, after);
+    if (problems.length) return refuse(problems);
+    await db.people.update(childId, { parentIds, updatedAt: Date.now() });
+    return { ok: true } as LinkResult;
+  });
+}
+
+/** Makes two people already in the family partners, unless that would break the tree. */
+export async function linkPartner(aId: string, bId: string, status: Partnership['status'] = 'together'): Promise<LinkResult> {
+  return db.transaction('rw', [db.people, db.partnerships], async () => {
+    const [a, b] = await Promise.all([db.people.get(aId), db.people.get(bId)]);
+    if (!a || !b || a.familyId !== b.familyId) return { ok: false, message: 'That person isn’t in this family.' } as LinkResult;
+    if (aId === bId) return { ok: false, message: `${a.name} can’t be their own partner.` } as LinkResult;
+    const before = await familyParts(a.familyId);
+    const fake = { id: 'new', familyId: a.familyId, personIds: [aId, bId] as [string, string], status, createdAt: 0, updatedAt: 0 };
+    const exists = before.partnerships.some((pt) => pt.personIds.includes(aId) && pt.personIds.includes(bId));
+    const problems = exists ? [] : newProblems(before, { ...before, partnerships: [...before.partnerships, fake] });
+    if (problems.length) return refuse(problems);
+    await ensurePartnership(a.familyId, [aId, bId], status);
+    return { ok: true } as LinkResult;
+  });
+}
+
 /** A person to create in `quickAddFamily` / the demo: names only, the rest optional. */
 export interface QuickAddChild {
+  /** The name of a new child. Ignored when `existingId` is set. */
   name: string;
+  /** An existing person in the family, as the child (F9). */
+  existingId?: string;
+  /** An existing person as the partner, instead of `partner`. */
+  partnerId?: string;
+  /** Existing people as kids, as well as the new names in `kids`. */
+  kidIds?: string[];
   /** A grown child who is still single and childless (the default is true). */
   grown?: boolean;
   partner?: string;
@@ -184,8 +255,12 @@ export interface QuickAddChild {
 
 export interface QuickAddInput {
   familyName: string;
+  /** Add to this family instead of making a new one (F9). */
+  familyId?: string;
   /** One or two names; two are made partners. */
   grandparents: string[];
+  /** Existing people as the top couple, in place of or as well as `grandparents` (at most two in all). */
+  grandparentIds?: string[];
   children: QuickAddChild[];
 }
 
@@ -197,32 +272,72 @@ const clean = (names: string[] | undefined): string[] => (names ?? []).map((n) =
  * skipped. Returns the new family.
  */
 export async function quickAddFamily(input: QuickAddInput): Promise<Family> {
-  const family: Family = stamp({ name: input.familyName.trim() || 'New family', archived: false });
+  const existingFamily = input.familyId ? await db.families.get(input.familyId) : undefined;
+  if (input.familyId && !existingFamily) throw new Error('That family isn’t on this phone any more.');
+  const family: Family = existingFamily ?? stamp({ name: input.familyName.trim() || 'New family', archived: false });
+  const before = existingFamily ? await familyParts(family.id) : { people: [] as Person[], partnerships: [] as Partnership[] };
   const people: Person[] = [];
   const partnerships: Partnership[] = [];
+  /** Existing people who gain parents or a partner. */
+  const changed = new Map<string, Person>();
+  const known = new Map(before.people.map((p) => [p.id, p]));
   const person = (name: string, fields: Partial<Person> = {}): Person => {
     const p: Person = stamp({ familyId: family.id, name, parentIds: [], ...fields });
     people.push(p);
+    known.set(p.id, p);
     return p;
   };
-  const couple = (a: Person, b: Person) => partnerships.push(stamp({ familyId: family.id, personIds: [a.id, b.id] as [string, string], status: 'together' as const }));
+  const existing = (id: string): Person => {
+    const p = changed.get(id) ?? known.get(id);
+    if (!p || p.familyId !== family.id) throw new Error('That person isn’t in this family.');
+    return p;
+  };
+  const withParents = (id: string, parentIds: string[]) => {
+    const p = existing(id);
+    const next = { ...p, parentIds: [...new Set([...p.parentIds, ...parentIds])], updatedAt: Date.now() };
+    changed.set(id, next);
+    known.set(id, next);
+    return next;
+  };
+  const couple = (a: Person, b: Person) => {
+    if (a.id === b.id || partnerships.some((x) => x.personIds.includes(a.id) && x.personIds.includes(b.id))) return;
+    if (before.partnerships.some((x) => x.personIds.includes(a.id) && x.personIds.includes(b.id))) return;
+    partnerships.push(stamp({ familyId: family.id, personIds: [a.id, b.id] as [string, string], status: 'together' as const }));
+  };
 
-  const tops = clean(input.grandparents).slice(0, 2).map((name) => person(name, { grown: true }));
+  const tops = [...new Set(input.grandparentIds ?? [])].map(existing);
+  for (const name of clean(input.grandparents)) if (tops.length < 2) tops.push(person(name, { grown: true }));
   if (tops.length === 2) couple(tops[0]!, tops[1]!);
+  const topIds = tops.map((t) => t.id);
   for (const child of input.children) {
     const name = child.name.trim();
-    if (!name) continue;
-    const partnerName = child.partner?.trim();
+    if (!child.existingId && !name) continue;
+    const partnerName = child.partnerId ? undefined : child.partner?.trim();
     const kids = clean(child.kids);
+    const kidIds = child.kidIds ?? [];
     const grown = child.grown ?? true;
-    const c = person(name, { parentIds: tops.map((t) => t.id), grown: grown || !!partnerName || kids.length > 0 });
-    const partner = partnerName ? person(partnerName, { grown: true }) : undefined;
+    const hasPartner = !!(child.partnerId || partnerName);
+    const c = child.existingId
+      ? withParents(child.existingId, topIds)
+      : person(name, { parentIds: topIds, grown: grown || hasPartner || kids.length > 0 || kidIds.length > 0 });
+    const partner = child.partnerId ? existing(child.partnerId) : partnerName ? person(partnerName, { grown: true }) : undefined;
     if (partner) couple(c, partner);
-    for (const kid of kids) person(kid, { parentIds: partner ? [c.id, partner.id] : [c.id], grown: false, ageGroup: 'child' });
+    const kidParents = partner ? [c.id, partner.id] : [c.id];
+    for (const kid of kids) person(kid, { parentIds: kidParents, grown: false, ageGroup: 'child' });
+    for (const id of kidIds) withParents(id, kidParents);
+  }
+  if (existingFamily) {
+    const after = {
+      people: [...before.people.map((p) => changed.get(p.id) ?? p), ...people],
+      partnerships: [...before.partnerships, ...partnerships],
+    };
+    const problems = newProblems(before, after);
+    if (problems.length) throw new Error(problems[0]);
   }
   await db.transaction('rw', [db.families, db.people, db.partnerships], async () => {
-    await db.families.add(family);
+    if (!existingFamily) await db.families.add(family);
     await db.people.bulkAdd(people);
+    for (const p of changed.values()) await db.people.update(p.id, { parentIds: p.parentIds, updatedAt: p.updatedAt });
     await db.partnerships.bulkAdd(partnerships);
   });
   return family;
@@ -506,17 +621,41 @@ export function moveShotsUpNext(id: string, personId: string): Promise<void> {
 }
 
 /** Partial edit of one shot: must-have, notes, pose (E6). */
-export function updateShot(id: string, shotId: string, changes: Partial<Pick<Shot, 'mustHave' | 'notes' | 'poseId' | 'status'>>): Promise<void> {
+export function updateShot(id: string, shotId: string, changes: Partial<Pick<Shot, 'mustHave' | 'notes' | 'status'>>): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.shots = shoot.shots.map((s) => (s.id === shotId ? { ...s, ...changes } : s));
+  });
+}
+
+/** Changes a shot's poses in one atomic edit (PL5): `edit` gets the current list and returns the new one. */
+function editPoses(id: string, shotId: string, edit: (poseIds: string[]) => string[]): Promise<void> {
   return editShoot(id, (shoot) => {
     shoot.shots = shoot.shots.map((s) => {
       if (s.id !== shotId) return s;
-      const next = { ...s, ...changes };
-      // An empty pose id clears the pose.
-      if (!next.poseId) delete next.poseId;
-      return next;
+      const { poseId, poseIds, ...rest } = s;
+      const next = [...new Set(edit(poseIds?.length ? poseIds : poseId ? [poseId] : []))];
+      return next.length ? { ...rest, poseIds: next } : rest;
     });
   });
 }
+
+/** Adds a pose to a shot, or takes it off if it is there (PL5). New poses go last. */
+export const togglePose = (id: string, shotId: string, poseId: string) =>
+  editPoses(id, shotId, (list) => (list.includes(poseId) ? list.filter((p) => p !== poseId) : [...list, poseId]));
+
+/** Moves a pose one place up or down in a shot's list (PL5). */
+export const movePose = (id: string, shotId: string, poseId: string, by: -1 | 1) =>
+  editPoses(id, shotId, (list) => {
+    const from = list.indexOf(poseId);
+    const to = from + by;
+    if (from < 0 || to < 0 || to >= list.length) return list;
+    const next = [...list];
+    [next[from], next[to]] = [next[to]!, next[from]!];
+    return next;
+  });
+
+/** Takes every pose off a shot (PL5). */
+export const clearPoses = (id: string, shotId: string) => editPoses(id, shotId, () => []);
 
 /** Renames a shot; an empty name goes back to the generated one. The name survives regenerating (E6). */
 export function renameShot(id: string, shotId: string, name: string): Promise<void> {
@@ -568,10 +707,38 @@ export async function applySuggestedOrder(id: string, rest = false): Promise<voi
     if (!shoot) return;
     const input = await planInput(shoot);
     const order = suggestOrder(
-      { ...input, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates },
+      { ...input, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities },
       rest,
     );
     await db.shoots.update(id, { order, manualOrder: false, updatedAt: Date.now() });
+  });
+}
+
+/**
+ * Marks people Early, Late or Normal for a shoot (O7). Before the shoot the
+ * whole list is re-ordered, unless the photographer ordered it by hand; on
+ * shoot day only the shots still to do are (done shots never move, O8).
+ * Returns whether the order changed.
+ */
+export async function setPriorities(id: string, personIds: string[], how: Priority | 'normal'): Promise<{ reordered: boolean }> {
+  const settings = await getSettings();
+  return db.transaction('rw', [...SHOOT_TABLES()], async () => {
+    const shoot = await db.shoots.get(id);
+    if (!shoot || lockedAway(shoot)) return { reordered: false };
+    const priorities = { ...(shoot.priorities ?? {}) };
+    for (const p of personIds) {
+      if (how === 'normal') delete priorities[p];
+      else priorities[p] = how;
+    }
+    if (Object.keys(priorities).length) shoot.priorities = priorities;
+    else delete shoot.priorities;
+    const input = { ...(await planInput(shoot)), shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities };
+    let order = shoot.order;
+    if (shoot.status === 'live') order = suggestDayOrder(input, currentShot(shoot)?.id);
+    else if (shoot.status === 'planned' && !shoot.manualOrder) order = suggestOrder(input);
+    const reordered = order.join() !== shoot.order.join();
+    await db.shoots.put({ ...shoot, order, updatedAt: Date.now() });
+    return { reordered };
   });
 }
 
@@ -658,9 +825,9 @@ export async function receiveShoot(incoming: ShootHandoff): Promise<void> {
     if (incoming.location) await upsert(db.locations, [incoming.location]);
     await upsert(db.poses, incoming.poses);
     const existing = await db.shoots.get(incoming.shoot.id);
-    // Keep the sender's updatedAt, so opening the same link twice is recognised. A forecast already here stays.
+    // Keep the sender's updatedAt, so opening the same link twice is recognized. A forecast already here stays.
     await db.shoots.put({
-      ...incoming.shoot,
+      ...migrateShoot(incoming.shoot),
       ...(existing?.forecast ? { forecast: existing.forecast } : {}),
       handoff: receivedHandoff(incoming),
     });
@@ -708,12 +875,13 @@ export async function deletePose(id: string): Promise<void> {
   await db.transaction('rw', [db.poses, db.posePhotos, db.shoots], async () => {
     await db.posePhotos.where('poseId').equals(id).delete();
     await db.shoots.toCollection().modify((shoot: Shoot) => {
-      if (!shoot.shots.some((s) => s.poseId === id)) return;
+      if (!shoot.shots.some((s) => poseIdsOf(s).includes(id))) return;
       shoot.shots = shoot.shots.map((s) => {
-        if (s.poseId !== id) return s;
-        const rest = { ...s };
-        delete rest.poseId;
-        return rest;
+        if (!poseIdsOf(s).includes(id)) return s;
+        const { poseId, poseIds, ...rest } = s;
+        void poseId;
+        const left = (poseIds ?? (poseId ? [poseId] : [])).filter((p) => p !== id);
+        return left.length ? { ...rest, poseIds: left } : rest;
       });
       shoot.updatedAt = Date.now();
     });
@@ -724,7 +892,7 @@ export async function deletePose(id: string): Promise<void> {
 /**
  * Puts the starter library (PL3) into the `poses` table. Safe to call any time:
  * it only adds starter poses that are missing (matched by their stable id), so
- * favourites, photos and anything else on an existing row are never touched.
+ * favorites, photos and anything else on an existing row are never touched.
  * Returns how many were added.
  */
 export async function seedStarterPoses(): Promise<number> {

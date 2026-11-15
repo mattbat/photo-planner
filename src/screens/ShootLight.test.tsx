@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LightBanner } from '../components/LightBanner';
 import { db } from '../data/db';
-import { addLocation, createShoot, today } from '../data/repo';
+import { addLocation, createShoot, today, updateSettings } from '../data/repo';
 import { goldenHourCountdown, sunTimes } from '../sun';
 import { clearDb, seedFamily } from '../test/helpers';
 import { ShootScreen } from './ShootScreen';
@@ -56,8 +56,43 @@ describe('Light section', () => {
     expect(loc.timeZone).toBeTruthy();
     await screen.findByTestId('timeline');
     expect(screen.getByTestId('shoot-span')).toBeInTheDocument();
-    expect(screen.getByLabelText('Light times')).toHaveTextContent('Sunset');
-    expect(screen.getByRole('region', { name: 'Shoot' })).toHaveTextContent(/Home garden · Golden hour \d/);
+    // (Offline, the zone falls back to this machine's, so the headline may say there is no golden hour that day here.)
+    expect(screen.getByTestId('light-headline')).toHaveTextContent(/Golden hour|No golden hour|sun doesn/);
+    // Just the place name: no coordinates or time zone in the section.
+    expect(within(lightSection()).queryByText(/41\.88/)).not.toBeInTheDocument();
+  });
+
+  it('shows the evening around golden hour with a headline, how the shoot fits, hour ticks and no blue hour (L2, L3)', async () => {
+    await open({ withPlace: true, startTime: '19:00' });
+    const headline = await screen.findByTestId('light-headline');
+    expect(headline).toHaveTextContent(/^Golden hour \d{1,2}:\d\d–\d{1,2}:\d\d PM · sunset \d{1,2}:\d\d PM$/);
+    expect(screen.getByRole('radio', { name: 'Evening' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('light-fit')).toHaveTextContent(/golden hour/);
+    expect(screen.getByText(/^Your shoot \d/)).toBeInTheDocument();
+    const section = lightSection();
+    expect(within(section).queryByText(/blue hour/i)).not.toBeInTheDocument();
+    expect(within(section).queryByText(/solar noon/i)).not.toBeInTheDocument();
+    expect(section.querySelector('.timeline-ticks')!.textContent).toMatch(/\d{1,2} PM/);
+    expect(within(section).getByText('Riverside Park')).toBeInTheDocument();
+    expect(within(section).queryByText(/41\.88|America\/Chicago/)).not.toBeInTheDocument();
+    expect(within(section).queryByTestId('now-marker')).not.toBeInTheDocument(); // not the day of the shoot
+  });
+
+  it('opens on the morning for a start before noon, and the toggle switches the window (L2)', async () => {
+    const { user } = await open({ withPlace: true, startTime: '07:00' });
+    expect(await screen.findByRole('radio', { name: 'Morning' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('light-headline')).toHaveTextContent(/sunrise \d{1,2}:\d\d AM$/);
+    await user.click(screen.getByRole('radio', { name: 'Evening' }));
+    expect(screen.getByTestId('light-headline')).toHaveTextContent(/sunset/);
+  });
+
+  it('says when times are in another zone, and marks "now" on the day of the shoot', async () => {
+    const { shoot } = await open({ withPlace: true, date: today(), startTime: '17:00' });
+    await screen.findByTestId('light-headline');
+    // The zone of the place is Chicago; the test machine is not (or the note is simply absent when it is).
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (zone !== 'America/Chicago') expect(screen.getByText('Times are local to Chicago.')).toBeInTheDocument();
+    expect(shoot.date).toBe(today());
   });
 
   it('rejects bad coordinates in plain words', async () => {
@@ -149,9 +184,14 @@ describe('Light section', () => {
   it('shows the sun direction with a compass label, and turns the rose with the compass (L5)', async () => {
     vi.stubGlobal('DeviceOrientationEvent', class {});
     const { user } = await open({ withPlace: true, startTime: '19:00' });
-    expect(await screen.findByText(/the sun is in the/)).toHaveTextContent(/WNW|W|NW|WSW/);
+    expect(await screen.findByText(/^In the/)).toHaveTextContent(/WNW|W|NW|WSW/);
+    expect(screen.getByText(/Where the sun will be at 7:00 PM/)).toBeInTheDocument();
+    expect(screen.getByText(/Turn your phone and the sun marker points the real way/)).toBeInTheDocument();
+    expect(screen.getByTestId('sun-marker')).toBeInTheDocument();
+    expect(['N', 'E', 'S', 'W'].every((l) => screen.getByText(l, { selector: 'text' }))).toBe(true);
     await user.click(screen.getByRole('button', { name: 'Use compass' }));
-    expect(screen.getByRole('button', { name: 'Stop compass' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Compass on' })).toBeInTheDocument();
+    expect(screen.getByTestId('facing')).toBeInTheDocument();
     act(() => {
       const e = new Event('deviceorientation') as Event & { webkitCompassHeading: number };
       e.webkitCompassHeading = 90;
@@ -172,7 +212,7 @@ describe('Light section', () => {
   it('offers no compass button when the phone has none', async () => {
     vi.stubGlobal('DeviceOrientationEvent', undefined);
     await open({ withPlace: true, startTime: '19:00' });
-    await screen.findByText(/the sun is in the/);
+    await screen.findByText(/^In the/);
     expect(screen.queryByRole('button', { name: 'Use compass' })).toBeNull();
   });
 
@@ -208,9 +248,19 @@ describe('Light section', () => {
     await user.click(await screen.findByRole('button', { name: 'Get forecast' }));
     const weather = await screen.findByTestId('weather');
     expect(weather).toHaveTextContent('40%');
-    expect(weather).toHaveTextContent('12 km/h');
+    // US units by default: 12 km/h is 7 mph and 9 °C is 48 °F.
+    expect(weather).toHaveTextContent('7 mph');
+    expect(weather).toHaveTextContent('48°F');
+    expect(weather).not.toHaveTextContent('km/h');
     expect(weather).toHaveTextContent(/Fetched just now/);
     expect((await db.shoots.get(shoot.id))!.forecast!.hours).toHaveLength(24);
+    // Switching to metric changes what is shown without fetching again, and the stored forecast stays metric.
+    await updateSettings({ units: 'metric' });
+    await waitFor(() => expect(screen.getByTestId('weather')).toHaveTextContent('12 km/h'));
+    expect(screen.getByTestId('weather')).toHaveTextContent('9°C');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((await db.shoots.get(shoot.id))!.forecast!.hours[0]!.tempC).toBe(9);
+    await updateSettings({ units: 'us' });
     // Offline later: the cached forecast is still shown, and the button says so instead of failing.
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
     await user.click(screen.getByRole('button', { name: 'Refresh forecast' }));

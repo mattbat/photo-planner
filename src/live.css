@@ -306,3 +306,45 @@
 .pose-sheet-row b {
   display: block;
 }
+
+/* Several poses on the current shot: a swipeable row (PL5). */
+.live-poses {
+  margin-top: 10px;
+}
+
+.live-pose-row {
+  display: flex;
+  gap: 12px;
+  margin: 6px 0 0;
+  padding: 0 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.live-pose-row li {
+  flex: none;
+}
+
+.live-pose-row .live-pose {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 88px;
+  max-width: 120px;
+  margin: 0;
+  padding: 4px;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: center;
+}
+
+.live-pose-row .live-pose b {
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.live-directions {
+  padding-left: 22px;
+}

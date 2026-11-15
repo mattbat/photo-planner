@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
+import { migrateShoot } from '../domain/shotPoses';
 import type { Extra, Family, Location, Partnership, Person, Pose, PosePhoto, SettingsRow, Shoot } from './types';
 
 /**
@@ -32,6 +33,10 @@ export class PhotoPlannerDb extends Dexie {
       locations: 'id, name',
       settings: 'key',
     });
+    // 2: a shot has several poses (`poseIds`) instead of one (`poseId`). Shots live inside the shoot, so no index changes.
+    this.version(2)
+      .stores({})
+      .upgrade((tx) => tx.table('shoots').toCollection().modify((shoot: Shoot) => void Object.assign(shoot, migrateShoot(shoot))));
   }
 }
 

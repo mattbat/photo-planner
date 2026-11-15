@@ -2,7 +2,7 @@ import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { DEMO_ATTENDING, DEMO_EXTRAS, DEMO_PEOPLE } from './demoFamily';
 import { generateShots } from './generate';
-import { DEFAULT_MINUTES_BY_SIZE, minutesForSize, orderShots, type OrderOptions, type OrderResult } from './order';
+import { DEFAULT_MINUTES_BY_SIZE, everyoneShotKeys, minutesForSize, orderShots, type OrderOptions, type OrderResult } from './order';
 import { TEMPLATE_IDS } from './templates';
 import type { EnginePerson, Shot } from './types';
 
@@ -155,6 +155,171 @@ describe('ordering properties', () => {
         expect(r.changes).toBeLessThanOrEqual(base.changes);
       }),
       { numRuns: 120 },
+    );
+  });
+});
+
+describe('orderShots priorities (early and late people)', () => {
+  const people = DEMO_PEOPLE;
+  const keys = demoShots.map((s) => s.key);
+  const has = (k: string, ids: string[]) => {
+    const s = byKey(demoShots).get(k)!;
+    return [...s.peopleIds, ...s.extraIds].some((id) => ids.includes(id));
+  };
+  // The oldest person in the demo and a grandchild-age person.
+  const everyone = [...new Set(demoShots.flatMap((s) => s.peopleIds))];
+  const someEarly = [everyone[0]!, everyone[3]!];
+  const someLate = [everyone[5]!];
+
+  it('puts every shot with an early person before every shot without one', () => {
+    const r = orderShots(demoShots, people, { priorities: { [someEarly[0]!]: 'early' } });
+    const flags = r.order.map((k) => has(k, [someEarly[0]!]));
+    expect(flags.indexOf(false)).toBeGreaterThan(0);
+    expect(flags.slice(flags.indexOf(false)).every((f) => !f)).toBe(true);
+    expect([...r.order].sort()).toEqual([...keys].sort());
+  });
+
+  it('puts every shot with a late person after every shot without one', () => {
+    const r = orderShots(demoShots, people, { priorities: { [someLate[0]!]: 'late' } });
+    const flags = r.order.map((k) => has(k, someLate));
+    const firstLate = flags.indexOf(true);
+    expect(firstLate).toBeGreaterThan(0);
+    expect(flags.slice(firstLate).every((f) => f)).toBe(true);
+  });
+
+  it('keeps the fixed prefix, then early shots, in the same order every time', () => {
+    const prefix = keys.slice(10, 13);
+    const o = { fixedPrefix: prefix, priorities: { [someEarly[1]!]: 'early' as const } };
+    const a = orderShots(demoShots, people, o);
+    expect(a.order.slice(0, 3)).toEqual(prefix);
+    expect(orderShots(demoShots, people, o).order).toEqual(a.order);
+    const rest = a.order.slice(3);
+    const flags = rest.map((k) => has(k, [someEarly[1]!]));
+    expect(flags.slice(flags.indexOf(false)).every((f) => !f)).toBe(true);
+  });
+
+  it('finishes an early person sooner than without the priority', () => {
+    const lastAt = (order: string[], id: string) => Math.max(...order.map((k, i) => (has(k, [id]) ? i : -1)));
+    const id = someEarly[0]!;
+    const plain = orderShots(demoShots, people, {});
+    const early = orderShots(demoShots, people, { priorities: { [id]: 'early' } });
+    expect(lastAt(early.order, id)).toBeLessThanOrEqual(lastAt(plain.order, id));
+    expect(early.steps.some((s) => s.doneForDay.includes(id))).toBe(true);
+  });
+
+  it('does nothing for people not in any shot, and for an empty map', () => {
+    expect(orderShots(demoShots, people, { priorities: { nobody: 'early' } }).order).toEqual(orderShots(demoShots, people).order);
+    expect(orderShots(demoShots, people, { priorities: {} }).order).toEqual(orderShots(demoShots, people).order);
+  });
+
+  it('with an early and a late person, early-only shots lead, late-only shots trail, mixed ones sit between', () => {
+    const [e, l] = [someEarly[0]!, someLate[0]!];
+    const r = orderShots(demoShots, people, { priorities: { [e]: 'early', [l]: 'late' } });
+    const tier = (k: string) => (has(k, [e]) && !has(k, [l]) ? 0 : has(k, [l]) && !has(k, [e]) ? 2 : 1);
+    const tiers = r.order.map(tier);
+    expect(tiers).toEqual([...tiers].sort((a, b) => a - b));
+  });
+
+  it('property: a permutation, prefix kept, tiers in order, on random small shoots', () => {
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f'];
+    const shotsArb = fc
+      .uniqueArray(fc.subarray(ids, { minLength: 1 }), { minLength: 2, maxLength: 12, selector: (x) => x.join() })
+      .map((lists) => lists.map((l, i) => shot(`s${i}`, ...l)));
+    const prioArb = fc.dictionary(fc.constantFrom(...ids), fc.constantFrom('early' as const, 'late' as const));
+    fc.assert(
+      fc.property(shotsArb, prioArb, fc.nat(3), fc.boolean(), (shots, priorities, p, kids) => {
+        const fixedPrefix = shots.slice(0, Math.min(p, shots.length - 1)).map((s) => s.key).reverse();
+        const r = orderShots(shots, [], { priorities, fixedPrefix, kidsFirst: kids, releaseOlderEarly: kids });
+        expect([...r.order].sort()).toEqual(shots.map((s) => s.key).sort());
+        expect(r.order.slice(0, fixedPrefix.length)).toEqual(fixedPrefix);
+        const m = byKey(shots);
+        const kind = (k: string) => {
+          const ps = m.get(k)!.peopleIds;
+          const e = ps.some((id) => priorities[id] === 'early');
+          const l = ps.some((id) => priorities[id] === 'late');
+          return e && !l ? 0 : l && !e ? 2 : 1;
+        };
+        const tiers = r.order.slice(fixedPrefix.length).map(kind);
+        expect(tiers).toEqual([...tiers].sort((a, b) => a - b));
+        // So, with no shot mixing early and late people: early shots precede all non-early, late shots follow all non-late.
+        const mixed = r.order.some((k) => m.get(k)!.peopleIds.some((id) => priorities[id] === 'early') && m.get(k)!.peopleIds.some((id) => priorities[id] === 'late'));
+        if (!mixed) {
+          const rest = r.order.slice(fixedPrefix.length);
+          const isE = rest.map((k) => m.get(k)!.peopleIds.some((id) => priorities[id] === 'early'));
+          expect(isE.slice(isE.indexOf(false) < 0 ? isE.length : isE.indexOf(false)).every((f) => !f)).toBe(true);
+          const isL = rest.map((k) => m.get(k)!.peopleIds.some((id) => priorities[id] === 'late'));
+          const firstL = isL.indexOf(true);
+          expect(firstL < 0 || isL.slice(firstL).every((f) => f)).toBe(true);
+        }
+        // Deterministic.
+        expect(orderShots(shots, [], { priorities, fixedPrefix, kidsFirst: kids, releaseOlderEarly: kids }).order).toEqual(r.order);
+      }),
+    );
+  });
+});
+
+describe('orderShots everyoneFirst (O9)', () => {
+  const everyoneKeys = everyoneShotKeys(demoShots);
+  const everyoneBySize = [...everyoneKeys].sort((a, b) => {
+    const m = byKey(demoShots);
+    return m.get(b)!.peopleIds.length + m.get(b)!.extraIds.length - (m.get(a)!.peopleIds.length + m.get(a)!.extraIds.length);
+  });
+
+  it('opens the shoot with the full group, then the no-partners full group, largest first', () => {
+    expect(everyoneKeys.size).toBeGreaterThanOrEqual(2);
+    const r = orderShots(demoShots, DEMO_PEOPLE, { everyoneFirst: true });
+    const first = r.order.slice(0, everyoneKeys.size);
+    expect(new Set(first)).toEqual(everyoneKeys);
+    expect(demoShots.find((s) => s.key === r.order[0])!.templateIds).toContain('fullGroup');
+    const size = (k: string) => byKey(demoShots).get(k)!.peopleIds.length + byKey(demoShots).get(k)!.extraIds.length;
+    expect(first.map(size)).toEqual([...first.map(size)].sort((a, b) => b - a));
+    expect(r.order.slice(0, 2).map((k) => demoShots.find((s) => s.key === k)!.templateIds)).toEqual(
+      expect.arrayContaining([expect.arrayContaining(['fullGroup'])]),
+    );
+    expect(everyoneBySize.length).toBe(everyoneKeys.size);
+  });
+
+  it('is a permutation, and does nothing when off', () => {
+    const on = orderShots(demoShots, DEMO_PEOPLE, { everyoneFirst: true });
+    expect([...on.order].sort()).toEqual(demoShots.map((s) => s.key).sort());
+    expect(orderShots(demoShots, DEMO_PEOPLE, { everyoneFirst: false }).order).toEqual(orderShots(demoShots, DEMO_PEOPLE).order);
+  });
+
+  it('keeps the fixed prefix, then the everyone shots', () => {
+    const prefix = demoShots.filter((s) => !everyoneKeys.has(s.key)).slice(0, 2).map((s) => s.key);
+    const r = orderShots(demoShots, DEMO_PEOPLE, { everyoneFirst: true, fixedPrefix: prefix });
+    expect(r.order.slice(0, 2)).toEqual(prefix);
+    expect(new Set(r.order.slice(2, 2 + everyoneKeys.size))).toEqual(everyoneKeys);
+  });
+
+  it('a full group with a Late person waits; the rest of the everyone shots still go first', () => {
+    const people = [...new Set(demoShots.flatMap((s) => s.peopleIds))];
+    const late = people[2]!;
+    const r = orderShots(demoShots, DEMO_PEOPLE, { everyoneFirst: true, priorities: { [late]: 'late' } });
+    const withLate = (k: string) => byKey(demoShots).get(k)!.peopleIds.includes(late);
+    const waiting = [...everyoneKeys].filter(withLate);
+    expect(waiting.length).toBeGreaterThan(0);
+    const firstBlock = r.order.slice(0, everyoneKeys.size - waiting.length);
+    expect(firstBlock.every((k) => everyoneKeys.has(k) && !withLate(k))).toBe(true);
+    // The waiting ones are after every shot without the late person.
+    const lastNormal = Math.max(...r.order.map((k, i) => (withLate(k) ? -1 : i)));
+    for (const k of waiting) expect(r.order.indexOf(k)).toBeGreaterThan(lastNormal);
+  });
+
+  it('property: with no Late people, every everyone shot comes before every other shot (and it is a permutation)', () => {
+    const ids = ['a', 'b', 'c', 'd', 'e'];
+    const shotsArb = fc
+      .uniqueArray(fc.subarray(ids, { minLength: 1 }), { minLength: 2, maxLength: 12, selector: (x) => x.join() })
+      .map((lists) => lists.map((l, i) => ({ ...shot(`s${i}`, ...l), templateIds: i === 3 ? (['fullGroup'] as Shot['templateIds']) : [] })));
+    fc.assert(
+      fc.property(shotsArb, fc.dictionary(fc.constantFrom(...ids), fc.constant('early' as const)), fc.boolean(), (shots, priorities, kids) => {
+        const r = orderShots(shots, [], { everyoneFirst: true, priorities, kidsFirst: kids, bigGroupFirst: kids });
+        expect([...r.order].sort()).toEqual(shots.map((s) => s.key).sort());
+        const every = everyoneShotKeys(shots);
+        const flags = r.order.map((k) => every.has(k));
+        expect(flags.slice(flags.indexOf(false) < 0 ? flags.length : flags.indexOf(false)).every((f) => !f)).toBe(true);
+        expect(orderShots(shots, [], { everyoneFirst: true, priorities, kidsFirst: kids, bigGroupFirst: kids }).order).toEqual(r.order);
+      }),
     );
   });
 });

@@ -55,7 +55,7 @@ Tap **Start shoot**. The screen stays awake. The big **Done** moves to the next 
 
 ### Poses
 
-The Poses tab is a library of simple illustrated poses by category and group size. Favourite them, add your own, and pick suggested poses for a shot so they show on shoot day.
+The Poses tab is a library of simple illustrated poses by category and group size. Favorite them, add your own, and pick suggested poses for a shot so they show on shoot day.
 
 ### Assistant hand-off
 
@@ -108,7 +108,7 @@ Dexie database `photo-planner`: `families`, `people`, `partnerships`, `extras`, 
 
 - **Shot engine** (`src/engine`, pure). `generate.ts` takes the people, partnerships, extras, the enabled templates (27 ids in `templates.ts`, the single source of truth) and who is attending, and returns shots. Each template yields candidate groups; identical groups are merged and keep every template that wanted them, so switching templates never duplicates a photo. Previews count what a template would add before it is on. Removed shots are remembered by a stable key so they stay removed.
 - **Order** (`order.ts`). Arranges the list from the order options (kids first, release older people early, big group first, must-haves early), and works out call-in and can-leave lists and the time estimate. Shots moved by hand are kept in place by **Re-order rest**.
-- **Tree layout** (`src/tree`, pure). Generations become rows, couples sit together, children are centred under their parents and each branch gets a colour. `FamilyTree` draws it as SVG with pan and zoom, and the same layout is exported as a PNG.
+- **Tree layout** (`src/tree`, pure). Generations become rows, couples sit together, children are centered under their parents and each branch gets a color. `FamilyTree` draws it as SVG with pan and zoom, and the same layout is exported as a PNG.
 - **Sun** (`src/sun`, pure). Solar position (elevation and compass bearing) from the NOAA algorithm. Golden hour (+6° to -4°), blue hour (-4° to -6°), sunrise, sunset and noon are found by searching the day in the location's time zone, and `plan.ts` picks the suggested start from the list's duration.
 - **Help**. Each topic in `src/help/topics.tsx` is plain JSX that names screenshots from `shots.ts`. `Help.test.tsx` checks every topic renders and every screenshot exists. After changing a screen, run `npm run screenshots` and commit the images.
 

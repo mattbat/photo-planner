@@ -18,9 +18,9 @@ const MARGIN = 8;
 
 /**
  * Where the tree sits when it opens in a box `w` x `h` (V4). With `minK` 0
- * (the Fit button) the whole tree is fitted and centred. Otherwise the zoom
+ * (the Fit button) the whole tree is fitted and centered. Otherwise the zoom
  * is whatever fits the tree, but never below `minK`, so a big family starts
- * readable; when that is wider than the box, the view is centred on the top
+ * readable; when that is wider than the box, the view is centered on the top
  * couple(s) (or at the left end of the top row if that is too wide) and starts at the top, so there is no empty strip above and no
  * content cut off on the left.
  */
@@ -36,7 +36,7 @@ export function initialView(layout: Measured, w: number, h: number, minK: number
   const left = Math.min(...heads.map((n) => n.x));
   const right = Math.max(...heads.map((n) => n.x + CARD_W));
   const top0 = Math.min(...heads.map((n) => n.y));
-  // Centre the top row if it fits; otherwise start at its left end.
+  // Center the top row if it fits; otherwise start at its left end.
   const want = (right - left) * k <= w - 2 * MARGIN ? w / 2 - ((left + right) / 2) * k : MARGIN - left * k;
   const tx = Math.min(MARGIN, Math.max(w - scaledW - MARGIN, want));
   return { k, tx, ty: MARGIN - top0 * k };

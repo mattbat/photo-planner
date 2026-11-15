@@ -25,14 +25,14 @@ test('new shoot → type coordinates → timeline and suggested start → use it
   await loc.getByRole('button', { name: 'Use these coordinates' }).click();
 
   await expect(page.getByTestId('timeline')).toBeVisible();
-  await expect(page.getByLabel('Light times')).toContainText('Sunset');
-  await expect(page.locator('.shoot-sub')).toContainText('Riverside Park · Golden hour');
+  await expect(page.getByTestId('light-headline')).toContainText('sunset');
+  await expect(page.locator('.shoot-sub')).toContainText('Riverside Park');
   await expect(page.getByText(/Start at/)).toBeVisible();
 
   await page.getByRole('button', { name: 'Use this start time' }).click();
   await expect(page.getByRole('button', { name: 'Start time is set' })).toBeVisible();
   await expect(page.getByTestId('shoot-span')).toBeVisible();
-  await expect(page.locator('.shoot-when')).toContainText(/[ap]m/);
+  await expect(page.locator('.shoot-when')).toContainText(/[AP]M/);
 
   if (process.env.LIGHT_SHOT) {
     await page.getByRole('heading', { name: 'Light', level: 2 }).scrollIntoViewIfNeeded();

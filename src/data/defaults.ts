@@ -11,6 +11,7 @@ export const DEFAULT_ORDER_OPTIONS: OrderOptions = {
   releaseOlderEarly: true,
   bigGroupFirst: true,
   mustHavesEarly: false,
+  everyoneFirst: true,
 };
 
 /** O5: 2 min for 1–2 people, 3 for 3–6, 5 for 7+, and a short set-up allowance. */
@@ -21,5 +22,6 @@ export function defaultSettings(): AppSettings {
     defaultTemplates: defaultTemplates(),
     defaultOrderOptions: { ...DEFAULT_ORDER_OPTIONS },
     timeEstimates: { ...DEFAULT_TIME_ESTIMATES },
+    units: 'us',
   };
 }

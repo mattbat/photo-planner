@@ -59,6 +59,8 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | F5 | ✅ | "Not usually at shoots" switch on the person sheet; used when a shoot is created (M1). |
 | F6 | ✅ | Several top couples joined by marriage in one tree (demo family). Templates that start from each couple come with M2. |
 | F7 | ✅ | Engine `validateFamily` (via `checkFamily` in `src/domain/shotView.ts`; the old `familyChecks.ts` was removed): own ancestor, own parent, more than two parents, child of a person and their parent, parent who is also a partner; shown as a list on the family screen (M1). |
+| F9 | ✅ | `ChoosePerson` (searchable list) in the person sheet (parent, partner, child), "+ child" on a couple (`NameSheet`) and Quick add people into an existing family (`QuickAddFamilySheet` `into`). Candidates from `linkCandidates` (`src/domain/links.ts`); `linkParent`, `linkChild`, `linkPartner` and `quickAddFamily` (with `familyId`) in `repo.ts` run `validateFamily` and refuse a link that would add a problem. Unit, property, repo, screen and e2e tests. |
+| F10 | ✅ | `DuplicateHint` ("Is this the same Emma? Link instead") from `similarPeople`; never blocks adding. |
 | F8 | ✅ | Guests and pets with a name, kind and emoji, per family (per-shoot extras arrive with shoots, M3). |
 
 ## 5a. Family tree diagram
@@ -66,13 +68,13 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | ID | Status | Notes |
 |----|--------|-------|
 | V1 | ✅ | One row per generation, partners joined by a solid or dashed line, step-children linked to their own parent (M1). |
-| V2 | 🟡 | Branch colours are stable (follow the picture left to right, not ids) and used on shot list chips (M3); shoot day comes with M4. |
+| V2 | 🟡 | Branch colors are stable (follow the picture left to right, not ids) and used on shot list chips (M3); shoot day comes with M4. |
 | V3 | 🟡 | Cards with name or nickname, generation, initials, kid icon and household outline. Photo and the "not usually at shoots" icon are not on the card yet. |
 | V4 | ✅ | Pinch, drag, wheel zoom and Fit inside the tree box; the page never scrolls sideways (M1). 📱 |
 | V5 | 🟡 | Tap a person to edit and add parents, partners and children; "+" on a couple line adds a child. "How related" waits for V6. |
 | V6 | ✅ | "How are they related?" mode on the family screen: tap two people, banner shows `describeRelationship` (M3). |
 | V7 | ✅ | Tapping a shot opens a sheet with its people highlighted on the tree (M3); the live screen's Tree view highlights the current shot (M4). |
-| V8 | ✅ | Live Tree view: not-attending greyed out, arrived ✓, not yet !, left → badges (M4). |
+| V8 | ✅ | Live Tree view: not-attending grayed out, arrived ✓, not yet !, left → badges (M4). |
 | V9 | ✅ | Share button on the family screen: SVG to PNG on a canvas, then the share sheet or a download (M1). 📱 |
 | V10 | 🟡 | Pure layout module with example and property tests (M1); sun and tree modules were integrated with the strict type settings. |
 
@@ -92,6 +94,9 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | O3 | ✅ | Call in ▲ / can leave ▼ / done for the day per step (M3). |
 | O4 | ✅ | Drag handle (and arrow keys) sets manual order; ↻ Re-order rest keeps shots already taken first (M3). |
 | O5 | ✅ | Total minutes and per-shot clock time from the start time and Settings estimates (M3). |
+| O7 | ✅ | `priorities` option in `orderShots` (`src/engine/order.ts`: tiers plus early release, still pure and deterministic); `Shoot.priorities` (optional, no Dexie version); `setPriorities` in `repo.ts`; `PrioritySheet` (per person and multi-select) on the shoot screen; Early/Late badges on shot chips, the live card and Who's here; validated in `validate.ts` and carried in the hand-off. Example, property (permutation, prefix kept, tiers in order, deterministic) and screen tests. |
+| O8 | ✅ | Who's here on shoot day has Normal / Early / Late; `suggestDayOrder` in `src/domain/shotView.ts` re-orders only to-do shots into their own slots (done shots never move, the current shot stays first); `reorderNote` gives the note. Undo does not undo a re-order. |
+| O9 | ✅ | `everyoneFirst` order option (`src/engine/order.ts`, `everyoneShotKeys`): everyone shots form a front tier, largest first; a shot with a Late person drops out of it. On by default (`DEFAULT_ORDER_OPTIONS`, Settings › New shoots, "Everyone first" on the shoot); missing in older data counts as on. "Full group waits for …" via `everyoneWaitsFor`. Example and property tests. |
 | O6 | ⬜ |  |
 
 ## 7. Shoot planning
@@ -108,7 +113,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 
 | ID | Status | Notes |
 |----|--------|-------|
-| D1 | ✅ | Current shot card: big name, people grouped by branch with the tree colours, extras with emoji, pose thumbnail and name, notes, ★ must-have (`LiveScreen`, M4). |
+| D1 | ✅ | Current shot card: big name, people grouped by branch with the tree colors, extras with emoji, pose thumbnail and name, notes, ★ must-have (`LiveScreen`, M4). |
 | D2 | ✅ | "Next" card: call in (green ▲), can leave (red ▼) and done for the day, worked out against the shots still to do (`transition` in `src/domain/shootDay.ts`). |
 | D3 | ✅ | Big Done ✓ in the bottom thumb zone; Skip, Needs retake and ↶ Undo beside it. Undo reverses the last event exactly (done, skip, retake, put-back, arrive, leave, not-here-yet, add-shot); a property test checks it. |
 | D4 | ✅ | List view: To do, Waiting, Retakes, Done, Skipped; tap a shot for Do this now, Mark done, Skip, Needs retake, Put back. |
@@ -118,6 +123,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | D8 | ✅ | `useWakeLock` while live; everything is in Dexie, so a reload resumes on the same shot (e2e). 📱 check on a real iPhone. |
 | D9 | ✅ | Finish shoot shows a summary (done, retakes owed, skipped, not reached, added) with share as text; Reopen shoot goes back to live. |
 | D10 | ✅ | Every tap is one atomic `editShoot` write; no Save button. |
+| D11 | ✅ | "Shot N of T · X left" from `shotCounter` in `src/domain/shootDay.ts`. The old header showed the shot's place in the stored list (`shots.indexOf(current) + 1`), which jumped with "Do this now", waiting shots and retakes. Unit, property (fast-check) and screen tests. |
 
 ## 9. Photographer and assistant
 
@@ -137,12 +143,12 @@ Option B, hand-off like next5 (decided 2026-11-15). Code: `src/data/handoff.ts`,
 | ID | Status | Notes |
 |----|--------|-------|
 | L1 | ✅ | Light section on the shoot: saved places (reused across shoots, Forget to remove), Use my location, place search (Open-Meteo geocoding, gives the time zone), typed coordinates, and a map pin (Leaflet + OpenStreetMap tiles, lazy-loaded, online only). GPS/pin/coordinates ask the forecast service for the time zone when online, else use the phone's. Offline, online options say "Needs a connection" and never block (M5). 📱 GPS permission to check on iPhone. |
-| L2 | ✅ | Coloured day bar (night, blue hour, golden hour, daylight) with the planned shoot overlaid, and a list of blue hour, sunrise, golden hour, solar noon, sunset (`src/domain/light.ts`, `LightSection`). Polar days/nights and half-missing spans give plain wording (M5). |
-| L3 | ✅ | "What do golden hour and blue hour mean?" fold in the Light section (M5). Full definitions in the Help topic "Golden hour and location" (M8). |
+| L2 | ✅ | Headline, shoot-fit line and a zoomed session timeline (`sessionWindow`, `hourTicks`, `lightHeadline`, `shootFit` in `src/domain/light.ts`; `LightSection`): daylight / golden hour / too dark, hour ticks, shoot bar with times, now marker, Morning/Evening toggle (evening unless the start is before noon), zone note, place name only. Sun direction, weather and dates are under "More". Polar days and nights give plain wording. Property and example tests. |
+| L3 | ✅ | Golden hour defined in the Help topic "Golden hour and location". Blue hour is gone from the UI and help (the sun module still computes it, `dayTimeline` and `lightRows` remain tested but unused by screens). |
 | L4 | ✅ | Morning/Evening choice, suggested start and end, warning from `suggestStart` when the list is longer than golden hour, "Use this start time" sets `startTime` (M5). Must-have-first weighting is not exposed. |
-| L5 | ✅ | Bearing, 16-point label and altitude at the planned time, arrow in a compass rose; "Use compass" turns the rose live (iOS permission asked on the tap; hidden when the phone has no orientation sensor) (M5). 📱 Compass to check on iPhone. |
+| L5 | ✅ | Bearing, 16-point label and altitude at the planned time, sun symbol on a labelled N/E/S/W rose with a caption under it; "Use compass" ("Compass on", a facing marker at the top) turns the rose live (iOS permission asked on the tap; hidden when the phone has no orientation sensor) (M5). 📱 Compass to check on iPhone. |
 | L6 | ✅ | "Pick a date" fold lists the next 21 days with evening and morning golden hours; tap one to set the shoot date (M5). |
-| L7 | ✅ | "Get forecast" for shoots within 14 days (cloud, rain chance, wind, temperature for the shoot hours). Stored on the shoot as `forecast` (no schema change; backup validates it) and shown offline with its fetch time (M5). |
+| L7 | ✅ | Units: `AppSettings.units` (`us` default, `metric`; missing reads as US; validated on restore), a Units row in Settings, converted at display time by `src/domain/units.ts`; the stored forecast stays metric. "Get forecast" for shoots within 14 days (cloud, rain chance, wind, temperature for the shoot hours). Stored on the shoot as `forecast` (no schema change; backup validates it) and shown offline with its fetch time (M5). |
 | L8 | ✅ | `LightBanner({shoot, location, now})` in `src/components/LightBanner.tsx` for the live screen's `lightBanner` slot; not wired into the live screen yet (M5). |
 
 ## 11. Pose library
@@ -151,11 +157,11 @@ Option B, hand-off like next5 (decided 2026-11-15). Code: `src/data/handoff.ts`,
 |----|--------|-------|
 | PL1 | ✅ | Nine category chips on the Poses tab (`src/poses/labels.ts`). |
 | PL2 | ✅ | Detail screen: image, description, numbered "How to direct it", tips, common mistakes, size range, tags, difficulty. Three extra tags (kid-friendly, baby, senior-friendly) feed suggestions. |
-| PL3 | ✅ | 60 original illustrations in `public/poses` (precached for offline), starter data in `src/poses/starterPoses.ts`. Seeded into the `poses` table on first visit by `seedStarterPoses` (adds only missing ids, never touches favourites or photos). Credit and licence stored per pose. Existing rows are not rewritten when a later release edits starter text. |
-| PL4 | ✅ | Add, edit and delete own poses; favourite and add photos (resized to 1600 px JPEG) on any pose. Built-in poses cannot be edited or deleted. 📱 camera picker to check on iPhone. |
-| PL5 | ✅ | "Suggested poses" in the shot sheet (group worked out in `src/domain/poseGroup.ts`); tap to attach (`Shot.poseId`), tap again or Clear pose to remove; shown on the live current-shot card (M4). |
-| PL6 | ✅ | Search, group-size and tag filters, favourites toggle. |
-| PL7 | ✅ | Pose sheet button on the shoot screen lists shots in order with their attached pose (M4). |
+| PL3 | ✅ | 60 original illustrations in `public/poses` (precached for offline), starter data in `src/poses/starterPoses.ts`. Seeded into the `poses` table on first visit by `seedStarterPoses` (adds only missing ids, never touches favorites or photos). Credit and license stored per pose. Existing rows are not rewritten when a later release edits starter text. |
+| PL4 | ✅ | Add, edit and delete own poses; favorite and add photos (resized to 1600 px JPEG) on any pose. Built-in poses cannot be edited or deleted. 📱 camera picker to check on iPhone. |
+| PL5 | ✅ | "Suggested poses" in the shot sheet (group worked out in `src/domain/poseGroup.ts`); tap several to attach (`Shot.poseIds`, ordered; `togglePose`, `movePose`, `clearPoses` in `repo.ts`), a count, up/down arrows to reorder, Clear poses; shown on the live card as a row of thumbnails, tap for directions. Old `poseId` data is converted by Dexie version 2 (`src/domain/shotPoses.ts`), and on restore and receive. `poseIds` is optional in the type (absent means none); `poseId` is only read from old files. |
+| PL6 | ✅ | Search, group-size and tag filters, favorites toggle. |
+| PL7 | ✅ | Pose sheet button on the shoot screen lists shots in order with all their attached poses (M4). The shot-list text and the hand-off carry every pose. |
 
 ## 12. Data, backup and sharing
 

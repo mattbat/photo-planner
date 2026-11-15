@@ -74,7 +74,7 @@ test('a whole shoot day: light by coordinates, 5 Done, someone leaves, waiting s
   await page.getByRole('dialog', { name: 'Shoot day' }).getByRole('button', { name: 'Finish shoot' }).click();
   await expect(page.getByRole('region', { name: 'Summary' })).toContainText('5 of');
   await page.getByRole('button', { name: 'Share summary as text' }).click();
-  await expect(page.getByRole('status')).toContainText(/Shoot summary (shared|copied)|Couldn’t share or copy|Sharing cancelled/);
+  await expect(page.getByRole('status')).toContainText(/Shoot summary (shared|copied)|Couldn’t share or copy|Sharing canceled/);
 });
 
 test('every screen fits a small phone: nothing scrolls sideways at 375×667', async ({ page }) => {
@@ -125,7 +125,7 @@ test.describe('dark mode', () => {
     const ratio = await done.evaluate((el) => {
       const parse = (css: string) => {
         const m = css.match(/rgba?\(([^)]+)\)/) ?? css.match(/color\(srgb ([^)]+)\)/);
-        if (!m) throw new Error(`cannot read colour: ${css}`);
+        if (!m) throw new Error(`cannot read color: ${css}`);
         const parts = m[1]!.split(/[\s,/]+/).filter(Boolean).map(Number);
         const scale = css.startsWith('color(') ? 255 : 1;
         return parts.slice(0, 3).map((v) => v * scale);

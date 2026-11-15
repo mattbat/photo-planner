@@ -136,6 +136,24 @@ describe('createBackup and parseBackup (B1, B4)', () => {
   });
 });
 
+describe('restoreBackup with the old single pose (PL5)', () => {
+  it('turns an old file\u2019s poseId into poseIds on restore, in both modes', async () => {
+    await fullPhone();
+    const backup = await createBackup();
+    const oldShot = { ...backup.shoots[0]!.shots[0]!, poseId: 'starter-1' };
+    const old = { ...backup, shoots: [{ ...backup.shoots[0]!, shots: [oldShot, ...backup.shoots[0]!.shots.slice(1)] }] };
+    const parsed = parseBackup(JSON.stringify(old));
+    expect(parsed.ok).toBe(true);
+    for (const mode of ['replace', 'merge'] as const) {
+      await clearDb();
+      await restoreBackup(old as unknown as typeof backup, mode);
+      const shot = (await db.shoots.toArray())[0]!.shots[0]!;
+      expect(shot.poseIds).toEqual(['starter-1']);
+      expect('poseId' in shot).toBe(false);
+    }
+  });
+});
+
 describe('restoreBackup (B1)', () => {
   it('replace: the phone ends up exactly like the backup', async () => {
     await fullPhone();
@@ -243,10 +261,10 @@ describe('backUp', () => {
     Object.assign(navigator, {
       canShare: () => true,
       share: async () => {
-        throw new DOMException('cancelled', 'AbortError');
+        throw new DOMException('canceled', 'AbortError');
       },
     });
-    expect(await backUp()).toBe('Backup cancelled.');
+    expect(await backUp()).toBe('Backup canceled.');
     expect(lastBackupAt()).toBeNull();
 
     delete (navigator as { canShare?: unknown }).canShare;

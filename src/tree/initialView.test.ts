@@ -6,7 +6,7 @@ import { CARD_W, layoutTree } from './layout';
 const BOX = { w: 402, h: 420 };
 
 describe('initialView', () => {
-  it('centres a small tree and fits it whole', () => {
+  it('centers a small tree and fits it whole', () => {
     const l = layoutTree(simpleFamily);
     const v = initialView(l, BOX.w, BOX.h, 0.6);
     expect(v.k).toBeGreaterThanOrEqual(0.6);
@@ -15,7 +15,7 @@ describe('initialView', () => {
     expect(v.ty).toBeLessThanOrEqual(24);
   });
 
-  it('on a wide family starts at the minimum zoom, centred on the top couples, from the top', () => {
+  it('on a wide family starts at the minimum zoom, centered on the top couples, from the top', () => {
     const l = layoutTree(demoFamily);
     expect(l.width * 0.6).toBeGreaterThan(BOX.w);
     const v = initialView(l, BOX.w, BOX.h, 0.6);
@@ -32,14 +32,14 @@ describe('initialView', () => {
     expect(v.ty + topY * v.k).toBeCloseTo(8);
   });
 
-  it('centres the top row when it fits the box', () => {
+  it('centers the top row when it fits the box', () => {
     const l = { width: 1200, height: 300, nodes: [{ x: 500, y: 20, generation: 1 }, { x: 650, y: 20, generation: 1 }, { x: 0, y: 150, generation: 2 }] };
     const v = initialView(l, 400, 300, 0.6);
     const cx = (500 + 650 + CARD_W) / 2;
     expect(v.tx + cx * v.k).toBeCloseTo(200);
   });
 
-  it('the Fit button fits and centres the whole tree', () => {
+  it('the Fit button fits and centers the whole tree', () => {
     const l = layoutTree(demoFamily);
     const v = initialView(l, BOX.w, BOX.h, 0);
     expect(v.k).toBeCloseTo(Math.min(BOX.w / l.width, BOX.h / l.height));

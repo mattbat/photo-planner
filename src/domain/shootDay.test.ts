@@ -11,6 +11,7 @@ import {
   pickNext,
   progress,
   setPresence,
+  shotCounter,
   summarize,
   summaryText,
   transition,
@@ -188,7 +189,7 @@ describe('progress and summary', () => {
     expect(progress(s, { now: 5, plannedMinutes: 1 }).elapsedMinutes).toBeUndefined();
   });
 
-  it('summarises and writes the text to share', () => {
+  it('summarizes and writes the text to share', () => {
     let s = addShot(base(), shot('x', ['ivy'], { source: 'custom', name: 'Ivy twirl' }), 1);
     s = markShot(markShot(markShot(s, 'a', 'done', 2), 'b', 'skip', 3), 'c', 'retake', 4);
     const sum = summarize(s);
@@ -288,6 +289,90 @@ describe('property: random shoot days', () => {
         });
         const order = moveShotsUp(s, who);
         expect([...order].sort()).toEqual([...s.order].sort());
+      }),
+    );
+  });
+});
+
+describe('shot counter (Shot N of T, X left)', () => {
+  // The old header showed the shot's place in the stored list, so it jumped around.
+  const oldNumber = (s: DayState) => s.shots.indexOf(currentShot(s)!) + 1;
+
+  it('reproduces the bug: the list position is not progress', () => {
+    let s = base();
+    s = makeCurrent(s, 'd', 1);
+    expect(oldNumber(s)).toBe(4); // "Shot 4 of 4" before anything was done
+    expect(shotCounter(s)).toEqual({ number: 1, total: 4, left: 4 });
+    s = markShot(s, 'd', 'done', 2);
+    expect(oldNumber(s)).toBe(1); // went backwards after Done
+    expect(shotCounter(s)).toEqual({ number: 2, total: 4, left: 3 });
+  });
+
+  it('counts 1, 2, 3 to the end and Undo restores each step', () => {
+    let s = base();
+    const seen: number[] = [];
+    const states: DayState[] = [];
+    while (currentShot(s)) {
+      states.push(s);
+      seen.push(shotCounter(s).number);
+      s = markShot(s, currentShot(s)!.id, seen.length % 2 ? 'done' : 'skip', seen.length);
+    }
+    expect(seen).toEqual([1, 2, 3, 4]);
+    expect(shotCounter(s)).toEqual({ number: 4, total: 4, left: 0 });
+    while (s.events.length) {
+      s = undo(s);
+      expect(shotCounter(s)).toEqual(shotCounter(states[s.events.length]!));
+    }
+  });
+
+  it('stays right with waiting shots, retakes, added shots and jumping', () => {
+    let s = setPresence(base(), 'gran', 'expected', 1);
+    expect(shotCounter(s)).toEqual({ number: 1, total: 4, left: 4 });
+    s = markShot(s, 'c', 'done', 2);
+    expect(shotCounter(s)).toEqual({ number: 2, total: 4, left: 3 });
+    s = markShot(s, 'd', 'retake', 3);
+    expect(shotCounter(s)).toEqual({ number: 2, total: 4, left: 3 });
+    s = addShot(s, shot('x', ['dan']), 4);
+    expect(shotCounter(s)).toEqual({ number: 2, total: 5, left: 4 });
+    s = makeCurrent(s, 'b', 5);
+    expect(shotCounter(s)).toEqual({ number: 2, total: 5, left: 4 });
+    expect(shotCounter({ shots: [] })).toEqual({ number: 1, total: 0, left: 0 });
+  });
+
+  it('property: N stays within 1..T, never drops on Done or Skip, left is what is not done or skipped', () => {
+    const action = fc.oneof(
+      fc.record({ k: fc.constant('mark' as const), i: fc.nat(5), how: fc.constantFrom('done', 'skip', 'retake', 'reset') }),
+      fc.record({ k: fc.constant('now' as const), i: fc.nat(5) }),
+      fc.record({ k: fc.constant('presence' as const), who: fc.constantFrom('gran', 'dan', 'ivy'), to: fc.constantFrom('here', 'expected', 'left') }),
+      fc.record({ k: fc.constant('add' as const) }),
+      fc.record({ k: fc.constant('undo' as const) }),
+    );
+    fc.assert(
+      fc.property(fc.array(action, { maxLength: 40 }), (actions) => {
+        let s = base();
+        let added = 0;
+        actions.forEach((a, t) => {
+          const before = shotCounter(s);
+          const id = s.shots[a.k === 'mark' || a.k === 'now' ? a.i % s.shots.length : 0]!.id;
+          if (a.k === 'mark') {
+            const finishing = a.how === 'done' || a.how === 'skip';
+            const wasFinished = s.shots.find((x) => x.id === id)!.status === 'done' || s.shots.find((x) => x.id === id)!.status === 'skipped';
+            s = markShot(s, id, a.how, t + 1);
+            if (finishing && !wasFinished) expect(shotCounter(s).number).toBeGreaterThanOrEqual(before.number);
+          } else if (a.k === 'now') s = makeCurrent(s, id, t + 1);
+          else if (a.k === 'presence') s = setPresence(s, a.who, a.to, t + 1);
+          else if (a.k === 'add') s = addShot(s, shot(`n${added++}`, ['dan']), t + 1);
+          else {
+            const e = s.events.length;
+            s = undo(s);
+            if (e) expect(s.events.length).toBe(e - 1);
+          }
+          const c = shotCounter(s);
+          expect(c.total).toBe(s.shots.length);
+          expect(c.number).toBeGreaterThanOrEqual(1);
+          expect(c.number).toBeLessThanOrEqual(c.total);
+          expect(c.left).toBe(s.shots.filter((x) => x.status !== 'done' && x.status !== 'skipped').length);
+        });
       }),
     );
   });

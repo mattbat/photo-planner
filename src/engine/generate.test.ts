@@ -287,14 +287,14 @@ describe('E6 edits survive regeneration', () => {
     const r = generateShots({
       ...base, attendingIds: DEMO_ATTENDING.filter((x) => x !== 'noah'),
       edits: { removed: [], renamed: {}, custom: [
-        { key: 'custom:c1', name: 'Mum and Dad', peopleIds: ['ruth', 'frank'], extraIds: [], templateIds: [], groupLabel: 'Custom', custom: true },
+        { key: 'custom:c1', name: 'Mom and Dad', peopleIds: ['ruth', 'frank'], extraIds: [], templateIds: [], groupLabel: 'Custom', custom: true },
         { key: 'custom:c2', name: 'Noah alone', peopleIds: ['noah'], extraIds: [], templateIds: [], groupLabel: 'Custom', custom: true },
         { key: 'custom:c3', name: 'Mike and Noah', peopleIds: ['mike', 'noah'], extraIds: [], templateIds: [], groupLabel: 'Custom', custom: true, branchId: 'branch:mike' },
         { key: 'custom:c4', name: 'Sarah and Ava', peopleIds: ['sarah', 'ava'], extraIds: [], templateIds: [], groupLabel: 'Custom', custom: true },
       ] },
     });
     const c1 = r.shots.find((s) => s.key === 'custom:c1')!;
-    expect(c1).toMatchObject({ name: 'Mum and Dad', custom: true });
+    expect(c1).toMatchObject({ name: 'Mom and Dad', custom: true });
     expect(c1.templateIds).toContain('couples');
     expect(r.shots.some((s) => s.key === 'couples:frank,ruth')).toBe(false);
     expect(r.flagged.map((f) => f.key)).toContain('custom:c2');

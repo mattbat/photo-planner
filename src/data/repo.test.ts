@@ -9,6 +9,9 @@ import {
   addExtra,
   createDemoFamily,
   ensurePartnership,
+  linkChild,
+  linkParent,
+  linkPartner,
   quickAddFamily,
   addLocation,
   addPartnership,
@@ -290,11 +293,37 @@ describe('eraseEverything', () => {
 });
 
 describe('schema (T4)', () => {
-  it('opens at version 1 with every table the spec needs', () => {
-    expect(db.verno).toBe(1);
+  it('opens at version 2 with every table the spec needs', () => {
+    expect(db.verno).toBe(2);
     expect(db.tables.map((t) => t.name).sort()).toEqual(
       ['extras', 'families', 'locations', 'partnerships', 'people', 'poses', 'posePhotos', 'settings', 'shoots'].sort(),
     );
+  });
+
+  it('version 2 turns a shot\u2019s single poseId into poseIds, leaving other shots alone', async () => {
+    const name = `migration-poses-${newId()}`;
+    // The version-1 layout, as an app from before this change stored it.
+    const old = new Dexie(name);
+    old.version(1).stores({
+      families: 'id, name',
+      people: 'id, familyId, *parentIds',
+      partnerships: 'id, familyId, *personIds',
+      extras: 'id, familyId, shootId',
+      shoots: 'id, familyId, date, status',
+      poses: 'id, category, name',
+      posePhotos: 'id, poseId',
+      locations: 'id, name',
+      settings: 'key',
+    });
+    const shot = (id: string, extra: object) => ({ id, name: id, nameEdited: false, personIds: [], source: 'custom', reasons: [], mustHave: false, notes: '', status: 'todo', ...extra });
+    await old.table('shoots').add({ id: 's1', familyId: 'f', date: '2026-12-05', status: 'planned', updatedAt: 1, createdAt: 1, shots: [shot('a', { poseId: 'p1' }), shot('b', {}), shot('c', { poseId: 'p2' })] });
+    old.close();
+    const upgraded = new PhotoPlannerDb(name);
+    const shoot = (await upgraded.shoots.get('s1'))!;
+    expect(shoot.shots.map((s) => s.poseIds)).toEqual([['p1'], undefined, ['p2']]);
+    expect(shoot.shots.some((s) => 'poseId' in s)).toBe(false);
+    upgraded.close();
+    await Dexie.delete(name);
   });
 
   it('keeps data when an older database of the same name is opened again', async () => {
@@ -354,6 +383,90 @@ describe('children, partnerships and bulk creation (M1)', () => {
     expect(family.name).toBe('New family');
     expect(await db.people.where('familyId').equals(family.id).count()).toBe(1);
     expect(await db.partnerships.count()).toBe(0);
+  });
+
+  describe('linking people already in the family (F9)', () => {
+    it('linkParent and linkChild link existing people, and linking twice changes nothing', async () => {
+      const { family, ivy, max, nia, gran } = await seedFamily();
+      const lone = await addPerson(family.id, { name: 'Lone Kid' });
+      expect(await linkParent(lone.id, nia.id)).toEqual({ ok: true });
+      expect((await db.people.get(lone.id))!.parentIds).toEqual([nia.id]);
+      expect(await linkChild(max.id, lone.id, nia.id)).toEqual({ ok: true });
+      expect((await db.people.get(lone.id))!.parentIds).toEqual([nia.id, max.id]);
+      const stamp = (await db.people.get(lone.id))!.updatedAt;
+      expect(await linkChild(max.id, lone.id, nia.id)).toEqual({ ok: true });
+      expect((await db.people.get(lone.id))!.updatedAt).toBe(stamp);
+      // Ivy already has two parents.
+      const refused = await linkParent(ivy.id, gran.id);
+      expect(refused).toMatchObject({ ok: false });
+      expect((await db.people.get(ivy.id))!.parentIds).toEqual([max.id, nia.id]);
+    });
+
+    it('refuses loops and impossible links, in plain words, and writes nothing', async () => {
+      const { gran, max, ivy } = await seedFamily();
+      const loop = await linkParent(gran.id, ivy.id);
+      expect(loop).toMatchObject({ ok: false });
+      expect((loop as { message: string }).message).toMatch(/own ancestor|Gran/);
+      expect((await db.people.get(gran.id))!.parentIds).toEqual([]);
+      expect(await linkParent(max.id, max.id)).toMatchObject({ ok: false });
+      expect(await linkParent('nope', max.id)).toMatchObject({ ok: false, message: expect.stringMatching(/isn’t in this family/) });
+      const other = await createFamily('Elsewhere');
+      const stranger = await addPerson(other.id, { name: 'Stranger' });
+      expect(await linkChild(max.id, stranger.id)).toMatchObject({ ok: false });
+    });
+
+    it('linkPartner links two existing people once, and refuses a parent and child', async () => {
+      const { family, max, gran, ivy } = await seedFamily();
+      const sam = await addPerson(family.id, { name: 'Sam' });
+      const before = await db.partnerships.count();
+      expect(await linkPartner(max.id, sam.id)).toEqual({ ok: true });
+      expect(await db.partnerships.count()).toBe(before + 1);
+      expect(await linkPartner(sam.id, max.id)).toEqual({ ok: true });
+      expect(await db.partnerships.count()).toBe(before + 1);
+      expect(await linkPartner(gran.id, max.id)).toMatchObject({ ok: false });
+      expect(await linkPartner(ivy.id, ivy.id)).toMatchObject({ ok: false });
+      expect(await linkPartner(ivy.id, 'nope')).toMatchObject({ ok: false });
+    });
+
+    it('quickAddFamily into an existing family can use people already there', async () => {
+      const { family } = await seedFamily();
+      const sky = await addPerson(family.id, { name: 'Sky' });
+      const bud = await addPerson(family.id, { name: 'Bud' });
+      const wee = await addPerson(family.id, { name: 'Wee' });
+      const result = await quickAddFamily({
+        familyName: '',
+        familyId: family.id,
+        grandparents: [],
+        grandparentIds: [sky.id],
+        children: [{ name: 'Bud', existingId: bud.id, partner: 'New Pal', kids: ['Tot'], kidIds: [wee.id] }],
+      });
+      expect(result.id).toBe(family.id);
+      expect(await db.families.count()).toBe(1);
+      const people = await db.people.where('familyId').equals(family.id).toArray();
+      const by = (name: string) => people.find((p) => p.name === name)!;
+      expect(by('Bud').parentIds).toEqual([sky.id]);
+      expect(by('Tot').parentIds).toEqual([bud.id, by('New Pal').id]);
+      expect(by('Wee').parentIds).toEqual([bud.id, by('New Pal').id]);
+      expect(people.filter((p) => p.name === 'Bud')).toHaveLength(1);
+    });
+
+    it('quickAddFamily into a family picks an existing partner, links nothing twice, and refuses a loop', async () => {
+      const { family, gran, grandad, max, nia } = await seedFamily();
+      const before = await db.partnerships.count();
+      await quickAddFamily({ familyName: '', familyId: family.id, grandparents: [], grandparentIds: [gran.id, grandad.id], children: [{ name: '', existingId: max.id, partnerId: nia.id }] });
+      expect(await db.partnerships.count()).toBe(before);
+      expect((await db.people.get(max.id))!.parentIds).toEqual([gran.id, grandad.id]);
+      // Max under his own child Ivy would be a loop.
+      const ivy = (await db.people.toArray()).find((p) => p.name === 'Ivy Tester')!;
+      await expect(
+        quickAddFamily({ familyName: '', familyId: family.id, grandparents: [], grandparentIds: [ivy.id], children: [{ name: '', existingId: gran.id }] }),
+      ).rejects.toThrow();
+      expect((await db.people.get(gran.id))!.parentIds).toEqual([]);
+      await expect(quickAddFamily({ familyName: '', familyId: 'nope', grandparents: ['A'], children: [] })).rejects.toThrow(/isn’t on this phone/);
+      await expect(
+        quickAddFamily({ familyName: '', familyId: family.id, grandparents: [], grandparentIds: ['nope'], children: [] }),
+      ).rejects.toThrow(/isn’t in this family/);
+    });
   });
 
   it('createDemoFamily adds the made-up family with couples, separations and a pet', async () => {

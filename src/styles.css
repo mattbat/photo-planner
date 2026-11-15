@@ -103,28 +103,74 @@ button {
   touch-action: manipulation;
 }
 
-input:not([type='checkbox']),
-select {
+/* One field style for every text box, select, date and time input, and
+   text area, so they all line up: same height, padding, radius, border and
+   type. 17px keeps iOS from zooming in. Date and time inputs need an explicit
+   height and appearance:none, or Safari draws them shorter and centered. */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+select,
+textarea {
+  display: block;
   width: 100%;
-  min-height: var(--tap);
+  margin: 0;
   padding: 0 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
-  background: var(--surface-2);
-  /* 16px+ prevents iOS from zooming into inputs. */
+  background-color: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
   font-size: 17px;
+  line-height: 1.3;
+  text-align: left;
   outline: none;
-}
-
-input:focus {
-  border-color: var(--accent);
-}
-
-input[type='date'] {
   -webkit-appearance: none;
   appearance: none;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+select {
+  height: var(--tap);
+  min-height: var(--tap);
+}
+
+textarea {
+  min-height: 96px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+input[type='date'],
+input[type='time'] {
+  display: block;
+  min-width: 0;
+  /* The line box fills the field (48px less the 2px border), which centers the value in Safari. */
+  line-height: calc(var(--tap) - 2px);
+}
+
+input::-webkit-date-and-time-value {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  min-height: calc(var(--tap) - 2px);
+}
+
+input::-webkit-datetime-edit {
+  padding: 0;
+}
+
+select {
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 14px 9px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
 }
 
 .sr-only {
@@ -195,29 +241,51 @@ input[type='date'] {
   white-space: nowrap;
 }
 
-.topbar-back {
-  font-size: 34px;
-  line-height: 1;
-  padding: 4px 12px 8px;
+/* Top-bar icon buttons: a 44 x 44 tap target around a 26px line icon, in the accent color. */
+.topbar-back,
+.icon-btn,
+.topbar-action .link,
+.topbar-action .pl-fav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
   color: var(--accent);
 }
 
-.topbar-action {
-  text-align: right;
-  min-width: 0;
+.topbar-back {
+  justify-content: flex-start;
+  margin-left: -6px;
 }
+
+.topbar-action {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-right: -6px;
+}
+
+.icon {
+  display: block;
+  flex: none;
+}
+
 
 .topbar-spacer .link {
   display: inline-flex;
   align-items: center;
-  padding: 8px 4px 8px 8px;
+  min-height: 44px;
+  padding: 0 8px 0 0;
   white-space: nowrap;
 }
 
 .topbar-action .link {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 4px;
+  padding: 0 6px;
+  font-size: 17px;
   white-space: nowrap;
 }
 
@@ -368,6 +436,18 @@ input[type='date'] {
   display: none;
 }
 
+/* Lists that follow each other (people by generation) read as one list: a divider between them. */
+.list + .list {
+  border-top: 1px solid var(--line);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.list:has(+ .list) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 .list > li + li {
   border-top: 1px solid var(--line);
 }
@@ -397,12 +477,16 @@ input[type='date'] {
   flex: 1;
   font-weight: 600;
   min-width: 0;
+  /* Whole-pixel line heights keep every row a whole number of pixels tall, so
+     the 1px divider between rows is never lost to rounding on an iPhone. */
+  line-height: 22px;
 }
 
 .list-sub {
   display: block;
   font-weight: 400;
   font-size: 14px;
+  line-height: 18px;
   color: var(--text-2);
 }
 
@@ -555,19 +639,24 @@ input[type='date'] {
 
 .field {
   display: block;
-  margin-bottom: 12px;
+  min-width: 0;
+  margin-bottom: 14px;
 }
 
-.field > span {
+/* Every field label, whether it sits in a .field or a stacked .row. */
+.field > span,
+.row.stack > .row-label {
   display: block;
-  font-size: 13px;
+  margin: 0 0 6px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-2);
-  margin-bottom: 6px;
 }
 
+/* Two fields side by side get equal widths. */
 .field-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -589,6 +678,11 @@ input[type='date'] {
 .row.stack {
   flex-direction: column;
   align-items: stretch;
+  gap: 0;
+  min-height: 0;
+  margin-bottom: 14px;
+  padding: 0;
+  border-bottom: none;
 }
 
 .row.stack .segmented {
@@ -1044,16 +1138,64 @@ input[type='date'] {
 }
 
 .tab .tab-icon {
-  font-size: 22px;
-  line-height: 1;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+}
+
+.tab .tab-icon .icon {
+  width: 26px;
+  height: 26px;
 }
 
 .tab[aria-current='page'] {
   color: var(--accent);
 }
 
-.topbar-action a {
-  font-size: 22px;
+/* Active tab: bolder line and a soft fill. */
+.tab[aria-current='page'] .icon {
+  stroke-width: 2.2;
+  fill: currentColor;
+  fill-opacity: 0.16;
+}
+
+/* Shoot row: meta line whose separators never end a line, and a progress ring. */
+.meta {
+  overflow: hidden;
+}
+
+.meta-in {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -14px;
+}
+
+.meta-bit {
+  position: relative;
+  padding-left: 14px;
+  white-space: nowrap;
+}
+
+.meta-bit::before {
+  content: '·';
+  position: absolute;
+  left: 4px;
+}
+
+.progress-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.ring-track {
+  stroke: var(--line);
+}
+
+.ring-fill {
+  stroke: var(--accent);
 }
 
 .update-banner,
@@ -1063,22 +1205,6 @@ input[type='date'] {
 
 /* Families and the tree (M1) */
 
-textarea {
-  width: 100%;
-  min-height: 84px;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-  font: inherit;
-  font-size: 17px;
-  resize: vertical;
-  outline: none;
-}
-
-textarea:focus {
-  border-color: var(--accent);
-}
 
 .tree-box {
   height: calc(var(--app-height, 100dvh) - 360px);
@@ -1658,77 +1784,87 @@ textarea:focus {
 }
 .timeline-bar {
   position: relative;
-  height: 34px;
-  border-radius: 8px;
+  height: 44px;
+  border-radius: 10px;
   overflow: hidden;
-  background: #0b1020;
+  background: #1c2233;
   border: 1px solid var(--line);
 }
 .seg {
   position: absolute;
   top: 0;
   bottom: 0;
-}
-.seg.night { background: #0b1020; }
-.seg.blue { background: #3b5bdb; }
-.seg.golden { background: #f2a93b; }
-.seg.day { background: #8ecbf2; }
-.timeline-key .seg,
-.shoot-swatch {
-  position: static;
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  vertical-align: -1px;
-  border: 1px solid var(--line);
-}
-.shoot-swatch {
-  background: rgba(255, 255, 255, 0.35);
-  border: 2px solid var(--text);
-}
-.shoot-span {
-  position: absolute;
-  top: 2px;
-  bottom: 2px;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px #000;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.28);
-}
-.timeline-axis {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
+}
+.seg.dark { background: #2a3146; }
+.seg.golden { background: #f2a93b; }
+.seg.day { background: #cfe6f5; }
+.seg-label {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.seg.dark .seg-label { color: #c9d0e4; }
+.seg.golden .seg-label,
+.seg.day .seg-label { color: #2b2110; }
+.now-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1.5px;
+  background: #e5322d;
+  box-shadow: 0 0 0 1px #fff;
+}
+.timeline-ticks {
+  position: relative;
+  height: 20px;
   margin-top: 4px;
   font-size: 12px;
   color: var(--text-2);
 }
-.timeline-key {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
+.timeline-ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.shoot-row {
   margin-top: 6px;
-  font-size: 12px;
-  color: var(--text-2);
 }
-.light-times {
-  list-style: none;
+.shoot-track {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface-2);
+}
+.shoot-span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 5px;
+  background: var(--text);
+}
+.shoot-caption {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.light-headline {
   margin: 12px 0 4px;
-  padding: 0;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
-.light-times li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-}
-.light-times li.missing b {
+.light-fit {
+  margin: 0 0 12px;
   color: var(--text-2);
-  font-weight: 500;
+  font-size: 15px;
 }
-.light-times b {
-  text-align: right;
+.light-more > summary {
+  min-height: 44px;
 }
 .light-suggest {
   margin: 8px 0;
@@ -1745,7 +1881,7 @@ textarea:focus {
 .compass {
   flex: none;
   text-align: center;
-  max-width: 160px;
+  max-width: 190px;
 }
 .compass svg {
   display: block;
@@ -1753,10 +1889,16 @@ textarea:focus {
 }
 .rose-ring { fill: var(--surface-2); stroke: var(--line); stroke-width: 2; }
 .rose-tick { stroke: var(--text-2); stroke-width: 2; }
-.rose-n { fill: var(--text); font-weight: 700; font-size: 12px; }
-.rose-l { fill: var(--text-2); font-size: 10px; }
-.rose-arrow { stroke: #f2a93b; stroke-width: 4; stroke-linecap: round; }
-.rose-head { fill: #f2a93b; }
+.rose-n { fill: var(--text); font-weight: 800; font-size: 13px; }
+.rose-l { fill: var(--text); font-weight: 700; font-size: 12px; }
+.rose-arrow { stroke: #f2a93b; stroke-width: 3; stroke-linecap: round; }
+.rose-sun { fill: #f2a93b; stroke: #b36b00; stroke-width: 1; }
+.rose-ray { stroke: #f2a93b; stroke-width: 2.5; stroke-linecap: round; }
+.rose-hub { fill: var(--text-2); }
+.rose-facing { fill: var(--accent); }
+.compass-caption { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.compass-controls { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.compass-controls .muted-note { margin: 0; }
 .map-box {
   height: 260px;
   border-radius: var(--radius-sm);
@@ -2192,4 +2334,110 @@ input::placeholder,
 textarea::placeholder {
   color: var(--text-3);
   opacity: 1;
+}
+
+/* Pick someone already in the family, and the possible-duplicate hint (F9, F10). */
+.choose-person {
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid var(--surface-2);
+  border-radius: 12px;
+}
+
+.choose-list {
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 8px 0;
+}
+
+.dup-hint {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--warn-text);
+}
+
+.qa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.qa-picked {
+  margin: 0;
+}
+
+/* Early and Late people (O7). */
+.prio-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--text);
+  color: var(--bg);
+}
+
+.prio-badge.late {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--text-2);
+}
+
+.prio-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prio-name input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+.prio-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+/* Chosen poses on a shot (PL5). */
+.pose-count {
+  margin-left: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.pose-chosen {
+  margin: 8px 0;
+  padding-left: 22px;
+}
+
+.pose-chosen li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.pose-chosen .grow {
+  flex: 1;
+}
+
+.pose-chosen .link {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.pose-sheet-thumbs {
+  display: flex;
+  gap: 4px;
 }

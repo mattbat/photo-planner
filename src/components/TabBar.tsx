@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react';
+import { CameraIcon, FigureIcon, PeopleIcon } from './icons';
 import { paths, TABS, type TabName } from '../router';
 
-const TAB_INFO: Record<TabName, { label: string; icon: string; href: string }> = {
-  shoots: { label: 'Shoots', icon: '📷', href: paths.shoots() },
-  families: { label: 'Families', icon: '👪', href: paths.families() },
-  poses: { label: 'Poses', icon: '🧍', href: paths.poses() },
+const TAB_INFO: Record<TabName, { label: string; icon: ReactNode; href: string }> = {
+  shoots: { label: 'Shoots', icon: <CameraIcon />, href: paths.shoots() },
+  families: { label: 'Families', icon: <PeopleIcon />, href: paths.families() },
+  poses: { label: 'Poses', icon: <FigureIcon />, href: paths.poses() },
 };
 
 /** The bottom navigation between Shoots, Families and Poses. */

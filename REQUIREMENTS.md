@@ -84,6 +84,8 @@ Same as next5 unless noted.
 | F5 | A person can be marked "not usually at shoots" (e.g. lives abroad) so they're unchecked by default. |
 | F6 | **Several top couples in one tree:** both sets of grandparents (or a reunion with great-aunts and uncles) live in the same family, joined through marriages. Templates work from each top couple ("Jen's parents + all their grandkids"). |
 | F7 | Validation in plain language: "Emma is listed as a child of both Mike and Mike's mother." |
+| F9 | **Link people already in the family.** Wherever one person is linked to another (quick add, parent, partner, child on the person sheet, "+ child" on a couple), offer **Choose someone already in the family** next to adding a new person: a searchable list that leaves out impossible choices (themselves, own descendants as a parent, own ancestors as a child, existing links, a third parent). A link that would still break the tree (F7) is refused with the reason. Quick add can also add into an existing family and pick existing people (decided 2026-11-15). |
+| F10 | A new name that matches someone already in the family ("Emma") shows a light "Is this the same Emma?" hint with **Link instead**; it never blocks adding (decided 2026-11-15). |
 | F8 | Extra people (guests, pets) per family or per shoot, with a name and an optional photo or emoji. |
 
 ## 5a. Family tree diagram
@@ -93,13 +95,13 @@ A diagram of the family, drawn by the app from the relationships (nobody arrange
 | ID | Requirement |
 |----|-------------|
 | V1 | **Layout:** one row per generation, top to bottom. Partners sit side by side joined by a line (a solid line for together, dashed for separated); their children hang below from that line. Step-children connect only to their own parent. Families joined by marriage (both sets of grandparents) appear side by side in one diagram. |
-| V2 | **Branches are colour-coded:** each child of a top couple and everyone descended from them share a colour, which is reused on the shot list and shoot day ("Mike's family" is always blue). |
+| V2 | **Branches are color-coded:** each child of a top couple and everyone descended from them share a color, which is reused on the shot list and shoot day ("Mike's family" is always blue). |
 | V3 | Each person is a card: name (or nickname), a generation label, an optional photo or initials, and icons for *kid* and *not usually at shoots*. Grown children show a household outline around them, their partner and their kids. |
 | V4 | Pinch to zoom and drag to pan; **Fit** shows the whole family; it works for 4 to 60 people on an iPhone screen. |
 | V5 | **Tap a person** to edit them, add a partner, child or parent from there ("+ child" on a couple line), or see how they're related to everyone else. |
 | V6 | **Relationship finder:** tap two people to read how they're related in plain words: "Emma is Dan's niece", "Jen is Ruth's daughter-in-law", "Liam and Ava are first cousins". |
 | V7 | **Shot view:** on the shot list or on shoot day, tap a shot to see its people highlighted on the tree and everyone else dimmed. Useful to check a shot is what you meant, and for the assistant to spot who to call. |
-| V8 | **Attendance view:** on a shoot, people not attending are greyed out; on shoot day, people who have arrived, are waiting or have left are marked. |
+| V8 | **Attendance view:** on a shoot, people not attending are grayed out; on shoot day, people who have arrived, are waiting or have left are marked. |
 | V9 | **Share the tree** as an image (to send to the family: "Is this everyone?"). |
 | V10 | The layout is a pure module (`src/tree`) with tests: no overlapping cards or crossing child lines for common family shapes (blended families, remarriage, single parents, two sets of grandparents), and the same family always draws the same way. Drawn as SVG. |
 
@@ -165,6 +167,9 @@ The grown-children templates exist because grown children are their own househol
 | O3 | Each step shows **call in** (green ▲) and **can leave / step aside** (red ▼), like next5's IN/OUT pairs. |
 | O4 | The photographer can drag shots into any order; the suggestion never overrides a manual order unless asked (**↻ Re-order rest**). |
 | O5 | **Time estimate:** minutes per shot by group size (defaults in Settings, e.g. 2 min for 1–2 people, 3 min for 3–6, 5 min for 7+, plus a set-up allowance). Shows the total and when each shot is expected to happen, so it can be matched to the light (§10). |
+| O7 | **Early and late people.** On a shoot the photographer marks people **Early** (finish them first: an older guest, someone with special needs) or **Late** (push to the end: someone called away briefly, a little one who needs a break); everyone else is Normal. Set per person or for several at once on the shoot screen, shown as a small Early/Late badge on people chips. Stored on the shoot (`priorities`), validated in backups and carried in the hand-off. Guarantee: after any shots fixed by hand or already done, the order is grouped in three tiers that never interleave: shots with an Early person and no Late one, then all other shots, then shots with a Late person and no Early one. With no shot that mixes Early and Late people, every shot with an Early person comes before every shot without one, and every shot with a Late person comes after every shot without one. Inside a tier the fewest-changes order applies, and Early people are released as soon as possible (decided 2026-11-15). |
+| O8 | On shoot day, **Who's here** has the same Normal / Early / Late control. Changing it re-orders only the shots still to do, keeping the one being photographed first; done, skipped and retake shots never move. A short note says what happened ("Reordered: Grandma's 4 shots are next") (decided 2026-11-15). |
+| O9 | **Everyone first** (option, on by default, in Settings and per shoot). The "everyone" shots open the shoot, largest first: the full-group templates (with or without pets and guests) and any shot containing all the people. The rest are ordered as before. A shot with someone marked Late (O7) is not an everyone shot until they are Normal or Early again: the shoot screen says "Full group waits for Dan". Shots fixed by hand or already done keep their place (decided 2026-11-15). |
 | O6 | Performance: 40 people and 120 shots ordered in under 1 second on an iPhone. |
 
 ## 7. Shoot planning
@@ -193,6 +198,7 @@ Designed for the assistant's thumb and outdoor glare: large text, big targets, h
 | D8 | Keeps the screen awake (Wake Lock, reusing next5's `useWakeLock`) and resumes exactly where it was after the phone locks or the app is closed. |
 | D9 | **Finish shoot** shows a summary: done, skipped, retakes still owed, custom shots added, and a text to share. Finished shoots can be reopened. |
 | D10 | Every tap saves immediately; no Save button. |
+| D11 | The current-shot card says **"Shot N of T · X left"**: N is progress (shots done or skipped, plus one), T the shots in the list, X the shots not yet done or skipped. N counts 1, 2, 3 to the end, never drops on Done or Skip, and Undo restores it. It does not depend on the order the shots are taken in (decided 2026-11-15). |
 
 ## 9. Photographer and assistant
 
@@ -211,12 +217,12 @@ Hand-off details (adapted from next5's SH1–SH6): share the shoot by link or Ai
 | ID | Requirement |
 |----|-------------|
 | L1 | **Location** for each shoot, set by: current GPS position; searching an address or place (online, e.g. Open-Meteo or OpenStreetMap geocoding, no API key); or typing coordinates, or dropping a pin on a map (OpenStreetMap tiles via Leaflet; online only). All three were wanted (decided 2026-11-15). Saved locations can be reused ("Riverside Park"). |
-| L2 | **Light timeline** for the date and place: sunrise, morning golden hour, sunset, evening golden hour, blue hour, and solar noon, shown as a coloured bar across the day, with the shoot's planned span (O5) drawn on it. Times in the location's time zone. |
-| L3 | Definitions shown in help: golden hour = sun between about 6° above and 4° below the horizon; blue hour = 4° to 6° below. |
+| L2 | **Light for the shoot's session.** One headline sentence ("Golden hour 4:56–5:48 PM · sunset 5:32 PM"), one line on how the planned shoot fits ("✓ All of your shoot is in golden hour", "starts 11 min before golden hour and ends during it"), and a zoomed timeline of just that session: about 2.5 hours before golden hour to 30 minutes after it (mirrored for the morning, widened to hold the shoot), in daylight, golden hour and "too dark", with hour ticks, the shoot's span (O5) as a bar labelled with its times, and a "now" marker on the day. Evening by default, morning when the planned start is before noon, with a toggle. Times in the location's zone, with a note when that differs from the phone's. The place shows by name only. Sun direction, weather and other dates sit in a **More** fold (decided 2026-11-15). |
+| L3 | Definition shown in help: golden hour = sun between about 6° above and 4° below the horizon. Blue hour is not shown anywhere in the UI (the sun module still computes it). |
 | L4 | **Suggested start time**: so the planned shoot ends as golden hour ends (evening) or starts as it begins (morning), with must-have and big-group shots in the best light. A warning if the shot list is longer than golden hour. |
-| L5 | **Sun direction**: the sun's compass bearing at the planned time, with a compass arrow (using the phone's compass when allowed) so the photographer knows where to put the family relative to the sun. |
+| L5 | **Sun direction**: the sun's compass bearing at the planned time, shown as a sun symbol on a rose with N, E, S and W labelled and a caption ("Where the sun will be at 4:45 PM"); "Use compass" turns the rose with the phone and marks where you are facing so the photographer knows where to put the family relative to the sun. |
 | L6 | **Pick a date**: a small calendar or list showing golden-hour times for the next weeks, to help choose a date. |
-| L7 | **Weather forecast** (cloud cover, rain chance, wind) for shoots in the next ~14 days from Open-Meteo (free, no key). Online only; cached for offline viewing. |
+| L7 | **Weather forecast** (cloud cover, rain chance, wind, temperature; **US units, °F and mph, by default**, metric in Settings. The saved forecast stays as the service sends it and is converted when shown, so switching needs no new download) for shoots in the next ~14 days from Open-Meteo (free, no key). Online only; cached for offline viewing. |
 | L8 | Shoot day shows a countdown to the end of golden hour (D7). |
 
 The sun calculation lives in a pure module (`src/sun`) with tests against published NOAA times for a few cities and dates, including polar and daylight-saving edge cases.
@@ -227,15 +233,15 @@ The sun calculation lives in a pure module (`src/sun`) with tests against publis
 |----|-------------|
 | PL1 | Categories: **Individual** (adult, man, woman, teen, senior), **Couples**, **Parent + child**, **Kids & babies**, **Siblings**, **Small family (3–6)**, **Large group (7+)**, **Generations**, **Candid / movement**. |
 | PL2 | Each pose: name, example image, short description, how to direct it (step by step, in words you can say to people), tips and common mistakes, group size range, tags (sitting, standing, walking, lying down, close-up, full-length, playful, formal), and difficulty. |
-| PL3 | **Starter library** of about 60 poses built into the app, works offline. Example images can be drawn illustrations, AI-generated images or free-licence stock photos (Pexels/Unsplash, credited) (decided 2026-11-15). Plan: one consistent illustration style for the whole starter set, so it looks like one library; photos the user adds sit alongside. Each image's source and licence is recorded. |
-| PL4 | The photographer can **add their own poses** and **add their own example photos** to any pose (from Photos or the camera), and mark favourites. |
-| PL5 | **Suggested poses** on each shot, matched by group size and who is in it (e.g. kids present, three generations). Tap to attach one; the attached pose shows on shoot day. |
+| PL3 | **Starter library** of about 60 poses built into the app, works offline. Example images can be drawn illustrations, AI-generated images or free-license stock photos (Pexels/Unsplash, credited) (decided 2026-11-15). Plan: one consistent illustration style for the whole starter set, so it looks like one library; photos the user adds sit alongside. Each image's source and license is recorded. |
+| PL4 | The photographer can **add their own poses** and **add their own example photos** to any pose (from Photos or the camera), and mark favorites. |
+| PL5 | **Suggested poses** on each shot, matched by group size and who is in it (e.g. kids present, three generations). Tap to attach poses: **a shot can have several**, shown with a count ("3 poses"), in an order the photographer can change with up/down arrows, and cleared all at once. Every attached pose shows on shoot day as a row of thumbnails with names; tapping one opens its directions. |
 | PL6 | Search and filter by category, size and tags. |
-| PL7 | A **pose sheet** per shoot: the poses attached to its shots, to review the night before. |
+| PL7 | A **pose sheet** per shoot: all the poses attached to each shot, to review the night before. |
 
 ## 12. Data, backup and sharing
 
-Reuses next5's code and behaviour.
+Reuses next5's code and behavior.
 
 | ID | Requirement |
 |----|-------------|
@@ -254,7 +260,7 @@ As next5 §12: README for users and developers; a skippable first-run intro endi
 - iPhone 17 portrait, down to 375 pt wide; safe areas; system font; iOS-style sheets.
 - Tap targets ≥ 44 pt; Done is always one tap.
 - **Theme follows the phone's light/dark setting by default**, with Light and Dark available in Settings (decided 2026-11-15). Shoot day must be readable in bright sun in either: high contrast, large type.
-- A look of its own (warm, photographic accent colour) rather than next5's sports style, but the same components.
+- A look of its own (warm, photographic accent color) rather than next5's sports style, but the same components.
 - Destructive actions confirm first.
 
 ## 15. Testing, CI and releases
@@ -310,7 +316,7 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 |------|----------|
 | 2026-11-15 | iPhone PWA built like next5 (same stack, hosting, tests, releases, beta previews, help). |
 | 2026-11-15 | Assistant gets the shoot by hand-off (link or AirDrop file), one phone running it at a time, as in next5. No server, no live sync. |
-| 2026-11-15 | Pose images may be drawn, AI-generated or free-licence stock. |
+| 2026-11-15 | Pose images may be drawn, AI-generated or free-license stock. |
 | 2026-11-15 | A shoot can include several related households; they live in one family tree, which can have more than one top couple (both sets of grandparents). |
 | 2026-11-15 | Grown children are their own household, and there are templates to photograph them with their parents. |
 | 2026-11-15 | Address search, GPS, a map pin and a weather forecast are all wanted (online only; everything else works offline). |
@@ -320,6 +326,13 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 | 2026-11-15 | A family tree diagram (§5a) is part of v1, built with the families milestone (M1). |
 | 2026-11-15 | The biggest shoot is about 20 people. Design and test for 2–30 people and up to ~80 shots. |
 | 2026-11-15 | No deceased people in the tree. |
+| 2026-11-15 | People already in a family can be picked wherever people are linked, with a duplicate-name hint (F9, F10), so separately added branches can be joined. |
+| 2026-11-15 | People can be marked Early or Late for a shoot, before and on the day, and the order follows (O7, O8). |
+| 2026-11-15 | A shot can have several poses, in order (`Shot.poseIds`, replacing the single `poseId`); old data, backups and hand-off files are converted (Dexie version 2, restore, receive) (PL5). |
+| 2026-11-15 | Everyone (full-group) shots come first by default; a Late person in the full group makes it wait for them (O9). |
+| 2026-11-15 | One time format app-wide, US style ("3:53 PM"); form fields, top-bar icons and tab icons share one style (polish pass). |
+| 2026-11-15 | Blue hour removed from the UI; the Light section focuses on the shoot's session (evening or morning) with golden hour and sunset at a glance (L2, L3). |
+| 2026-11-15 | Weather shows °F and mph by default; metric is a Settings choice (L7). American English throughout. |
 | 2026-11-15 | Build started; the Q12 default shot types are used until changed. Built by Claude with subagents, milestone by milestone. |
 
 ## 18. Risks

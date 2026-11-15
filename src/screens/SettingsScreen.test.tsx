@@ -1,10 +1,10 @@
 import changelog from '../changelog.json';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BACKUP_FORMAT, createBackup, lastBackupAt } from '../data/backup';
 import { db } from '../data/db';
-import { createFamily } from '../data/repo';
+import { createFamily, getSettings } from '../data/repo';
 import { clearDb, seedFamily } from '../test/helpers';
 import { themePreference } from '../theme';
 
@@ -152,14 +152,14 @@ describe('SettingsScreen', () => {
     expect(await db.families.count()).toBe(0);
   });
 
-  it('does not erase if the backup offered first is cancelled', async () => {
+  it('does not erase if the backup offered first is canceled', async () => {
     const user = userEvent.setup();
     beta.value = { branch: 'claude/families', next: {} };
     await createFamily('The Testers');
     Object.assign(navigator, {
       canShare: () => true,
       share: async () => {
-        throw new DOMException('cancelled', 'AbortError');
+        throw new DOMException('canceled', 'AbortError');
       },
     });
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -170,4 +170,28 @@ describe('SettingsScreen', () => {
     expect(await db.families.count()).toBe(1);
     expect(reload).not.toHaveBeenCalled();
   });
+
+  it('chooses US or metric units for the weather, US by default, and everyone-first for new shoots', async () => {
+    const user = userEvent.setup();
+    render(<SettingsScreen reload={() => undefined} />);
+    const group = await screen.findByRole('radiogroup', { name: 'Units' });
+    // Settings come from a live query, so wait for the screen to show them.
+    await waitFor(() => expect(within(group).getByRole('radio', { name: 'US (°F, mph)' })).toHaveAttribute('aria-checked', 'true'));
+    await user.click(within(group).getByRole('radio', { name: 'Metric (°C, km/h)' }));
+    await waitFor(async () => expect((await getSettings()).units).toBe('metric'));
+    await waitFor(() => expect(within(group).getByRole('radio', { name: 'Metric (°C, km/h)' })).toHaveAttribute('aria-checked', 'true'));
+    const toggle = screen.getByRole('switch', { name: 'Everyone shots first' });
+    await waitFor(() => expect(toggle).toBeChecked());
+    await user.click(toggle);
+    await waitFor(async () => expect((await getSettings()).defaultOrderOptions.everyoneFirst).toBe(false));
+    expect((await getSettings()).defaultOrderOptions.kidsFirst).toBe(true);
+  });
+
+  it('settings saved before units existed read as US', async () => {
+    await db.settings.put({ key: 'app', updatedAt: 1, value: { defaultTemplates: [], defaultOrderOptions: { kidsFirst: true, releaseOlderEarly: true, bigGroupFirst: true, mustHavesEarly: false }, timeEstimates: { small: 2, medium: 3, large: 5, setup: 5 } } });
+    const s = await getSettings();
+    expect(s.units).toBe('us');
+    expect(s.defaultOrderOptions.everyoneFirst).toBeUndefined(); // counts as on
+  });
 });
+

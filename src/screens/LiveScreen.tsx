@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CustomShotSheet } from '../components/CustomShotSheet';
+import { PriorityBadge, PriorityControl } from '../components/PrioritySheet';
+import { MoreIcon } from '../components/icons';
+import { applyPriority } from '../components/priority';
 import { ShareShootSheet, SharedBanner } from '../components/ShareShoot';
 import { lockedAway } from '../data/handoff';
 import { FamilyTree } from '../components/FamilyTree';
@@ -18,7 +21,7 @@ import {
   undoLastOnDay,
   updateSettings,
 } from '../data/repo';
-import type { Extra, Person, Pose, Presence, Shot } from '../data/types';
+import type { Extra, Person, Pose, Presence, Shoot, Shot } from '../data/types';
 import { formatDate } from '../domain/dates';
 import { displayName, groupByGeneration, toTreePeople } from '../domain/familyView';
 import { shortNames } from '../domain/shortNames';
@@ -26,6 +29,8 @@ import {
   currentShot,
   dayLists,
   progress,
+  shotCounter,
+  type ShotCounter,
   summarize,
   summaryText,
   transition,
@@ -34,6 +39,7 @@ import {
   type DayState,
 } from '../domain/shootDay';
 import { analyzeOrder } from '../domain/shotView';
+import { poseIdsOf } from '../domain/shotPoses';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useShootData, type ShootData } from '../hooks/useShootData';
 import { usePoseMap } from '../hooks/usePoseMap';
@@ -97,6 +103,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
   const banner = lightBanner ?? <LightBanner shoot={shoot} location={location} now={new Date(now)} />;
   const [view, setView] = useState<View>('now');
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [poseOpen, setPoseOpen] = useState<Pose | null>(null);
 
   const state: DayState = shoot;
   const nameById = useMemo(() => shortNames(people, extras), [people, extras]);
@@ -135,8 +142,8 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
         title="Shoot day"
         back={paths.shoot(shoot.id)}
         action={
-          <button type="button" className="link" aria-label="Shoot day menu" onClick={() => setDialog('menu')}>
-            ⋯
+          <button type="button" className="icon-btn" aria-label="Shoot day menu" onClick={() => setDialog('menu')}>
+            <MoreIcon />
           </button>
         }
       />
@@ -186,7 +193,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
       {view === 'now' && (
         <>
           {current ? (
-            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} pose={current.poseId ? poses.get(current.poseId) : undefined} waiting={waitingFor(state, current)} number={shoot.shots.indexOf(current) + 1} total={stats.total} />
+            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} poses={poseIdsOf(current).flatMap((id) => (poses.has(id) ? [poses.get(id)!] : []))} waiting={waitingFor(state, current)} counter={shotCounter(state)} priorities={shoot.priorities} onPose={setPoseOpen} />
           ) : (
             <section className="live-card live-empty" aria-label="Current shot">
               <h2>{open === 0 ? 'All shots handled' : 'Waiting for people'}</h2>
@@ -236,7 +243,35 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
         </div>
       </footer>
 
-      {dialog === 'who' && <WhoSheet data={data} nameOf={nameOf} onClose={() => setDialog(null)} />}
+      {poseOpen && (
+        <Sheet title={poseOpen.name} onClose={() => setPoseOpen(null)}>
+          {poseOpen.description && <p>{poseOpen.description}</p>}
+          {poseOpen.directions.length > 0 && (
+            <>
+              <h3 className="sheet-sub">Directions</h3>
+              <ol className="live-directions">
+                {poseOpen.directions.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ol>
+            </>
+          )}
+          {poseOpen.tips.length > 0 && (
+            <>
+              <h3 className="sheet-sub">Tips</h3>
+              <ul>
+                {poseOpen.tips.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          <a className="btn secondary wide" href={`#/poses/${encodeURIComponent(poseOpen.id)}`}>
+            Open the pose
+          </a>
+        </Sheet>
+      )}
+      {dialog === 'who' && <WhoSheet data={data} nameOf={nameOf} onNote={setMessage} onClose={() => setDialog(null)} />}
       {dialog === 'add' && (
         <CustomShotSheet
           shootId={shoot.id}
@@ -331,26 +366,28 @@ function CurrentCard({
   nameOf,
   nodes,
   extras,
-  pose,
+  poses,
   waiting,
-  number,
-  total,
+  counter,
+  priorities,
+  onPose,
 }: {
   shot: Shot;
   nameOf: (id: string) => string;
   nodes: Map<string, NodeInfo>;
   extras: Extra[];
-  pose: Pose | undefined;
+  poses: Pose[];
   waiting: string[];
-  number: number;
-  total: number;
+  counter: ShotCounter;
+  priorities: Shoot['priorities'];
+  onPose: (pose: Pose) => void;
 }) {
   const extraById = new Map(extras.map((e) => [e.id, e]));
   const { groups, extra } = groupPeople(shot.personIds, nodes, new Set(extraById.keys()), nameOf);
   return (
     <section className="live-card" aria-label="Current shot">
       <p className="live-kicker">
-        Shot {number} of {total}
+        Shot {counter.number} of {counter.total} · {counter.left} left
         {shot.mustHave && (
           <span className="live-star" role="img" aria-label="Must-have">
             {' '}
@@ -369,7 +406,10 @@ function CurrentCard({
           <div className="live-glabel">{g.label}</div>
           <div className="live-people">
             {g.ids.map((id) => (
-              <span key={id}>{nameOf(id)}</span>
+              <span key={id}>
+                {nameOf(id)}
+                <PriorityBadge value={priorities?.[id]} />
+              </span>
             ))}
           </div>
         </div>
@@ -384,14 +424,20 @@ function CurrentCard({
           </div>
         </div>
       )}
-      {pose && (
-        <a className="live-pose" href={`#/poses/${encodeURIComponent(pose.id)}`}>
-          <PoseThumb pose={pose} />
-          <span>
-            <span className="live-glabel">Suggested pose</span>
-            <b>{pose.name}</b>
-          </span>
-        </a>
+      {poses.length > 0 && (
+        <div className="live-poses">
+          <div className="live-glabel">{poses.length === 1 ? 'Suggested pose' : `Suggested poses (${poses.length})`}</div>
+          <ul className="live-pose-row" aria-label="Poses for this shot">
+            {poses.map((pose) => (
+              <li key={pose.id}>
+                <button type="button" className="live-pose" aria-label={`Pose: ${pose.name}`} onClick={() => onPose(pose)}>
+                  <PoseThumb pose={pose} />
+                  <b>{pose.name}</b>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {shot.notes.trim() && <p className="live-notes">{shot.notes}</p>}
     </section>
@@ -506,9 +552,10 @@ const PRESENCE: { value: Presence; label: string }[] = [
 ];
 
 /** Who’s here (D5): arrived, not yet, or left. Someone leaving offers to bring their shots forward. */
-function WhoSheet({ data, nameOf, onClose }: { data: ShootData; nameOf: (id: string) => string; onClose: () => void }) {
+function WhoSheet({ data, nameOf, onNote, onClose }: { data: ShootData; nameOf: (id: string) => string; onNote: (note: string) => void; onClose: () => void }) {
   const { shoot, people, partnerships } = data;
   const [offer, setOffer] = useState<string | null>(null);
+  const [note, setNote] = useState('');
   const treatAll = useLiveQuery(async () => (await getSettings()).treatEveryoneAsHere !== false) ?? true;
   const groups = useMemo(() => groupByGeneration(people.filter((p) => shoot.attendingIds.includes(p.id)), partnerships), [people, partnerships, shoot.attendingIds]);
   const remaining = (id: string) => shoot.shots.filter((s) => s.status === 'todo' && s.personIds.includes(id)).length;
@@ -535,13 +582,21 @@ function WhoSheet({ data, nameOf, onClose }: { data: ShootData; nameOf: (id: str
           </button>
         </div>
       )}
+      {note && (
+        <p className="status-msg" role="status">
+          {note}
+        </p>
+      )}
       {groups.map((g) => (
         <ul key={g.generation} className="list live-who" aria-label={`Generation ${g.generation}`}>
           {g.people.map((p) => {
             const now = shoot.presence[p.id] ?? 'here';
             return (
               <li key={p.id} className="live-who-row">
-                <span className="live-who-name">{displayName(p)}</span>
+                <span className="live-who-name">
+                  {displayName(p)}
+                  <PriorityBadge value={shoot.priorities?.[p.id]} />
+                </span>
                 <div className="segmented" role="radiogroup" aria-label={`${displayName(p)} is`}>
                   {PRESENCE.map((o) => (
                     <button key={o.value} type="button" role="radio" aria-checked={o.value === now} className={o.value === now ? 'on' : ''} onClick={() => set(p, o.value)}>
@@ -549,6 +604,16 @@ function WhoSheet({ data, nameOf, onClose }: { data: ShootData; nameOf: (id: str
                     </button>
                   ))}
                 </div>
+                <PriorityControl
+                  name={displayName(p)}
+                  value={shoot.priorities?.[p.id] ?? 'normal'}
+                  onChange={(v) =>
+                    void applyPriority(shoot, [p.id], v, nameOf).then((text) => {
+                      setNote(text);
+                      onNote(text);
+                    })
+                  }
+                />
               </li>
             );
           })}

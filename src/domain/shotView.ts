@@ -2,6 +2,7 @@ import type { AppSettings, Extra, Partnership, Person, Shoot, Shot, TemplateId, 
 import {
   buildFamily,
   describeRelationship,
+  everyoneShotKeys,
   generateShots,
   orderShots,
   previewCounts,
@@ -13,6 +14,8 @@ import {
   type PreviewCount,
   type Shot as EngineShot,
 } from '../engine';
+import { formatClock } from '../sun';
+import { poseIdsOf } from './shotPoses';
 import { orderedPeople, toTreePeople } from './familyView';
 
 /**
@@ -84,7 +87,7 @@ function toStoredShot(shot: EngineShot, previous: Shot | undefined): Shot {
     reasons: shot.templateIds,
     mustHave: previous?.mustHave ?? false,
     notes: previous?.notes ?? '',
-    ...(previous?.poseId ? { poseId: previous.poseId } : {}),
+    ...(previous && poseIdsOf(previous).length ? { poseIds: poseIdsOf(previous) } : {}),
     status: previous?.status ?? 'todo',
     ...(previous?.doneAt !== undefined ? { doneAt: previous.doneAt } : {}),
   };
@@ -186,6 +189,8 @@ export interface OrderInput {
   order: string[];
   options: AppSettings['defaultOrderOptions'];
   estimates: TimeEstimates;
+  /** People to shoot early or late (O7). */
+  priorities?: Record<string, 'early' | 'late'> | undefined;
   thisYear?: number;
 }
 
@@ -205,8 +210,9 @@ function runOrder(input: OrderInput, fixedPrefix: string[], useOptions: boolean)
     ordered.map((s) => toEngineShot(s, extraSet)),
     toEnginePeople(input.people, input.partnerships, input.thisYear),
     {
-      ...(useOptions ? { kidsFirst: o.kidsFirst, releaseOlderEarly: o.releaseOlderEarly, bigGroupFirst: o.bigGroupFirst, mustHavesEarly: o.mustHavesEarly } : {}),
+      ...(useOptions ? { kidsFirst: o.kidsFirst, releaseOlderEarly: o.releaseOlderEarly, bigGroupFirst: o.bigGroupFirst, mustHavesEarly: o.mustHavesEarly, everyoneFirst: o.everyoneFirst !== false } : {}),
       mustHaveKeys: ordered.filter((s) => s.mustHave).map((s) => s.id),
+      ...(input.priorities ? { priorities: input.priorities } : {}),
       fixedPrefix,
       minutesBySize: minutesBySize(input.estimates),
       setupMinutes: input.estimates.setup,
@@ -221,18 +227,55 @@ export function suggestOrder(input: OrderInput, keepDone = false): string[] {
   return runOrder(input, prefix, true).order;
 }
 
+/**
+ * Shoot day (O8): re-order only the shots still to do. Done, skipped and
+ * retake shots keep their places; the shot being photographed stays first of
+ * the rest; the other to-do shots are re-ordered (with the priorities) into
+ * the slots the to-do shots had.
+ */
+export function suggestDayOrder(input: OrderInput, currentShotId?: string): string[] {
+  const ordered = inOrder(input.shots, input.order);
+  const closed = ordered.filter((s) => s.status !== 'todo').map((s) => s.id);
+  const current = ordered.find((s) => s.id === currentShotId && s.status === 'todo');
+  const result = runOrder(input, [...closed, ...(current ? [current.id] : [])], true).order;
+  const todo = new Set(ordered.filter((s) => s.status === 'todo').map((s) => s.id));
+  const queue = result.filter((id) => todo.has(id));
+  return ordered.map((s) => (todo.has(s.id) ? queue.shift()! : s.id));
+}
+
+/**
+ * People marked Late who are in an "everyone" shot, so that shot waits for
+ * them instead of opening the shoot (O9). Empty when everyone-first is off.
+ */
+export function everyoneWaitsFor(shots: Shot[], priorities: Record<string, 'early' | 'late'> | undefined, options: { everyoneFirst?: boolean | undefined }): string[] {
+  if (options.everyoneFirst === false || !priorities) return [];
+  const extra = new Set<string>();
+  const eng = shots.filter((s) => s.status === 'todo').map((s) => toEngineShot(s, extra));
+  const everyone = everyoneShotKeys(eng);
+  const late = new Set<string>();
+  for (const s of eng) if (everyone.has(s.key)) for (const id of s.peopleIds) if (priorities[id] === 'late') late.add(id);
+  return [...late];
+}
+
+/** The short note after priorities change on shoot day: "Reordered: Grandma's 4 shots are next". */
+export function reorderNote(name: string, how: 'early' | 'late' | 'normal', shots: number): string {
+  const n = `${shots} shot${shots === 1 ? '' : 's'}`;
+  if (how === 'early') return `Reordered: ${name}’s ${n} ${shots === 1 ? 'is' : 'are'} next.`;
+  if (how === 'late') return `Reordered: ${name}’s ${n} ${shots === 1 ? 'is' : 'are'} last.`;
+  return `Reordered the rest without a priority for ${name}.`;
+}
+
 /** The current order as steps (who to call in, who can leave, who is done for the day) with minutes (O3, O5). */
 export function analyzeOrder(input: OrderInput): OrderResult {
   return runOrder(input, inOrder(input.shots, input.order).map((s) => s.id), false);
 }
 
-/** "9:05 am" for a start time (HH:mm) plus minutes; the day wraps. */
+/** "9:05 AM" for a start time (HH:mm) plus minutes; the day wraps. */
 export function clockAt(startTime: string, minutes: number): string {
   const [h = '0', m = '0'] = startTime.split(':');
   const total = ((((Number(h) || 0) * 60 + (Number(m) || 0) + Math.round(minutes)) % 1440) + 1440) % 1440;
   const hh = Math.floor(total / 60);
-  const mm = String(total % 60).padStart(2, '0');
-  return `${hh % 12 === 0 ? 12 : hh % 12}:${mm} ${hh < 12 ? 'am' : 'pm'}`;
+  return formatClock(hh, total % 60);
 }
 
 /** Plain-text shot list to paste into a message (P5). */
@@ -244,6 +287,8 @@ export function shotListText(args: {
   order: string[];
   nameOf: (id: string) => string;
   minutes?: { key: string; start: number }[];
+  /** Names the poses on a shot (PL5). */
+  poseName?: (id: string) => string | undefined;
 }): string {
   const ordered = inOrder(args.shots, args.order);
   const start = new Map((args.minutes ?? []).map((m) => [m.key, m.start]));
@@ -252,6 +297,8 @@ export function shotListText(args: {
     const at = args.startTime && start.has(s.id) ? ` (${clockAt(args.startTime, start.get(s.id)!)})` : '';
     lines.push(`${i + 1}. ${s.mustHave ? '★ ' : ''}${s.name}${at}`);
     lines.push(`   ${s.personIds.map(args.nameOf).join(', ')}`);
+    const poses = poseIdsOf(s).flatMap((id) => args.poseName?.(id) ?? []);
+    if (poses.length) lines.push(`   ${poses.length === 1 ? 'Pose' : 'Poses'}: ${poses.join(', ')}`);
     if (s.notes.trim()) lines.push(`   Note: ${s.notes.trim()}`);
   });
   return lines.join('\n');

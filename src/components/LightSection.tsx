@@ -1,41 +1,43 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { formatTemp, formatWind, unitsOf } from '../domain/units';
 import { fetchForecast, isOnline, NeedsConnection } from '../data/online';
-import { today, updateShoot } from '../data/repo';
+import { getSettings, today, updateShoot } from '../data/repo';
 import type { Location, Shoot } from '../data/types';
 import { formatDate } from '../domain/dates';
 import {
-  dayTimeline,
+  defaultSession,
   fetchedText,
   forecastForShoot,
+  formatRange,
   formatSpan,
+  hourTicks,
   inForecastRange,
-  lightRows,
+  lightHeadline,
   parseYMD,
+  sessionWindow,
+  shootFit,
   shootSpan,
   toHHmm,
+  windowPosition,
+  zoneCity,
+  type LightSession,
 } from '../domain/light';
 import { daysOverview, guessTimeZone, sunBearingAt, sunTimes, suggestStart, zonedTimeToUtc, formatLocalTime } from '../sun';
 import { CompassRose } from './CompassRose';
 import { LocationSheet } from './LocationSheet';
 import { Segmented } from './ui';
 
-const KIND_LABEL = { night: 'Night', blue: 'Blue hour', golden: 'Golden hour', day: 'Daylight' } as const;
+const SEGMENT_LABEL = { day: 'Daylight', golden: 'Golden hour', dark: 'Too dark' } as const;
 
-/** The Light part of a shoot (§10): place, timeline, suggested start, sun direction, date helper and weather. */
+/** The Light part of a shoot (§10): place, the session around golden hour, suggested start, then a "More" fold. */
 export function LightSection({ shoot, location, totalMinutes }: { shoot: Shoot; location: Location | null; totalMinutes: number }) {
   const [picking, setPicking] = useState(false);
 
   return (
     <div className="light">
       <div className="light-place">
-        <div>
-          <div className="light-place-name">{location ? location.name : 'No location yet'}</div>
-          {location && (
-            <div className="light-place-sub">
-              {location.latitude.toFixed(3)}, {location.longitude.toFixed(3)} · {location.timeZone ?? guessTimeZone()}
-            </div>
-          )}
-        </div>
+        <div className="light-place-name">{location ? location.name : 'No location yet'}</div>
         <button type="button" className={`btn small ${location ? 'secondary' : ''}`} onClick={() => setPicking(true)}>
           {location ? 'Change' : 'Set location'}
         </button>
@@ -49,65 +51,28 @@ export function LightSection({ shoot, location, totalMinutes }: { shoot: Shoot; 
 
 function Lit({ shoot, location, totalMinutes }: { shoot: Shoot; location: Location; totalMinutes: number }) {
   const tz = location.timeZone ?? guessTimeZone();
-  const [session, setSession] = useState<'evening' | 'morning'>('evening');
+  const [session, setSession] = useState<LightSession>(() => defaultSession(shoot.startTime));
+  const now = useMinute();
 
   const times = useMemo(() => sunTimes(parseYMD(shoot.date), location.latitude, location.longitude, tz), [shoot.date, location.latitude, location.longitude, tz]);
-  const segments = useMemo(() => dayTimeline(times), [times]);
   const span = shootSpan(times, shoot.startTime, totalMinutes);
-  const rows = lightRows(times);
+  const win = useMemo(() => sessionWindow(times, session, span), [times, session, span]);
+  const ticks = useMemo(() => hourTicks(win, tz), [win, tz]);
   const suggestion = useMemo(() => suggestStart({ times, shootMinutes: Math.max(totalMinutes, 5), session }), [times, totalMinutes, session]);
   const suggestedHHmm = toHHmm(suggestion.start, tz);
   const startInstant = shoot.startTime ? zonedTimeToUtc(times.date.y, times.date.m, times.date.d, ...hm(shoot.startTime), tz) : suggestion.start;
   const sun = sunBearingAt(startInstant, location.latitude, location.longitude);
+  const headline = lightHeadline(times, session);
+  const fit = shootFit(win.golden, span);
+  const nowAt = shoot.date === today() ? windowPosition(win, new Date(now)) : null;
+  const spanFrom = span ? (span.start.getTime() - win.start.getTime()) / (win.end.getTime() - win.start.getTime()) : 0;
+  const spanTo = span ? (span.end.getTime() - win.start.getTime()) / (win.end.getTime() - win.start.getTime()) : 0;
+  const here = guessTimeZone();
 
   return (
     <>
-      <div className="timeline" role="img" aria-label={timelineLabel(segments, span, tz)} data-testid="timeline">
-        <div className="timeline-bar">
-          {segments.map((s, i) => (
-            <span key={i} className={`seg ${s.kind}`} style={{ left: `${s.from * 100}%`, width: `${(s.to - s.from) * 100}%` }} />
-          ))}
-          {span && <span className="shoot-span" data-testid="shoot-span" style={{ left: `${span.from * 100}%`, width: `${Math.max((span.to - span.from) * 100, 1)}%` }} />}
-        </div>
-        <div className="timeline-axis" aria-hidden>
-          {['12 am', '6 am', '12 pm', '6 pm', '12 am'].map((t, i) => (
-            <span key={i}>{t}</span>
-          ))}
-        </div>
-        <div className="timeline-key" aria-hidden>
-          {(['night', 'blue', 'golden', 'day'] as const).map((k) => (
-            <span key={k}>
-              <i className={`seg ${k}`} /> {KIND_LABEL[k]}
-            </span>
-          ))}
-          {span && (
-            <span>
-              <i className="shoot-swatch" /> Your shoot
-            </span>
-          )}
-        </div>
-      </div>
-
-      <ul className="light-times" aria-label="Light times">
-        {rows.map((r) => (
-          <li key={r.key} className={r.missing ? 'missing' : ''}>
-            <span>{r.label}</span>
-            <b>{r.text}</b>
-          </li>
-        ))}
-      </ul>
-
-      <details className="fold">
-        <summary>What do golden hour and blue hour mean?</summary>
-        <p className="info-text">
-          <b>Golden hour</b> is when the sun is between about 6° above and 4° below the horizon: warm, soft, low light that flatters skin.{' '}
-          <b>Blue hour</b> is when it is 4° to 6° below the horizon: the sky glows deep blue just after sunset or before sunrise. Daylight is the sun higher than 6°; night is lower than 6° below.
-        </p>
-      </details>
-
-      <h3 className="light-sub">Suggested start</h3>
       <Segmented
-        label="Which golden hour"
+        label="Which session"
         value={session}
         onChange={setSession}
         options={[
@@ -115,6 +80,43 @@ function Lit({ shoot, location, totalMinutes }: { shoot: Shoot; location: Locati
           { value: 'evening', label: 'Evening' },
         ]}
       />
+      <p className="light-headline" data-testid="light-headline">
+        {headline}
+      </p>
+      {fit && (
+        <p className="light-fit" data-testid="light-fit">
+          {fit}
+        </p>
+      )}
+
+      <div className="timeline" role="img" aria-label={`${headline}.${span ? ` Your shoot ${formatRange(span.start, span.end, tz)}.` : ''}`} data-testid="timeline">
+        <div className="timeline-bar">
+          {win.segments.map((s, i) => (
+            <span key={i} className={`seg ${s.kind}`} style={{ left: `${s.from * 100}%`, width: `${(s.to - s.from) * 100}%` }}>
+              {s.to - s.from > 0.16 && <span className="seg-label">{SEGMENT_LABEL[s.kind]}</span>}
+            </span>
+          ))}
+          {nowAt !== null && <span className="now-marker" data-testid="now-marker" style={{ left: `${nowAt * 100}%` }} title="Now" />}
+        </div>
+        <div className="timeline-ticks" aria-hidden>
+          {ticks.map((t) => (
+            <span key={t.label + t.at} style={{ left: `${t.at * 100}%` }}>
+              {t.label}
+            </span>
+          ))}
+        </div>
+        {span && (
+          <div className="shoot-row">
+            <div className="shoot-track">
+              <span className="shoot-span" data-testid="shoot-span" style={{ left: `${Math.max(0, spanFrom) * 100}%`, width: `${Math.max((Math.min(1, spanTo) - Math.max(0, spanFrom)) * 100, 1)}%` }} />
+            </div>
+            <div className="shoot-caption">Your shoot {formatRange(span.start, span.end, tz)}</div>
+          </div>
+        )}
+      </div>
+      {tz !== here && <p className="muted-note">Times are local to {zoneCity(tz)}.</p>}
+
+      <h3 className="light-sub">Suggested start</h3>
       <p className="light-suggest">
         Start at <b>{formatLocalTime(suggestion.start, tz)}</b>, finish about {formatLocalTime(suggestion.end, tz)}
         <span className="muted"> (list takes about {Math.max(totalMinutes, 5)} min)</span>
@@ -133,33 +135,38 @@ function Lit({ shoot, location, totalMinutes }: { shoot: Shoot; location: Locati
         {shoot.startTime === suggestedHHmm ? 'Start time is set' : 'Use this start time'}
       </button>
 
-      <h3 className="light-sub">Sun direction</h3>
-      <div className="sun-dir">
-        <CompassRose bearing={sun.bearingDeg} label={sun.label} />
-        <p>
-          At {formatLocalTime(startInstant, tz)} the sun is in the <b>{sun.label}</b> ({Math.round(sun.bearingDeg)}°)
-          {sun.aboveHorizon ? `, ${Math.round(sun.altitudeDeg)}° up.` : ', below the horizon.'}
-          <span className="muted"> Put your family with the sun behind them for glow, or off to one side for soft light on faces.</span>
-        </p>
-      </div>
-
-      <DatePicker shoot={shoot} location={location} tz={tz} />
-      <Weather shoot={shoot} location={location} totalMinutes={totalMinutes} />
+      <details className="fold light-more">
+        <summary>More: sun direction, weather, other dates</summary>
+        <h3 className="light-sub">Sun direction</h3>
+        <div className="sun-dir">
+          <CompassRose bearing={sun.bearingDeg} label={sun.label} caption={`Where the sun will be at ${formatLocalTime(startInstant, tz)}`} />
+          <p>
+            In the <b>{sun.label}</b> ({Math.round(sun.bearingDeg)}°)
+            {sun.aboveHorizon ? `, ${Math.round(sun.altitudeDeg)}° up.` : ', below the horizon.'}
+            <span className="muted"> Sun behind your family gives glow; off to one side gives soft light on faces.</span>
+          </p>
+        </div>
+        <Weather shoot={shoot} location={location} totalMinutes={totalMinutes} />
+        <DatePicker shoot={shoot} location={location} tz={tz} />
+      </details>
     </>
   );
+}
+
+/** The current time, updated every minute, for the "now" marker. */
+function useMinute(): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
 }
 
 const hm = (t: string): [number, number] => {
   const [h = 0, m = 0] = t.split(':').map(Number);
   return [h, m];
 };
-
-function timelineLabel(segments: ReturnType<typeof dayTimeline>, span: ReturnType<typeof shootSpan>, tz: string) {
-  const parts = segments
-    .filter((s) => s.kind === 'golden' || s.kind === 'blue')
-    .map((s) => `${KIND_LABEL[s.kind]} ${formatSpan({ start: s.start, end: s.end }, tz)}`);
-  return `Light across the day. ${parts.join('; ')}.${span ? ` Your shoot ${formatLocalTime(span.start, tz)} to ${formatLocalTime(span.end, tz)}.` : ''}`;
-}
 
 /** L6: the next three weeks of golden hours, tap one to set the date. */
 function DatePicker({ shoot, location, tz }: { shoot: Shoot; location: Location; tz: string }) {
@@ -190,13 +197,13 @@ function DatePicker({ shoot, location, tz }: { shoot: Shoot; location: Location;
   );
 }
 
-const temp = (c: number | null) => (c === null ? '–' : `${Math.round(c)}°C`);
 const pct = (n: number | null) => (n === null ? '–' : `${n}%`);
 
 /** L7: forecast on demand, cached on the shoot for offline viewing. */
 function Weather({ shoot, location, totalMinutes }: { shoot: Shoot; location: Location; totalMinutes: number }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const units = unitsOf(useLiveQuery(async () => (await getSettings()).units, []));
   const inRange = inForecastRange(shoot.date, today());
   const cached = shoot.forecast && shoot.forecast.date === shoot.date ? shoot.forecast : null;
   const summary = cached ? forecastForShoot(cached, shoot.startTime, totalMinutes) : null;
@@ -243,13 +250,13 @@ function Weather({ shoot, location, totalMinutes }: { shoot: Shoot; location: Lo
               <div className="weather-grid">
                 <span>Cloud<b>{pct(summary.cloudPercent)}</b></span>
                 <span>Rain chance<b>{pct(summary.rainPercent)}</b></span>
-                <span>Wind<b>{summary.windKmh === null ? '–' : `${summary.windKmh} km/h`}</b></span>
-                <span>Temperature<b>{temp(summary.tempC)}</b></span>
+                <span>Wind<b>{formatWind(summary.windKmh, units)}</b></span>
+                <span>Temperature<b>{formatTemp(summary.tempC, units)}</b></span>
               </div>
               <ul className="weather-hours">
                 {summary.hours.map((h) => (
                   <li key={h.time}>
-                    {h.time} · cloud {pct(h.cloudPercent)} · rain {pct(h.rainPercent)} · wind {h.windKmh ?? '–'} km/h · {temp(h.tempC)}
+                    {h.time} · cloud {pct(h.cloudPercent)} · rain {pct(h.rainPercent)} · wind {formatWind(h.windKmh, units)} · {formatTemp(h.tempC, units)}
                   </li>
                 ))}
               </ul>

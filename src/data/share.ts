@@ -3,7 +3,7 @@
  * Files, iCloud Drive, AirDrop, Mail...). Where sharing files isn't
  * supported (most desktop browsers), the file is downloaded instead.
  */
-export type ShareOutcome = 'shared' | 'downloaded' | 'cancelled';
+export type ShareOutcome = 'shared' | 'downloaded' | 'canceled';
 
 export async function shareFile(name: string, text: string, type = 'application/json'): Promise<ShareOutcome> {
   return shareBlob(name, new Blob([text], { type }));
@@ -18,7 +18,7 @@ export async function shareBlob(name: string, blob: Blob): Promise<ShareOutcome>
       return 'shared';
     } catch (error) {
       // The coach closed the share sheet without choosing anything.
-      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
+      if (error instanceof DOMException && error.name === 'AbortError') return 'canceled';
       // Anything else: fall back to a download.
     }
   }
@@ -33,7 +33,7 @@ export async function shareBlob(name: string, blob: Blob): Promise<ShareOutcome>
   return 'downloaded';
 }
 
-export type LinkOutcome = 'shared' | 'copied' | 'cancelled' | 'failed';
+export type LinkOutcome = 'shared' | 'copied' | 'canceled' | 'failed';
 
 /**
  * Hands a link to the user: the share sheet on iPhone (Messages, WhatsApp,
@@ -46,7 +46,7 @@ export async function shareLink(url: string, title: string, text: string): Promi
       await navigator.share({ title, text, url });
       return 'shared';
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
+      if (error instanceof DOMException && error.name === 'AbortError') return 'canceled';
     }
   }
   try {
@@ -68,7 +68,7 @@ export async function shareText(title: string, text: string, what = 'Plan'): Pro
       await navigator.share({ title, text });
       return `${what} shared.`;
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return 'Sharing cancelled.';
+      if (error instanceof DOMException && error.name === 'AbortError') return 'Sharing canceled.';
     }
   }
   try {
@@ -82,6 +82,6 @@ export async function shareText(title: string, text: string, what = 'Plan'): Pro
 /** Shares a CSV file (S5) and says what happened, for a status message. */
 export async function shareCsv(name: string, csv: string): Promise<string> {
   const outcome = await shareFile(name, csv, 'text/csv');
-  if (outcome === 'cancelled') return 'Export cancelled.';
+  if (outcome === 'canceled') return 'Export canceled.';
   return outcome === 'shared' ? 'Stats exported.' : 'Stats file downloaded.';
 }

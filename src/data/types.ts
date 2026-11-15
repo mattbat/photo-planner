@@ -1,5 +1,5 @@
 /**
- * Data model (REQUIREMENTS.md §4–§12). Plain serialisable objects only: they
+ * Data model (REQUIREMENTS.md §4–§12). Plain serializable objects only: they
  * are stored in IndexedDB, written to backup files and, later, handed to the
  * assistant's phone. No classes, functions, Dates or Blobs.
  *
@@ -143,7 +143,9 @@ export interface Shot {
   reasons: TemplateId[];
   mustHave: boolean;
   notes: string;
-  /** The pose attached to it (§11), if any. */
+  /** The poses attached to it (§11), in order. Absent when there are none. */
+  poseIds?: string[];
+  /** Old layout, one pose. Only read from old data and files, and turned into `poseIds` (see `migrateShot`). */
   poseId?: string;
   status: ShotStatus;
   /** Spare: flagged shots are not stored, they are worked out from who is attending (E3). */
@@ -161,7 +163,12 @@ export interface OrderOptions {
   bigGroupFirst: boolean;
   /** Must-haves early (O2). */
   mustHavesEarly: boolean;
+  /** Everyone shots open the shoot, largest first (O9). Missing in older data, which counts as on. */
+  everyoneFirst?: boolean;
 }
+
+/** Who to finish first or push to the end on a shoot (O7); anyone not listed is normal. */
+export type Priority = 'early' | 'late';
 
 /** Where a person is on shoot day (D5, V8). */
 export type Presence = 'expected' | 'here' | 'left';
@@ -226,6 +233,8 @@ export interface Shoot extends Stamped {
    * regenerating does not bring them back (E6).
    */
   removedKeys: string[];
+  /** People to shoot early or late (O7), by person id. Optional: no index, so no Dexie version. */
+  priorities?: Record<string, Priority>;
   // Shoot day (§8)
   presence: Record<string, Presence>;
   /** The shot being photographed now (D1); resumes after the phone locks (D8). */
@@ -312,10 +321,10 @@ export type PoseTag = (typeof POSE_TAGS)[number];
 
 export type PoseDifficulty = 'easy' | 'medium' | 'hard';
 
-/** Where a pose's example image came from and under what licence (PL3). */
+/** Where a pose's example image came from and under what license (PL3). */
 export interface ImageCredit {
   source: string;
-  licence: string;
+  license: string;
   credit?: string;
   url?: string;
 }
@@ -373,6 +382,8 @@ export interface AppSettings {
   timeEstimates: TimeEstimates;
   /** Start shoots with everyone marked here, so nobody has to be ticked off (D5). Default on. */
   treatEveryoneAsHere?: boolean;
+  /** Weather units: US (°F, mph) by default, or metric. Older settings without it read as US. */
+  units?: 'us' | 'metric';
 }
 
 /** The `settings` table is a small key-value store; today it holds one row, `app`. */

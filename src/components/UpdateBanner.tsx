@@ -45,7 +45,7 @@ export function UpdateBanner({ update = applyUpdate }: { update?: () => Promise<
     const before = lastBackupAt();
     const result = await backUp();
     if (lastBackupAt() === before) {
-      // Cancelled: don't update without the backup they asked for.
+      // Canceled: don't update without the backup they asked for.
       setMessage(`${result} Nothing was updated.`);
       return;
     }

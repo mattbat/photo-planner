@@ -83,6 +83,9 @@ describe('validators', () => {
     expect(isValidPerson({ id: 'p', ...stamps, familyId: 'f', name: 'Ivy', parentIds: 'a' })).toBe(false);
     expect(isValidPerson({ id: 'p', ...stamps, familyId: 'f', name: 'Ivy', parentIds: [], sex: 'robot' })).toBe(false);
     expect(isValidPartnership({ id: 'c', ...stamps, familyId: 'f', personIds: ['a'], status: 'together' })).toBe(false);
+    expect(isValidShoot({ ...shoot, priorities: { a: 'early', b: 'late' } })).toBe(true);
+    expect(isValidShoot({ ...shoot, priorities: { a: 'urgent' } })).toBe(false);
+    expect(isValidShoot({ ...shoot, priorities: ['early'] })).toBe(false);
     expect(isValidShoot({ ...shoot, status: 'soon' })).toBe(false);
     expect(isValidShoot({ ...shoot, shots: [{ id: 'x' }] })).toBe(false);
     expect(isValidShoot({ ...shoot, templates: [{ id: 'made-up', enabled: true }] })).toBe(false);
@@ -91,5 +94,10 @@ describe('validators', () => {
     expect(isValidPosePhoto({ id: 'pp', ...stamps, poseId: 'x', dataUrl: 'javascript:alert(1)', width: 1, height: 1 })).toBe(false);
     expect(isValidSettings({ key: 'app', value: {}, updatedAt: 1 })).toBe(false);
     expect(isValidSettings({ id: 'app', value: defaultSettings(), updatedAt: 1 })).toBe(false);
+    expect(isValidSettings({ key: 'app', value: { ...defaultSettings(), units: 'metric' }, updatedAt: 1 })).toBe(true);
+    const { units, ...older } = defaultSettings();
+    void units;
+    expect(isValidSettings({ key: 'app', value: older, updatedAt: 1 })).toBe(true); // older backups
+    expect(isValidSettings({ key: 'app', value: { ...defaultSettings(), units: 'imperial' }, updatedAt: 1 })).toBe(false);
   });
 });

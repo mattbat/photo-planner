@@ -5,8 +5,8 @@ import { addPose, addPosePhoto, deletePosePhoto, seedStarterPoses, setPoseFavori
 
 beforeEach(clearDb);
 
-describe('starter poses, favourites and photos', () => {
-  it('seeds the starter library once and keeps favourites and photos on a second seed', async () => {
+describe('starter poses, favorites and photos', () => {
+  it('seeds the starter library once and keeps favorites and photos on a second seed', async () => {
     const added = await seedStarterPoses();
     expect(added).toBeGreaterThanOrEqual(55);
     expect(await db.poses.count()).toBe(added);

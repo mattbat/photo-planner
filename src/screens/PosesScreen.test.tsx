@@ -30,7 +30,7 @@ describe('PosesScreen', () => {
     expect(within(cards()[0]!).getByText(/person|people|group/)).toBeInTheDocument();
   });
 
-  it('filters by category, search, size and tag, and shows favourites only', async () => {
+  it('filters by category, search, size and tag, and shows favorites only', async () => {
     const user = userEvent.setup();
     render(<PosesScreen />);
     await waitFor(() => expect(cards()).toHaveLength(starterPoses.length));
@@ -58,7 +58,7 @@ describe('PosesScreen', () => {
     await user.selectOptions(screen.getByLabelText('Group size'), '');
     await user.click(within(screen.getByRole('group', { name: 'Tags' })).getByRole('button', { name: 'Playful' }));
 
-    await user.click(screen.getByRole('button', { name: '★ Favourites' }));
+    await user.click(screen.getByRole('button', { name: '★ Favorites' }));
     expect(screen.getByText('No poses match')).toBeInTheDocument();
     await db.poses.update(starterPoses[0]!.id, { favorite: true });
     await waitFor(() => expect(cards()).toHaveLength(1));
@@ -86,7 +86,7 @@ describe('PosesScreen', () => {
 describe('PoseDetailScreen', () => {
   const first = starterPoses[0]!;
 
-  it('shows the pose, steps and credit, and toggles the favourite', async () => {
+  it('shows the pose, steps and credit, and toggles the favorite', async () => {
     const user = userEvent.setup();
     await seedStarterPoses();
     render(<PoseDetailScreen poseId={first.id} />);
@@ -98,9 +98,9 @@ describe('PoseDetailScreen', () => {
     // Built-in poses can't be edited or deleted.
     expect(screen.queryByRole('button', { name: 'Delete pose' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Add to favourites' }));
+    await user.click(screen.getByRole('button', { name: 'Add to favorites' }));
     await waitFor(async () => expect((await db.poses.get(first.id))!.favorite).toBe(true));
-    await user.click(await screen.findByRole('button', { name: 'Remove from favourites' }));
+    await user.click(await screen.findByRole('button', { name: 'Remove from favorites' }));
     await waitFor(async () => expect((await db.poses.get(first.id))!.favorite).toBe(false));
   });
 

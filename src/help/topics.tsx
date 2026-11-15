@@ -101,6 +101,14 @@ const ALL: Topic[] = [
           </li>
           <li>Children can have two parents, one parent, or a step-parent. Pick who the child is with.</li>
         </ul>
+        <h2>Someone who is already in the family</h2>
+        <p>
+          Wherever you link people (a parent, partner or child on a person, <b>+ child</b> on a couple, and{' '}
+          <b>Quick add people</b>), tap <b>Choose someone already in the family</b> instead of adding a new person. It is
+          a searchable list that leaves out anyone who can’t be chosen, such as the person themselves or their own
+          descendants as a parent. Use it to join two branches you added separately. If you start typing a name that
+          matches someone already there, the app asks “Is this the same Emma?” and <b>Link instead</b> links her rather than making a twin.
+        </p>
         <h2>Kids and grown children</h2>
         <p>
           Each person is a kid or grown. Anyone with a partner or children of their own is treated as grown. Kids sit
@@ -230,6 +238,11 @@ const ALL: Topic[] = [
         <p>Under <b>Order options</b>:</p>
         <ul>
           <li>
+            <b>Everyone first</b> (on by default): the full-group shots open the shoot, largest first, while everyone is
+            fresh. If you mark someone in the full group <b>Late</b>, it says “Full group waits for …” and that shot comes
+            later.
+          </li>
+          <li>
             <b>Kids first</b>: little ones before they tire.
           </li>
           <li>
@@ -242,6 +255,14 @@ const ALL: Topic[] = [
             <b>Must-haves early</b>: starred shots sooner, while energy is high.
           </li>
         </ul>
+        <h2>Early and late people</h2>
+        <p>
+          Tap <b>Early or late people</b> at the top of the shoot. Mark someone <b>Early</b> to finish their shots first
+          (an older guest, someone who needs a break soon) or <b>Late</b> to keep them to the end (someone called away,
+          a little one who needs a rest). Tick several people to set them at once. A small <b>Early</b> or{' '}
+          <b>Late</b> badge shows on their names. If you ordered the list by hand it stays as it is until you tap{' '}
+          <b>Suggested order</b>.
+        </p>
         <h2>Call in and can leave</h2>
         <p>
           Each shot shows <b>Call in:</b> the people who aren’t in the shot before it, and <b>Can leave:</b> people whose
@@ -266,12 +287,20 @@ const ALL: Topic[] = [
           The <b>Light</b> section of a shoot shows the sun for your date and place. Set the place and everything else
           appears.
         </p>
-        <Shot name="light" caption="The Light section: times, a bar across the day and a suggested start." />
+        <Shot name="light" caption="The Light section: golden hour at a glance, a bar for the session and a suggested start." />
         <h2>Setting the place</h2>
         <p>
           Choose <b>Set a new place</b> and use your phone’s position, search for an address, type coordinates, or drop a
           pin on a map. Save the place (“Riverside Park”) to reuse it. The map and search need a connection; saved places
           and the sun times work offline.
+        </p>
+        <h2>Reading the section</h2>
+        <p>
+          The big line gives golden hour and sunset (or sunrise). Under it, one sentence says how your planned shoot
+          fits: “✓ All of your shoot is in golden hour”, or how many minutes it starts before or ends after. The bar
+          shows just that evening (or morning, if your start is before noon, or if you tap <b>Morning</b>): daylight,
+          golden hour and “too dark”, with the hours marked, your shoot underneath, and a red line for now on the day.
+          Sun direction, weather and other dates are under <b>More</b>.
         </p>
         <h2>Words you’ll see</h2>
         <dl className="help-terms">
@@ -280,8 +309,6 @@ const ALL: Topic[] = [
             The soft, warm light when the sun is between about 6° above and 4° below the horizon: just after sunrise and
             before sunset.
           </dd>
-          <dt>Blue hour</dt>
-          <dd>The cool, even light just after golden hour, with the sun 4° to 6° below the horizon.</dd>
           <dt>Suggested start</dt>
           <dd>
             When to begin so your planned shoot ends as evening golden hour ends, or starts as the morning one begins,
@@ -290,15 +317,17 @@ const ALL: Topic[] = [
           </dd>
           <dt>Sun direction</dt>
           <dd>
-            Where the sun will be as a compass bearing, with an arrow. Face the family so the sun is behind or beside
-            you, or put it behind them for a glowing edge.
+            The little sun on the compass shows where the sun will be at your start time (“Where the sun will be at 4:45
+            PM”). Tap <b>Use compass</b> and turn your phone: the sun marker then points the real way, and the top of the
+            rose is the way you are facing. Put the sun behind the family for a glowing edge, or beside you for soft light
+            on faces.
           </dd>
         </dl>
         <h2>Pick a date</h2>
         <p>Pick a date lists the next three weeks with golden hour for each day, so you can choose a good one.</p>
         <h2>Weather forecast</h2>
         <p>
-          For shoots in the next 14 days you’ll see cloud cover, rain chance, temperature and wind. This <b>needs a
+          For shoots in the next 14 days you’ll see cloud cover, rain chance, temperature (°F) and wind (mph). Switch to °C and km/h in Settings › Units. This <b>needs a
           connection</b>; the last forecast is kept so you can still read it offline, and it tells you if it no longer
           covers your shoot time.
         </p>
@@ -342,6 +371,11 @@ const ALL: Topic[] = [
           their remaining shots up next. In Settings, <b>Treat everyone as here</b> sets whether a new shoot starts with
           everyone present.
         </p>
+        <p>
+          The same sheet has <b>Normal / Early / Late</b> for each person. Marking someone <b>Early</b> brings their
+          remaining shots up next; <b>Late</b> sends them to the end. Only shots still to do move; done shots stay put and
+          the shot you are on stays on top. A short note says what changed.
+        </p>
         <h2>Add a shot on the spot</h2>
         <p>
           Tap <b>+ Shot</b> and tap the people to include: “Can we get one with just the girls?”. It is added and marked
@@ -349,7 +383,7 @@ const ALL: Topic[] = [
         </p>
         <h2>Progress and golden hour</h2>
         <p>
-          The top shows how many are done and how many ★ must-haves are left. When golden hour is coming to an end, a
+          The shot card says <b>Shot 3 of 12 · 10 left</b>: shots finished so far plus one, out of all shots, and how many are left. The top shows how many are done and how many ★ must-haves are left. When golden hour is coming to an end, a
           countdown appears.
         </p>
         <h2>Finish</h2>
@@ -422,17 +456,19 @@ const ALL: Topic[] = [
           The <b>Poses</b> tab is a library of pose ideas, each drawn as a simple figure, sorted by category and the size
           of the group.
         </p>
-        <Shot name="poses" caption="Filter by category, group size and tags. Star your favourites." />
+        <Shot name="poses" caption="Filter by category, group size and tags. Star your favorites." />
         <ul>
           <li>
             Use the category pills, <b>Group size</b> and tags to narrow it down; search by name.
           </li>
           <li>
-            Tap <b>★</b> to favourite a pose. Open one for the description, tips and your own photos.
+            Tap <b>★</b> to favorite a pose. Open one for the description, tips and your own photos.
           </li>
           <li>
-            On a shot, open it and pick a pose under <b>Suggested poses</b>. It then appears on shoot day. The{' '}
-            <b>Pose sheet</b> on a shoot lists every shot that has one, to look at before you start.
+            On a shot, open it and tap as many poses as you like under <b>Suggested poses</b> (tap again to take one off).
+            The sheet shows how many you picked, and the ↑ ↓ arrows put them in order. On shoot day they appear as a row
+            under the people; tap one to read its directions. The <b>Pose sheet</b> on a shoot lists the poses on every
+            shot, to look at before you start.
           </li>
           <li>You can add your own poses, with your own reference photo.</li>
         </ul>

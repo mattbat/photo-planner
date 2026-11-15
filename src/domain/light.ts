@@ -45,8 +45,8 @@ export function kindAtAltitude(altDeg: number): LightKind {
 }
 
 /**
- * The local day as consecutive coloured segments. Boundaries are the exact
- * golden and blue hour times; the colour of each stretch comes from the sun's
+ * The local day as consecutive colored segments. Boundaries are the exact
+ * golden and blue hour times; the color of each stretch comes from the sun's
  * height at its middle, so polar days and nights come out right.
  */
 export function dayTimeline(times: SunTimes): TimelineSegment[] {
@@ -103,6 +103,134 @@ export function toHHmm(date: Date, timeZone: string): string {
   const h24 = (Number(h) % 12) + (ap === 'PM' ? 12 : 0);
   return `${String(h24).padStart(2, '0')}:${m}`;
 }
+
+// --- The session that matters (L2, L3) --------------------------------------
+
+export type LightSession = 'evening' | 'morning';
+
+/** Evening by default; morning when the planned start is before noon (L2). */
+export function defaultSession(startTime: string | undefined): LightSession {
+  const m = startTime && /^\d{1,2}:\d{2}$/.test(startTime) ? Number(startTime.split(':')[0]) : 18;
+  return m < 12 ? 'morning' : 'evening';
+}
+
+const MIN = 60000;
+
+export type WindowKind = 'day' | 'golden' | 'dark';
+
+export interface WindowSegment {
+  kind: WindowKind;
+  start: Date;
+  end: Date;
+  /** Position along the window, 0 to 1. */
+  from: number;
+  to: number;
+}
+
+export interface SessionWindow {
+  start: Date;
+  end: Date;
+  /** The session's golden hour, or null when the sun has none on this date. */
+  golden: { start: Date; end: Date } | null;
+  /** Sunset (evening) or sunrise (morning), or null when the sun doesn't do it. */
+  sunEvent: Date | null;
+  segments: WindowSegment[];
+}
+
+/**
+ * The stretch of the day worth drawing (L2): about 2.5 hours before golden
+ * hour starts to 30 minutes after it ends (the other way round for the
+ * morning), widened to hold the planned shoot. With no golden hour it is
+ * built round the sunset or sunrise, or solar noon. Segments are daylight,
+ * golden hour, and "dark" (anything lower than golden hour): blue hour is not
+ * shown separately.
+ */
+export function sessionWindow(times: SunTimes, session: LightSession, shoot?: { start: Date; end: Date } | null): SessionWindow {
+  const g = session === 'evening' ? times.goldenEvening : times.goldenMorning;
+  const golden = g.start && g.end && g.end > g.start ? { start: g.start, end: g.end } : null;
+  const sunEvent = session === 'evening' ? times.sunset : times.sunrise;
+  const anchor = golden ? null : (sunEvent ?? times.solarNoon);
+  const [before, after] = session === 'evening' ? [150, 30] : [30, 150];
+  let start = golden ? golden.start.getTime() - before * MIN : anchor!.getTime() - before * MIN;
+  let end = golden ? golden.end.getTime() + after * MIN : anchor!.getTime() + after * MIN;
+  if (shoot) {
+    start = Math.min(start, shoot.start.getTime() - 10 * MIN);
+    end = Math.max(end, shoot.end.getTime() + 10 * MIN);
+  }
+  // Stay inside the local day.
+  const day = localDayBounds(times.date, times.timeZone);
+  start = Math.max(start, day.start.getTime());
+  end = Math.min(end, day.end.getTime());
+  const cuts = [start, ...[golden?.start, golden?.end].filter((d): d is Date => !!d).map((d) => d.getTime()).filter((t) => t > start && t < end), end].sort((a, b) => a - b);
+  const len = end - start;
+  const segments: WindowSegment[] = [];
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const a = cuts[i]!, b = cuts[i + 1]!;
+    const alt = sunPosition(new Date((a + b) / 2), times.lat, times.lng).altitudeDeg;
+    const kind: WindowKind = alt > 6 ? 'day' : alt >= -4 ? 'golden' : 'dark';
+    const last = segments[segments.length - 1];
+    if (last && last.kind === kind) {
+      last.end = new Date(b);
+      last.to = (b - start) / len;
+    } else segments.push({ kind, start: new Date(a), end: new Date(b), from: (a - start) / len, to: (b - start) / len });
+  }
+  return { start: new Date(start), end: new Date(end), golden, sunEvent, segments };
+}
+
+/** Where an instant sits along a window, 0 to 1, or null outside it. */
+export function windowPosition(w: Pick<SessionWindow, 'start' | 'end'>, at: Date): number | null {
+  const t = at.getTime(), a = w.start.getTime(), b = w.end.getTime();
+  return t < a || t > b ? null : (t - a) / (b - a);
+}
+
+/** Whole-hour tick marks along a window, labelled in the zone ("4 PM"). Every other hour when there are many. */
+export function hourTicks(w: Pick<SessionWindow, 'start' | 'end'>, timeZone: string): { at: number; label: string }[] {
+  const a = w.start.getTime(), b = w.end.getTime();
+  const mm = Number(formatLocalTime(w.start, timeZone).split(':')[1]!.slice(0, 2));
+  const secs = w.start.getUTCSeconds();
+  let t = a + (((60 - mm) % 60) * 60 - secs) * 1000;
+  if (t < a - 1000) t += 60 * MIN;
+  const all: { at: number; label: string }[] = [];
+  for (; t <= b; t += 60 * MIN) all.push({ at: Math.min(1, Math.max(0, (t - a) / (b - a))), label: formatLocalTime(new Date(t), timeZone).replace(':00 ', ' ') });
+  return all.length > 6 ? all.filter((_, i) => i % 2 === 0) : all;
+}
+
+/** "4:56–5:48 PM", or "11:40 AM–12:30 PM" when the two sit either side of noon. */
+export function formatRange(start: Date, end: Date, timeZone: string): string {
+  const [a, ap = ''] = formatLocalTime(start, timeZone).split(' ');
+  const [b, bp = ''] = formatLocalTime(end, timeZone).split(' ');
+  return ap === bp ? `${a}–${b} ${bp}` : `${a} ${ap}–${b} ${bp}`;
+}
+
+/** The headline: "Golden hour 4:56–5:48 PM · sunset 5:32 PM" (L2). */
+export function lightHeadline(times: SunTimes, session: LightSession): string {
+  const tz = times.timeZone;
+  const g = session === 'evening' ? times.goldenEvening : times.goldenMorning;
+  const event = session === 'evening' ? times.sunset : times.sunrise;
+  const word = session === 'evening' ? 'sunset' : 'sunrise';
+  const parts: string[] = [];
+  if (g.start && g.end && g.end > g.start) parts.push(`Golden hour ${formatRange(g.start, g.end, tz)}`);
+  else parts.push(times.polar === 'day' ? 'The sun doesn’t set today' : times.polar === 'night' ? 'The sun doesn’t rise today' : 'No golden hour on this date');
+  if (event) parts.push(`${word} ${formatLocalTime(event, tz)}`);
+  return parts.join(' · ');
+}
+
+const mins = (ms: number) => Math.max(1, Math.round(ms / MIN));
+
+/** How the shoot sits against golden hour, in one sentence, or null when there is nothing to compare. */
+export function shootFit(golden: { start: Date; end: Date } | null, shoot: { start: Date; end: Date } | null): string | null {
+  if (!golden || !shoot) return null;
+  const gs = golden.start.getTime(), ge = golden.end.getTime(), ss = shoot.start.getTime(), se = shoot.end.getTime();
+  if (ss >= gs && se <= ge) return '✓ All of your shoot is in golden hour';
+  if (se <= gs) return `Your shoot ends ${mins(gs - se)} min before golden hour starts`;
+  if (ss >= ge) return `Your shoot starts ${mins(ss - ge)} min after golden hour ends`;
+  if (ss < gs && se > ge) return `Your shoot starts ${mins(gs - ss)} min before golden hour and ends ${mins(se - ge)} min after it`;
+  if (ss < gs) return `Your shoot starts ${mins(gs - ss)} min before golden hour and ends during it`;
+  return `Your shoot starts during golden hour and ends ${mins(se - ge)} min after it`;
+}
+
+/** "Chicago" for "America/Chicago"; used in "Times are local to Chicago". */
+export const zoneCity = (timeZone: string): string => (timeZone.split('/').pop() ?? timeZone).replace(/_/g, ' ');
 
 // --- Times list (L2) -------------------------------------------------------
 

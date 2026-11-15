@@ -143,7 +143,7 @@ describe('planShoot', () => {
       s.id === couple.id ? { ...s, name: 'The big two', nameEdited: true, mustHave: true, notes: 'By the tree', status: 'done' as const, doneAt: 5, poseId: 'p1' } : s,
     );
     const again = planShoot(input(baseShoot(['fullGroup', 'couples'], { shots: edited, order: first.order })));
-    expect(again.shots.find((s) => s.id === couple.id)).toMatchObject({ name: 'The big two', nameEdited: true, mustHave: true, notes: 'By the tree', status: 'done', doneAt: 5, poseId: 'p1' });
+    expect(again.shots.find((s) => s.id === couple.id)).toMatchObject({ name: 'The big two', nameEdited: true, mustHave: true, notes: 'By the tree', status: 'done', doneAt: 5, poseIds: ['p1'] });
     // Another template on: the edits stay, and the shot is still the same shot.
     const more = planShoot(input(baseShoot(['fullGroup', 'couples', 'siblings'], { shots: edited, order: first.order })));
     expect(more.shots.find((s) => s.id === couple.id)?.name).toBe('The big two');
@@ -322,12 +322,12 @@ describe('moveShot', () => {
 
 describe('text', () => {
   it('writes the time of day', () => {
-    expect(clockAt('09:05', 0)).toBe('9:05 am');
-    expect(clockAt('11:50', 20)).toBe('12:10 pm');
-    expect(clockAt('00:00', 5)).toBe('12:05 am');
-    expect(clockAt('23:30', 60)).toBe('12:30 am');
-    expect(clockAt('16:00', -30)).toBe('3:30 pm');
-    expect(clockAt('x', 0)).toBe('12:00 am');
+    expect(clockAt('09:05', 0)).toBe('9:05 AM');
+    expect(clockAt('11:50', 20)).toBe('12:10 PM');
+    expect(clockAt('00:00', 5)).toBe('12:05 AM');
+    expect(clockAt('23:30', 60)).toBe('12:30 AM');
+    expect(clockAt('16:00', -30)).toBe('3:30 PM');
+    expect(clockAt('x', 0)).toBe('12:00 AM');
   });
 
   it('writes the shot list for sharing (P5)', () => {
@@ -345,7 +345,7 @@ describe('text', () => {
       minutes: [{ key: 'b', start: 5 }, { key: 'a', start: 8 }],
     });
     expect(text).toBe(
-      ['The Testers, Sat, Dec 5, from 4:00 pm', '', '1. ★ Kids (4:05 pm)', '   Y', '   Note: By the gate', '2. Everyone (4:08 pm)', '   X, Y'].join('\n'),
+      ['The Testers, Sat, Dec 5, from 4:00 PM', '', '1. ★ Kids (4:05 PM)', '   Y', '   Note: By the gate', '2. Everyone (4:08 PM)', '   X, Y'].join('\n'),
     );
     expect(shotListText({ title: 'T', date: 'D', shots, order: [], nameOf: (id) => id })).toBe(
       'T, D\n\n1. Everyone\n   x, y\n2. ★ Kids\n   y\n   Note: By the gate',
@@ -365,5 +365,47 @@ describe('relationships and solo scope', () => {
     expect(soloScopeOf(settings(['soloKids']))).toBe('kids');
     expect(soloScopeOf(settings(['soloAdults']))).toBe('adults');
     expect(soloScopeOf(settings(['soloEveryone']))).toBe('everyone');
+  });
+});
+
+describe('shoot-day priorities (O8)', () => {
+  it('reorderNote says what happened in plain words', async () => {
+    const { reorderNote } = await import('./shotView');
+    expect(reorderNote('Grandma', 'early', 4)).toBe('Reordered: Grandma’s 4 shots are next.');
+    expect(reorderNote('Grandma', 'early', 1)).toBe('Reordered: Grandma’s 1 shot is next.');
+    expect(reorderNote('Noah', 'late', 2)).toBe('Reordered: Noah’s 2 shots are last.');
+    expect(reorderNote('Noah', 'normal', 2)).toMatch(/Reordered/);
+  });
+});
+
+describe('shotListText with poses (PL5)', () => {
+  it('lists every pose on a shot', async () => {
+    const { shotListText } = await import('./shotView');
+    const base = { id: 'a', name: 'Everyone', nameEdited: false, personIds: ['x'], source: 'custom' as const, reasons: [], mustHave: false, notes: '', status: 'todo' as const };
+    const text = shotListText({
+      title: 'T',
+      date: 'D',
+      shots: [{ ...base, poseIds: ['p1', 'p2'] }, { ...base, id: 'b', name: 'One', poseIds: ['p1'] }, { ...base, id: 'c', name: 'None' }],
+      order: ['a', 'b', 'c'],
+      nameOf: () => 'X',
+      poseName: (id) => ({ p1: 'Huddle', p2: 'Walk' })[id],
+    });
+    expect(text).toContain('Poses: Huddle, Walk');
+    expect(text).toContain('Pose: Huddle');
+    expect(text.match(/Pose/g)).toHaveLength(2);
+  });
+});
+
+describe('everyoneWaitsFor (O9)', () => {
+  const mk = (id: string, personIds: string[], reasons: Shot['reasons'] = []): Shot => ({ id, name: id, nameEdited: false, personIds, source: 'custom', reasons, mustHave: false, notes: '', status: 'todo' });
+  it('names the Late people who are in an everyone shot, and nobody when it is off', async () => {
+    const { everyoneWaitsFor } = await import('./shotView');
+    const shots = [mk('all', ['a', 'b', 'c'], ['fullGroup']), mk('ab', ['a', 'b']), mk('c', ['c'])];
+    expect(everyoneWaitsFor(shots, { c: 'late' }, {})).toEqual(['c']);
+    expect(everyoneWaitsFor(shots, { c: 'early' }, {})).toEqual([]);
+    expect(everyoneWaitsFor(shots, { c: 'late' }, { everyoneFirst: false })).toEqual([]);
+    expect(everyoneWaitsFor(shots, undefined, {})).toEqual([]);
+    // A shot with everybody counts even without the template.
+    expect(everyoneWaitsFor([mk('x', ['a', 'b']), mk('y', ['a'])], { b: 'late' }, {})).toEqual(['b']);
   });
 });
