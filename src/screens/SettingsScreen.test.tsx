@@ -175,12 +175,13 @@ describe('SettingsScreen', () => {
     const user = userEvent.setup();
     render(<SettingsScreen reload={() => undefined} />);
     const group = await screen.findByRole('radiogroup', { name: 'Units' });
-    expect(within(group).getByRole('radio', { name: 'US (°F, mph)' })).toHaveAttribute('aria-checked', 'true');
+    // Settings come from a live query, so wait for the screen to show them.
+    await waitFor(() => expect(within(group).getByRole('radio', { name: 'US (°F, mph)' })).toHaveAttribute('aria-checked', 'true'));
     await user.click(within(group).getByRole('radio', { name: 'Metric (°C, km/h)' }));
     await waitFor(async () => expect((await getSettings()).units).toBe('metric'));
-    expect(within(group).getByRole('radio', { name: 'Metric (°C, km/h)' })).toHaveAttribute('aria-checked', 'true');
+    await waitFor(() => expect(within(group).getByRole('radio', { name: 'Metric (°C, km/h)' })).toHaveAttribute('aria-checked', 'true'));
     const toggle = screen.getByRole('switch', { name: 'Everyone shots first' });
-    expect(toggle).toBeChecked();
+    await waitFor(() => expect(toggle).toBeChecked());
     await user.click(toggle);
     await waitFor(async () => expect((await getSettings()).defaultOrderOptions.everyoneFirst).toBe(false));
     expect((await getSettings()).defaultOrderOptions.kidsFirst).toBe(true);
