@@ -36,6 +36,8 @@ import { useShootData, type ShootData } from '../hooks/useShootData';
 import { usePoseMap } from '../hooks/usePoseMap';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { PoseThumb } from '../components/PoseThumb';
+import { LightBanner } from '../components/LightBanner';
+import { db } from '../data/db';
 import { layoutTree } from '../tree/layout';
 import type { AttendanceStatus } from '../tree/types';
 import { paths } from '../router';
@@ -86,6 +88,8 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
   const wake = useWakeLock(true);
   const poses = usePoseMap();
   const now = useNow();
+  const location = useLiveQuery(() => (shoot.locationId ? db.locations.get(shoot.locationId) : undefined), [shoot.locationId]);
+  const banner = lightBanner ?? <LightBanner shoot={shoot} location={location} now={new Date(now)} />;
   const [view, setView] = useState<View>('now');
   const [dialog, setDialog] = useState<Dialog>(null);
 
@@ -131,7 +135,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
           </button>
         }
       />
-      {lightBanner}
+      {banner}
       {wake.failed && <p className="callout-small">The screen may lock. Keep the phone awake in Settings › Display.</p>}
 
       <section className="live-progress" aria-label="Progress">

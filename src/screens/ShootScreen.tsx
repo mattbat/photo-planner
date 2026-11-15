@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AttendanceList } from '../components/AttendanceList';
 import { LiveControls } from '../components/LiveControls';
+import { LightSection } from '../components/LightSection';
 import { CustomShotSheet } from '../components/CustomShotSheet';
 import { ShotSheet } from '../components/ShotSheet';
 import { TemplatesPanel } from '../components/TemplatesPanel';
@@ -22,8 +23,10 @@ import {
 } from '../data/repo';
 import type { Shot } from '../data/types';
 import { formatDate } from '../domain/dates';
-import { branchColors, toTreePeople } from '../domain/familyView';
 import { shortNames } from '../domain/shortNames';
+import { goldenHourLabel } from '../domain/light';
+import { guessTimeZone } from '../sun';
+import { branchColors, toTreePeople } from '../domain/familyView';
 import {
   analyzeOrder,
   clockAt,
@@ -128,6 +131,7 @@ function Shoot({ data }: { data: ShootData }) {
         <div className="shoot-sub">
           {family?.name}
           {location ? ` · ${location.name}` : ''}
+          {location ? ` · ${goldenHourLabel(shoot.date, location, guessTimeZone()) ?? 'No golden hour'}` : ''}
         </div>
         <div className="shoot-facts">
           <button type="button" className="link" onClick={() => setDialog('attendance')}>
@@ -143,6 +147,10 @@ function Shoot({ data }: { data: ShootData }) {
           {status}
         </p>
       )}
+
+      <Section title="Light">
+        <LightSection shoot={shoot} location={location} totalMinutes={analysis.totalMinutes} />
+      </Section>
 
       <Section title="Templates">
         <details className="fold" open>
