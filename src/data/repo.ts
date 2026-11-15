@@ -435,7 +435,8 @@ export async function startShoot(id: string): Promise<void> {
   const settings = await getSettings();
   const treatAll = settings.treatEveryoneAsHere !== false;
   const before = await db.shoots.get(id);
-  if (!before) return;
+  // SH5: a shoot shared to the other phone can be edited and shared again, but only that phone starts it.
+  if (!before || before.handoff?.away) return;
   const extras = await db.extras.where('familyId').equals(before.familyId).toArray();
   const pets = new Set(extras.map((e) => e.id));
   await editShoot(id, (shoot) => {

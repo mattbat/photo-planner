@@ -24,11 +24,14 @@ export function LiveControls({ shoot, people, extras, familyName = 'Shoot' }: { 
         <button
           type="button"
           className="btn big wide"
-          disabled={shoot.shots.length === 0}
+          disabled={shoot.shots.length === 0 || !!shoot.handoff?.away}
           onClick={() => void startShoot(shoot.id).then(() => navigate(paths.live(shoot.id)))}
         >
           Start shoot
         </button>
+      )}
+      {shoot.status === 'planned' && shoot.handoff?.away && (
+        <p className="hint">The other phone starts this shoot. Tap Take back control to start it here.</p>
       )}
       {shoot.status === 'live' && !locked && (
         <a className="btn big wide" href={paths.live(shoot.id)}>
