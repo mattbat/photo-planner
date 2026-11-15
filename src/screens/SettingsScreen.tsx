@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
 import { BETA, versionLabel } from '../beta';
 import { ReleaseNotes } from '../components/WhatsNew';
-import { Info, Section, Segmented, TopBar } from '../components/ui';
+import { Info, Section, Segmented, TopBar, Toggle } from '../components/ui';
 import {
   backUp,
   formatBackupDate,
@@ -14,7 +14,7 @@ import {
   type RestoreMode,
 } from '../data/backup';
 import { db } from '../data/db';
-import { eraseEverything } from '../data/repo';
+import { eraseEverything, getSettings, updateSettings } from '../data/repo';
 import { RELEASES } from '../data/whatsNew';
 import { formatDate } from '../domain/dates';
 import { paths } from '../router';
@@ -28,6 +28,7 @@ function plural(n: number, word: string) {
 export function SettingsScreen({ reload = () => window.location.reload() }: { reload?: () => void }) {
   const [theme, setTheme] = useState(themePreference);
   const [message, setMessage] = useState<string | null>(null);
+  const treatAll = useLiveQuery(async () => (await getSettings()).treatEveryoneAsHere !== false) ?? true;
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Backup | null>(null);
   const [last, setLast] = useState(lastBackupAt);
@@ -161,6 +162,11 @@ export function SettingsScreen({ reload = () => window.location.reload() }: { re
           Match phone follows your iPhone’s light or dark setting. On the Home Screen app, the clock and battery at the
           top update the next time you open Photo Planner.
         </p>
+      </Section>
+
+      <Section title="Shoot day">
+        <Toggle label="Treat everyone as here" checked={treatAll} onChange={(v) => void updateSettings({ treatEveryoneAsHere: v })} />
+        <p className="hint">On: a new shoot starts with everyone here, so nobody has to be ticked off. Off: people count as not here until you mark them, and shots that need them wait.</p>
       </Section>
 
       <Section

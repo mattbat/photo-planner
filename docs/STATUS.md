@@ -4,9 +4,9 @@ Tracks every requirement in [REQUIREMENTS.md](../REQUIREMENTS.md). Update this f
 
 **Legend:** ✅ Done · 🟡 Partial · ⬜ Not started · ➖ Dropped · 📱 Needs checking on a real iPhone
 
-**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 27 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **Next:** M4, ordering on shoot day and the live checklist.
+**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 27 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **M4 (shoot day)** is done: Start shoot, the live checklist (`#/shoots/:id/live`), who's here, undo, finish and summary, poses on shots. **Next:** M5 light (golden hour), M6 hand-off.
 
-Last updated: 2026-11-15 (M2, M3)
+Last updated: 2026-11-15 (M4)
 
 ## Milestones
 
@@ -16,7 +16,7 @@ Last updated: 2026-11-15 (M2, M3)
 | M1 | Families + tree | ✅ |
 | M2 | Shot engine | ✅ |
 | M3 | Shoots + shot list | ✅ |
-| M4 | Ordering + shoot day | ⬜ |
+| M4 | Ordering + shoot day | ✅ |
 | M5 | Light | ⬜ |
 | M6 | Assistant hand-off | ⬜ |
 | M7 | Pose library | ⬜ |
@@ -42,7 +42,7 @@ Last updated: 2026-11-15 (M2, M3)
 | T2 | ✅ | Base path `/photo-planner/` and hash routing (M0). The final address depends on the name decision (Q13). |
 | T3 | 🟡 | Workbox precache and an offline-launch test in Chromium (M0). The online extras arrive in M5. |
 | T4 | 🟡 | Dexie database `photo-planner` v1 with all tables; persistent storage requested at startup (M0). Migration tests grow with each new version. |
-| T5 | 🟡 | Update banner never applies silently, with an hourly check; hidden on shoots in progress via `useInLiveShoot` (M0). Shoot routes arrive in M3/M4. |
+| T5 | ✅ | Update banner never applies silently, with an hourly check; hidden on a shoot in progress and its shoot-day screen via `useInLiveShoot` (M0, M4). |
 | T6 | ✅ | React, TypeScript, Vite, vite-plugin-pwa, Dexie, Vitest, fast-check, Testing Library, Playwright (WebKit at iPhone 17 size). |
 | T7 | 🟡 | `src/sun` (position, golden hour, plan, time zones) is in with tests; the screens arrive in M5. |
 | T8 | ⬜ | Photo resizing arrives with the pose library (M7); photos are stored as data URLs. |
@@ -71,8 +71,8 @@ Last updated: 2026-11-15 (M2, M3)
 | V4 | ✅ | Pinch, drag, wheel zoom and Fit inside the tree box; the page never scrolls sideways (M1). 📱 |
 | V5 | 🟡 | Tap a person to edit and add parents, partners and children; "+" on a couple line adds a child. "How related" waits for V6. |
 | V6 | ✅ | "How are they related?" mode on the family screen: tap two people, banner shows `describeRelationship` (M3). |
-| V7 | ✅ | Tapping a shot opens a sheet with its people highlighted on the tree (M3). |
-| V8 | 🟡 | `statusById` prop exists on the tree; used on shoots in M3/M4. |
+| V7 | ✅ | Tapping a shot opens a sheet with its people highlighted on the tree (M3); the live screen's Tree view highlights the current shot (M4). |
+| V8 | ✅ | Live Tree view: not-attending greyed out, arrived ✓, not yet !, left → badges (M4). |
 | V9 | ✅ | Share button on the family screen: SVG to PNG on a canvas, then the share sheet or a download (M1). 📱 |
 | V10 | 🟡 | Pure layout module with example and property tests (M1); sun and tree modules were integrated with the strict type settings. |
 
@@ -86,7 +86,7 @@ Last updated: 2026-11-15 (M2, M3)
 | E4 | ✅ | + Custom shot from a list or the tree (M3). |
 | E5 | ✅ | Each template shows its shot count (+N before it is on) (M3). |
 | E6 | ✅ | Renames, must-haves, notes, removed and custom shots survive regenerating, which runs on every change (M3). |
-| E7 | 🟡 | Per-shot notes; pose attach arrives with M7 (`poseId` is kept). |
+| E7 | ✅ | Per-shot notes and pose attach (M4). |
 | O1 | ✅ | Suggested order button (M3). |
 | O2 | ✅ | Four options as switches on the shoot (M3). |
 | O3 | ✅ | Call in ▲ / can leave ▼ / done for the day per step (M3). |
@@ -108,16 +108,16 @@ Last updated: 2026-11-15 (M2, M3)
 
 | ID | Status | Notes |
 |----|--------|-------|
-| D1 | ⬜ |  |
-| D2 | ⬜ |  |
-| D3 | ⬜ |  |
-| D4 | ⬜ |  |
-| D5 | ⬜ |  |
-| D6 | ⬜ |  |
-| D7 | ⬜ |  |
-| D8 | ⬜ |  |
-| D9 | ⬜ |  |
-| D10 | ⬜ |  |
+| D1 | ✅ | Current shot card: big name, people grouped by branch with the tree colours, extras with emoji, pose thumbnail and name, notes, ★ must-have (`LiveScreen`, M4). |
+| D2 | ✅ | "Next" card: call in (green ▲), can leave (red ▼) and done for the day, worked out against the shots still to do (`transition` in `src/domain/shootDay.ts`). |
+| D3 | ✅ | Big Done ✓ in the bottom thumb zone; Skip, Needs retake and ↶ Undo beside it. Undo reverses the last event exactly (done, skip, retake, put-back, arrive, leave, not-here-yet, add-shot); a property test checks it. |
+| D4 | ✅ | List view: To do, Waiting, Retakes, Done, Skipped; tap a shot for Do this now, Mark done, Skip, Needs retake, Put back. |
+| D5 | ✅ | Who's here sheet (Here / Not yet / Left). Shots that need someone not here go to Waiting with "waiting for: Dan" and return when they arrive. Leaving offers "Move all of Dan's shots up next". Setting "Treat everyone as here" (default on, in Settings and the sheet): on, a shoot starts with everyone here; off, people start Not yet and their shots wait. |
+| D6 | ✅ | "+ Shot" reuses the custom shot sheet; the new shot becomes current and is logged so Undo removes it. |
+| D7 | 🟡 | "12 of 30 done · 3 ★ left" and elapsed against planned time. Golden-hour minutes left: `lightBanner` slot in the live screen header, filled by M5. |
+| D8 | ✅ | `useWakeLock` while live; everything is in Dexie, so a reload resumes on the same shot (e2e). 📱 check on a real iPhone. |
+| D9 | ✅ | Finish shoot shows a summary (done, retakes owed, skipped, not reached, added) with share as text; Reopen shoot goes back to live. |
+| D10 | ✅ | Every tap is one atomic `editShoot` write; no Save button. |
 
 ## 10. Light: golden hour and location
 
@@ -140,9 +140,9 @@ Last updated: 2026-11-15 (M2, M3)
 | PL2 | ✅ | Detail screen: image, description, numbered "How to direct it", tips, common mistakes, size range, tags, difficulty. Three extra tags (kid-friendly, baby, senior-friendly) feed suggestions. |
 | PL3 | ✅ | 60 original illustrations in `public/poses` (precached for offline), starter data in `src/poses/starterPoses.ts`. Seeded into the `poses` table on first visit by `seedStarterPoses` (adds only missing ids, never touches favourites or photos). Credit and licence stored per pose. Existing rows are not rewritten when a later release edits starter text. |
 | PL4 | ✅ | Add, edit and delete own poses; favourite and add photos (resized to 1600 px JPEG) on any pose. Built-in poses cannot be edited or deleted. 📱 camera picker to check on iPhone. |
-| PL5 | 🟡 | `suggestPoses` and a drop-in `PoseSuggestions` component are ready; attaching to shots waits for the shoot screens. |
+| PL5 | ✅ | "Suggested poses" in the shot sheet (group worked out in `src/domain/poseGroup.ts`); tap to attach (`Shot.poseId`), tap again or Clear pose to remove; shown on the live current-shot card (M4). |
 | PL6 | ✅ | Search, group-size and tag filters, favourites toggle. |
-| PL7 | ⬜ | Waits for the shoot screens. |
+| PL7 | ✅ | Pose sheet button on the shoot screen lists shots in order with their attached pose (M4). |
 
 ## 12. Data, backup and sharing
 

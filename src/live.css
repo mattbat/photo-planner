@@ -1,0 +1,308 @@
+/* Shoot day (§8): big text, high contrast, Done in thumb reach at the bottom. */
+
+.screen.live {
+  padding-bottom: calc(var(--safe-bottom) + 200px);
+}
+
+.live-progress {
+  margin: 4px 0 8px;
+  font-size: 17px;
+}
+
+.live-progress .live-time {
+  display: block;
+  color: var(--text-2);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-bar {
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.live-bar span {
+  display: block;
+  height: 100%;
+  background: var(--in);
+}
+
+.live-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.live-tool-row {
+  display: flex;
+  gap: 8px;
+}
+
+.live-tool-row .btn {
+  flex: 1;
+  padding: 0 10px;
+}
+
+.live-card {
+  padding: 14px 16px 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 2px solid var(--text);
+}
+
+.live-kicker {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.live-star {
+  color: var(--accent);
+}
+
+.live-name {
+  margin: 2px 0 10px;
+  font-size: 30px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.live-group {
+  margin: 8px 0;
+  padding: 2px 0 2px 12px;
+  border-left: 8px solid var(--ft-line);
+}
+
+.live-glabel {
+  display: block;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.live-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.live-waiting {
+  margin: 6px 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  font-weight: 700;
+}
+
+.live-pose {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.live-thumb {
+  width: 84px;
+  flex: none;
+}
+
+.live-notes {
+  margin: 10px 0 0;
+  font-size: 18px;
+  white-space: pre-wrap;
+}
+
+.live-next {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.live-next h3 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.live-next .step {
+  margin: 4px 0;
+  font-size: 18px;
+}
+
+.live-empty h2 {
+  margin: 0 0 6px;
+}
+
+.live-lists {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.live-sec > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.live-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.live-row {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.live-row.now {
+  border: 3px solid var(--accent);
+}
+
+.live-row-name {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.live-row-sub {
+  display: block;
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.live-now {
+  color: var(--accent);
+}
+
+.live-tree-box {
+  height: 52dvh;
+  min-height: 240px;
+}
+
+.live-people-line {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.live-offer {
+  margin: 6px 0 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+
+.live-offer p {
+  margin: 0;
+}
+
+.live-who {
+  margin: 0 0 8px;
+}
+
+.live-who-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+}
+
+.live-who-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.live-who .segmented button {
+  min-height: 44px;
+}
+
+.live-footer {
+  padding-top: 10px;
+}
+
+.live-footer .btn.wide {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.btn.done-btn {
+  min-height: 68px;
+  font-size: 26px;
+  background: var(--in);
+  color: #04200f;
+}
+
+:root[data-theme='light'] .btn.done-btn {
+  color: #fff;
+}
+
+.live-footer .footer-row .btn {
+  padding: 0 6px;
+  font-size: 16px;
+}
+
+.callout-small {
+  margin: 4px 0;
+  color: var(--warn-text);
+  font-size: 14px;
+}
+
+/* Start shoot and pose sheet on the shoot screen. */
+
+.live-start {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.live-start .btn {
+  margin-top: 0;
+}
+
+.pose-sheet-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.pose-sheet-row .live-thumb {
+  width: 96px;
+}
+
+.pose-sheet-row b {
+  display: block;
+}

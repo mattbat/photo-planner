@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AttendanceList } from '../components/AttendanceList';
+import { LiveControls } from '../components/LiveControls';
 import { CustomShotSheet } from '../components/CustomShotSheet';
 import { ShotSheet } from '../components/ShotSheet';
 import { TemplatesPanel } from '../components/TemplatesPanel';
@@ -19,9 +20,10 @@ import {
   updateShoot,
   updateShot,
 } from '../data/repo';
-import type { Extra, Person, Shot } from '../data/types';
+import type { Shot } from '../data/types';
 import { formatDate } from '../domain/dates';
-import { branchColors, displayName, toTreePeople } from '../domain/familyView';
+import { branchColors, toTreePeople } from '../domain/familyView';
+import { shortNames } from '../domain/shortNames';
 import {
   analyzeOrder,
   clockAt,
@@ -35,17 +37,6 @@ import {
 import { useBlockDrag } from '../hooks/useBlockDrag';
 import { useShootData, type ShootData } from '../hooks/useShootData';
 import { navigate, paths } from '../router';
-
-/** First names for chips and lists; a full name only where two people share a first name. */
-function shortNames(people: Person[], extras: Extra[]): Map<string, string> {
-  const first = (p: Person) => displayName(p).split(' ')[0] ?? displayName(p);
-  const count = new Map<string, number>();
-  for (const p of people) count.set(first(p), (count.get(first(p)) ?? 0) + 1);
-  return new Map<string, string>([
-    ...people.map((p) => [p.id, (count.get(first(p)) ?? 0) > 1 ? displayName(p) : first(p)] as const),
-    ...extras.map((e) => [e.id, e.name] as const),
-  ]);
-}
 
 const minutesText = (m: number) => (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60 ? `${m % 60} min` : ''}`.trim());
 
@@ -146,6 +137,7 @@ function Shoot({ data }: { data: ShootData }) {
           <span>about {minutesText(analysis.totalMinutes)}</span>
         </div>
       </section>
+      <LiveControls shoot={shoot} people={people} extras={extras} />
       {status && (
         <p className="status-msg" role="status">
           {status}
@@ -263,7 +255,7 @@ function Shoot({ data }: { data: ShootData }) {
         />
       )}
       {shotSheet && (
-        <ShotSheet key={shotSheet.id} shootId={shoot.id} shot={shotSheet} treePeople={treePeople} extras={extras} onClose={() => setDialog(null)} />
+        <ShotSheet key={shotSheet.id} shootId={shoot.id} shot={shotSheet} treePeople={treePeople} extras={extras} people={people} partnerships={partnerships} onClose={() => setDialog(null)} />
       )}
       {dialog === 'options' && (
         <OptionsSheet

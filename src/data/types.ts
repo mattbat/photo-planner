@@ -174,11 +174,18 @@ export type ShootStatus = 'planned' | 'live' | 'done';
  */
 export interface ShootEvent {
   at: number;
-  type: 'done' | 'skip' | 'retake' | 'reset' | 'arrive' | 'leave' | 'add-shot';
+  /** `expect` puts someone back to "not here yet"; `reset` puts a shot back to to-do. */
+  type: 'done' | 'skip' | 'retake' | 'reset' | 'arrive' | 'leave' | 'expect' | 'add-shot';
   shotId?: string;
   personId?: string;
   /** The shot's status before, so Undo exactly reverses it. */
   previous?: ShotStatus;
+  /** The shot's `doneAt` before (null for none). */
+  previousDoneAt?: number | null;
+  /** The shot being photographed before (null for none). */
+  previousCurrentShotId?: string | null;
+  /** The person's presence before (null for no entry). */
+  previousPresence?: Presence | null;
 }
 
 /** Who is running the checklist when it is shared with the assistant (§9, M6). */
@@ -339,6 +346,8 @@ export interface AppSettings {
   defaultTemplates: TemplateSetting[];
   defaultOrderOptions: OrderOptions;
   timeEstimates: TimeEstimates;
+  /** Start shoots with everyone marked here, so nobody has to be ticked off (D5). Default on. */
+  treatEveryoneAsHere?: boolean;
 }
 
 /** The `settings` table is a small key-value store; today it holds one row, `app`. */

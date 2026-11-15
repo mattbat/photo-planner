@@ -1,3 +1,4 @@
+import { addShot, markShot, makeCurrent, moveShotsUp, pickNext, setPresence, undo as undoDay, type DayState } from '../domain/shootDay';
 import { planShoot, suggestOrder, type PlanInput, type SoloScope } from '../domain/shotView';
 import { starterPoses } from '../poses/starterPoses';
 import { demoFamily } from '../tree/fixtures';
@@ -12,6 +13,7 @@ import type {
   Person,
   Pose,
   PosePhoto,
+  Presence,
   Shoot,
   Shot,
   TemplateId,
@@ -387,33 +389,120 @@ export function setAttending(id: string, personId: string, attending: boolean): 
   });
 }
 
-/** Adds a shot of your own (E4): people and extras by id. */
+/** Adds a shot of your own (E4): people and extras by id. On a live shoot it is logged so Undo can take it back (D6). */
 export async function addCustomShot(id: string, fields: { name: string; personIds: string[] }): Promise<string> {
   const shotId = `custom:${newId()}`;
   await editShoot(id, (shoot) => {
-    shoot.shots = [
-      ...shoot.shots,
-      {
-        id: shotId,
-        name: fields.name.trim() || 'Custom shot',
-        nameEdited: false,
-        personIds: fields.personIds,
-        source: 'custom',
-        reasons: [],
-        mustHave: false,
-        notes: '',
-        status: 'todo',
-      },
-    ];
+    const shot: Shot = {
+      id: shotId,
+      name: fields.name.trim() || 'Custom shot',
+      nameEdited: false,
+      personIds: fields.personIds,
+      source: 'custom',
+      reasons: [],
+      mustHave: false,
+      notes: '',
+      status: 'todo',
+    };
+    if (shoot.status === 'live') return applyDay(shoot, addShot(shoot, shot, Date.now()));
+    shoot.shots = [...shoot.shots, shot];
     shoot.order = [...shoot.order, shotId];
   });
   return shotId;
 }
 
+// Shoot day (§8). Every tap is one atomic edit, so it is saved at once (D10).
+
+/** Copies a day state back onto the shoot (a missing current shot means none). */
+function applyDay(shoot: Shoot, next: DayState): void {
+  shoot.shots = next.shots;
+  shoot.order = next.order;
+  shoot.presence = next.presence;
+  shoot.events = next.events;
+  if (next.currentShotId === undefined) delete shoot.currentShotId;
+  else shoot.currentShotId = next.currentShotId;
+}
+
+/**
+ * Start shoot (D5): live, with the clock started. Everyone attending starts
+ * as here (or, with "Treat everyone as here" off, as expected: shots that
+ * need them wait until they arrive). Pets and guests are always here.
+ */
+export async function startShoot(id: string): Promise<void> {
+  const settings = await getSettings();
+  const treatAll = settings.treatEveryoneAsHere !== false;
+  const before = await db.shoots.get(id);
+  if (!before) return;
+  const extras = await db.extras.where('familyId').equals(before.familyId).toArray();
+  const pets = new Set(extras.map((e) => e.id));
+  await editShoot(id, (shoot) => {
+    const presence: Shoot['presence'] = {};
+    for (const pid of shoot.attendingIds) presence[pid] = treatAll || pets.has(pid) ? 'here' : 'expected';
+    shoot.presence = presence;
+    shoot.status = 'live';
+    shoot.startedAt = Date.now();
+    delete shoot.finishedAt;
+    shoot.events = [];
+    delete shoot.currentShotId;
+    const first = pickNext({ ...shoot, presence });
+    if (first) shoot.currentShotId = first.id;
+  });
+}
+
+/** Finish shoot (D9). */
+export function finishShoot(id: string): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.status = 'done';
+    shoot.finishedAt = Date.now();
+  });
+}
+
+/** Reopens a finished shoot where it was (D9). */
+export function reopenShoot(id: string): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.status = 'live';
+    delete shoot.finishedAt;
+  });
+}
+
+/** Done, Skip, Needs retake, or back to to-do (D3). */
+export function markShotOnDay(id: string, shotId: string, how: 'done' | 'skip' | 'retake' | 'reset'): Promise<void> {
+  return editShoot(id, (shoot) => applyDay(shoot, markShot(shoot, shotId, how, Date.now())));
+}
+
+/** "Do this now" (D4). */
+export function doShotNow(id: string, shotId: string): Promise<void> {
+  return editShoot(id, (shoot) => applyDay(shoot, makeCurrent(shoot, shotId, Date.now())));
+}
+
+/** Marks someone here, not here yet or left (D5). */
+export function setShootPresence(id: string, personId: string, to: Presence): Promise<void> {
+  return editShoot(id, (shoot) => applyDay(shoot, setPresence(shoot, personId, to, Date.now())));
+}
+
+/** ↶ Undo: reverses the last thing that happened (D3). */
+export function undoLastOnDay(id: string): Promise<void> {
+  return editShoot(id, (shoot) => applyDay(shoot, undoDay(shoot)));
+}
+
+/** "Move all of Dan's shots up next" (D5). */
+export function moveShotsUpNext(id: string, personId: string): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.order = moveShotsUp(shoot, personId);
+    shoot.manualOrder = true;
+  });
+}
+
 /** Partial edit of one shot: must-have, notes, pose (E6). */
 export function updateShot(id: string, shotId: string, changes: Partial<Pick<Shot, 'mustHave' | 'notes' | 'poseId' | 'status'>>): Promise<void> {
   return editShoot(id, (shoot) => {
-    shoot.shots = shoot.shots.map((s) => (s.id === shotId ? { ...s, ...changes } : s));
+    shoot.shots = shoot.shots.map((s) => {
+      if (s.id !== shotId) return s;
+      const next = { ...s, ...changes };
+      // An empty pose id clears the pose.
+      if (!next.poseId) delete next.poseId;
+      return next;
+    });
   });
 }
 

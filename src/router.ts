@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 export type Route =
   | { name: 'shoots' }
   | { name: 'shoot'; id: string }
+  | { name: 'live'; id: string }
   | { name: 'families' }
   | { name: 'family'; id: string }
   | { name: 'poses' }
@@ -25,6 +26,7 @@ export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   switch (parts[0]) {
     case 'shoots':
+      if (parts[1] && parts[2] === 'live') return { name: 'live', id: decodeURIComponent(parts[1]) };
       return parts[1] ? { name: 'shoot', id: decodeURIComponent(parts[1]) } : { name: 'shoots' };
     case 'families':
       return parts[1] ? { name: 'family', id: decodeURIComponent(parts[1]) } : { name: 'families' };
@@ -42,6 +44,8 @@ export function parseRoute(hash: string): Route {
 export const paths = {
   shoots: () => '#/',
   shoot: (id: string) => `#/shoots/${encodeURIComponent(id)}`,
+  /** Shoot day: the checklist (§8). */
+  live: (id: string) => `#/shoots/${encodeURIComponent(id)}/live`,
   families: () => '#/families',
   family: (id: string) => `#/families/${encodeURIComponent(id)}`,
   poses: () => '#/poses',

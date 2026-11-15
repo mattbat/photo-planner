@@ -137,6 +137,39 @@ describe('ShootScreen', () => {
     expect(shotNames()).toContain('Everyone');
   });
 
+  it('starts the shoot and opens shoot day (§8)', async () => {
+    const { user, shoot } = await open();
+    await user.click(screen.getByRole('button', { name: 'Start shoot' }));
+    await waitFor(async () => expect((await reload(shoot.id)).status).toBe('live'));
+    expect(window.location.hash).toBe(`#/shoots/${shoot.id}/live`);
+    expect(await screen.findByRole('link', { name: 'Continue shoot day' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Finish shoot' }));
+    await waitFor(async () => expect((await reload(shoot.id)).status).toBe('done'));
+    await user.click(await screen.findByRole('button', { name: 'Reopen shoot' }));
+    await waitFor(async () => expect((await reload(shoot.id)).status).toBe('live'));
+  });
+
+  it('attaches a suggested pose to a shot (PL5) and lists it on the pose sheet (PL7)', async () => {
+    const { user, shoot } = await open();
+    await user.click(screen.getByRole('button', { name: /^Pose sheet/ }));
+    expect(await screen.findByText(/No poses yet/)).toBeInTheDocument();
+    await user.click(within(screen.getByRole('dialog', { name: 'Pose sheet' })).getByRole('button', { name: 'Done' }));
+    await user.click(within(rows()[0]!).getByRole('button', { name: 'Everyone' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Everyone' });
+    const pick = await within(sheet).findAllByRole('listitem');
+    await user.click(pick[0]!);
+    await waitFor(async () => expect((await reload(shoot.id)).shots.find((s) => s.name === 'Everyone')!.poseId).toBeTruthy());
+    expect(await within(sheet).findByRole('button', { name: 'Clear pose' })).toBeInTheDocument();
+    await user.click(within(sheet).getByRole('button', { name: 'Done' }));
+    await user.click(screen.getByRole('button', { name: /^Pose sheet \(1\)/ }));
+    const poseList = await screen.findByRole('list', { name: 'Shots with poses' });
+    expect(poseList).toHaveTextContent('Everyone');
+    await user.click(within(screen.getByRole('dialog', { name: 'Pose sheet' })).getByRole('button', { name: 'Done' }));
+    await user.click(within(rows()[0]!).getByRole('button', { name: 'Everyone' }));
+    await user.click(await screen.findByRole('button', { name: 'Clear pose' }, { timeout: 3000 }));
+    await waitFor(async () => expect((await reload(shoot.id)).shots.find((s) => s.name === 'Everyone')!.poseId).toBeUndefined());
+  });
+
   it('moves a shot with the drag handle’s arrow keys, which counts as ordering by hand (O4)', async () => {
     const { user, shoot } = await open();
     const before = shotNames();

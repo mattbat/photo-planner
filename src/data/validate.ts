@@ -108,7 +108,7 @@ const isShot: Check = (value) =>
   })(value);
 const isEvent = exact({
   at: isNumber,
-  type: oneOf('done', 'skip', 'retake', 'reset', 'arrive', 'leave', 'add-shot'),
+  type: oneOf('done', 'skip', 'retake', 'reset', 'arrive', 'leave', 'expect', 'add-shot'),
 });
 
 export const isValidShoot = record(

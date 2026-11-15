@@ -14,7 +14,7 @@ describe('router', () => {
   });
 
   it('builds paths that parse back to the same route', () => {
-    const { family, shoot, pose, ...plain } = paths;
+    const { family, shoot, live, pose, ...plain } = paths;
     for (const [name, path] of Object.entries(plain)) {
       expect(parseRoute(path())).toEqual({ name });
     }
@@ -23,6 +23,8 @@ describe('router', () => {
     expect(parseRoute('#/families/f1')).toEqual({ name: 'family', id: 'f1' });
     expect(parseRoute(shoot('s 1/x'))).toEqual({ name: 'shoot', id: 's 1/x' });
     expect(parseRoute('#/shoots/s1')).toEqual({ name: 'shoot', id: 's1' });
+    expect(parseRoute(live('s 1/x'))).toEqual({ name: 'live', id: 's 1/x' });
+    expect(parseRoute('#/shoots/s1/live')).toEqual({ name: 'live', id: 's1' });
   });
 
   it('has one tab per top-level screen, in tab-bar order', () => {
