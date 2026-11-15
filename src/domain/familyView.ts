@@ -49,8 +49,18 @@ export function isGrown(person: Person, hasPartner: boolean, hasChildren: boolea
   return person.parentIds.length === 0;
 }
 
+/**
+ * People in a fixed order, whatever order they were read from the database
+ * in (that is the random order of their ids): oldest record first, then by
+ * name. The tree, its branch colours and the shot engine all rely on this.
+ */
+export function orderedPeople(people: Person[]): Person[] {
+  return [...people].sort((a, b) => a.createdAt - b.createdAt || a.name.localeCompare(b.name) || (a.id < b.id ? -1 : 1));
+}
+
 /** The tree's view of a family: ids, names (nickname first), partners and kid/grown. */
-export function toTreePeople(people: Person[], partnerships: Partnership[], thisYear = new Date().getFullYear()): TreePerson[] {
+export function toTreePeople(peopleIn: Person[], partnerships: Partnership[], thisYear = new Date().getFullYear()): TreePerson[] {
+  const people = orderedPeople(peopleIn);
   const { byId, partnersOf, childrenOf } = indexFamily(people, partnerships);
   const status = new Map<string, 'together' | 'separated'>();
   const key = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
@@ -97,7 +107,13 @@ export function displayName(p: Pick<Person, 'name' | 'nickname'>): string {
 }
 
 /**
- * Hook point for the relationship finder (V6): once `src/domain` gets
- * `describeRelationship(a, b)`, the person sheet and the tree call it here.
+ * The branch colour (0 to 7) of each person who belongs to a branch, as the
+ * tree draws it, so shot lists can use the same colours (V2). People of the
+ * top couples have none. Colours follow the picture from left to right, not
+ * the ids, so a family always looks the same.
  */
-export type RelationshipDescriber = (aId: string, bId: string) => string | null;
+export function branchColors(treePeople: TreePerson[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const n of layoutTree(treePeople).nodes) if (n.branchId) out.set(n.id, n.colorIndex);
+  return out;
+}

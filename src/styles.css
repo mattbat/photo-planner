@@ -831,7 +831,7 @@ input[type='date'] {
 .sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 25;
   background: var(--backdrop);
   display: flex;
   align-items: flex-end;
@@ -1195,4 +1195,205 @@ textarea:focus {
 .qa-child {
   padding: 10px 0;
   border-bottom: 1px solid var(--surface-2);
+}
+
+/* Shoot screen (§7) */
+
+.shoot-head {
+  margin: 8px 0 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.shoot-when {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.shoot-sub {
+  color: var(--text-2);
+}
+
+.shoot-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin-top: 6px;
+  color: var(--text-2);
+}
+
+.fold {
+  margin: 4px 0 8px;
+}
+
+.fold > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.template-count {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.list-sub.inline {
+  display: inline;
+  margin-left: 6px;
+}
+
+.shots {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shot {
+  padding: 8px 12px 10px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.shot.dragged {
+  box-shadow: var(--shadow);
+}
+
+.shots.dragging .shot:not(.dragged) {
+  transition: transform 150ms ease;
+}
+
+.shot-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shot-num {
+  flex: none;
+  min-width: 22px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.shot-name {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.star {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 24px;
+}
+
+.star.on {
+  color: var(--accent);
+}
+
+.drag-handle {
+  flex: none;
+  width: 32px;
+  height: 44px;
+  margin-left: -8px;
+  border: none;
+  background: none;
+  color: var(--text-3);
+  font-size: 22px;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 4px 28px;
+}
+
+.pchip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 2px solid var(--ft-line);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.pchip.more {
+  border-style: dashed;
+  color: var(--text-2);
+}
+
+.shot-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 28px;
+  font-size: 13px;
+}
+
+.step.in {
+  color: var(--in);
+}
+
+.step.out {
+  color: var(--out);
+}
+
+.shot-meta {
+  display: flex;
+  gap: 12px;
+  margin: 4px 0 0 28px;
+  color: var(--text-3);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.shot-notes {
+  margin: 4px 0 0 28px;
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.tree-box.small {
+  height: 260px;
+  min-height: 200px;
+  margin: 8px 0;
+}
+
+/* How are they related? (V6) */
+
+.relate-banner {
+  margin: 8px 0;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
 }

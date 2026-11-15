@@ -50,7 +50,7 @@ describe('App', () => {
     const { family } = await seedFamily();
     await createShoot(family, { date: '2026-12-05' });
     render(<App />);
-    expect(await screen.findByText(/0 of 0 shots/)).toBeInTheDocument();
+    expect(await screen.findByText(/^0\/\d+$/)).toBeInTheDocument();
     expect(screen.getByText('The Testers')).toBeInTheDocument();
     await goTo('#/families');
     expect(await screen.findByText('5 people')).toBeInTheDocument();

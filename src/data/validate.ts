@@ -1,4 +1,5 @@
-import { POSE_CATEGORIES, POSE_TAGS, TEMPLATE_IDS } from './types';
+import { TEMPLATE_IDS } from '../engine/templates';
+import { POSE_CATEGORIES, POSE_TAGS } from './types';
 
 /**
  * Shape checks for records that arrive from outside this phone: a backup file

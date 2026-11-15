@@ -9,7 +9,7 @@ import { Empty, Section, Segmented, TopBar } from '../components/ui';
 import { db } from '../data/db';
 import { addChild, addPerson } from '../data/repo';
 import type { Extra } from '../data/types';
-import { checkFamily } from '../domain/familyChecks';
+import { checkFamily, describePair } from '../domain/shotView';
 import { displayName, groupByGeneration, indexFamily, toTreePeople } from '../domain/familyView';
 import { paths } from '../router';
 
@@ -32,6 +32,8 @@ export function FamilyScreen({ familyId }: { familyId: string }) {
   const [personId, setPersonId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [status, setStatus] = useState('');
+  /** V6: "How are they related?" mode, with the people tapped so far (at most two). */
+  const [relating, setRelating] = useState<string[] | null>(null);
 
   const people = data?.people;
   const partnerships = data?.partnerships;
@@ -110,14 +112,45 @@ export function FamilyScreen({ familyId }: { familyId: string }) {
         </Empty>
       ) : view === 'tree' ? (
         <>
+        <div className="action-row">
+          <button
+            type="button"
+            className={`btn small ${relating ? '' : 'secondary'}`}
+            aria-pressed={relating !== null}
+            onClick={() => setRelating(relating ? null : [])}
+          >
+            How are they related?
+          </button>
+        </div>
+        {relating && (
+          <p className="relate-banner" role="status">
+            {relating.length < 2
+              ? relating.length === 0
+                ? 'Tap two people to see how they are related.'
+                : `Now tap someone else to compare with ${nameOf(index.byId.get(relating[0]!)?.name)}.`
+              : describePair(data.people, data.partnerships, relating[0]!, relating[1]!)}
+            {relating.length > 0 && (
+              <>
+                {' '}
+                <button type="button" className="link" onClick={() => setRelating([])}>
+                  Clear
+                </button>
+              </>
+            )}
+          </p>
+        )}
         <div className="tree-box">
           <FamilyTree
             people={treePeople}
-            onPersonTap={setPersonId}
+            {...(relating ? { selectedIds: new Set(relating) } : {})}
+            onPersonTap={(id) => {
+              if (!relating) return setPersonId(id);
+              setRelating(relating.length >= 2 || relating.includes(id) ? [id] : [...relating, id]);
+            }}
             onCoupleAddChild={(a, b) => setDialog({ kind: 'addChild', parentIds: [a, b] })}
           />
         </div>
-        <p className="status-msg">Pinch to zoom, drag to move around, tap Fit to see everyone. Tap a person to edit them.</p>
+        <p className="status-msg">Pinch to zoom, drag to move around, tap Fit to see everyone. Tap a person to edit them{relating ? '' : ', or use “How are they related?”'}.</p>
         </>
       ) : (
         groups.map((g) => (

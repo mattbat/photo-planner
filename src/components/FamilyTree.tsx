@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { initialView } from '../tree/initialView';
 import { layoutTree } from '../tree/layout';
 import type { AttendanceStatus, TreePerson } from '../tree/types';
 import { TreeContent } from './TreeContent';
@@ -30,9 +31,7 @@ export function FamilyTree(props: FamilyTreeProps) {
   /** Fits the tree in the box, but not smaller than `minK`, so a big family starts readable (pinch out or tap Fit to see everyone). */
   const place = useCallback((minK: number) => {
     const el = boxRef.current;
-    const w = el?.clientWidth || layout.width, h = el?.clientHeight || layout.height;
-    const k = Math.max(minK, Math.min(w / layout.width, h / layout.height, 1.5));
-    setView({ k, tx: (w - layout.width * k) / 2, ty: Math.max(0, (h - layout.height * k) / 2) });
+    setView(initialView(layout, el?.clientWidth || layout.width, el?.clientHeight || layout.height, minK));
   }, [layout]);
   const fit = useCallback(() => place(0), [place]);
   useEffect(() => { place(0.6); }, [place]);

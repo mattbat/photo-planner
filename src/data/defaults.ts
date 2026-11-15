@@ -1,37 +1,9 @@
-import {
-  TEMPLATE_IDS,
-  type AppSettings,
-  type OrderOptions,
-  type TemplateId,
-  type TemplateSetting,
-  type TimeEstimates,
-} from './types';
+import { DEFAULT_TEMPLATE_IDS, TEMPLATE_IDS } from '../engine/templates';
+import type { AppSettings, OrderOptions, TemplateSetting, TimeEstimates } from './types';
 
-/**
- * The shot types ticked for a new shoot (REQUIREMENTS.md Q12 default):
- * full group, grandparents + all grandkids, parents + all grown children,
- * parents + each grown child's household, each household, each couple, all
- * siblings, cousins, and solo portraits of the kids.
- */
-export const DEFAULT_ENABLED_TEMPLATES: readonly TemplateId[] = [
-  'full-group',
-  'grandparents-all-grandkids',
-  'parents-all-grown-children',
-  'parents-each-grown-child-household',
-  'each-household',
-  'each-couple',
-  'all-siblings',
-  'cousins',
-  'solo-portraits',
-];
-
-/** Every template, in §6.1 order, with the Q12 ones on. */
+/** Every template, in §6.1 order, with the Q12 ones on (the engine's defaults). */
 export function defaultTemplates(): TemplateSetting[] {
-  return TEMPLATE_IDS.map((id) => ({
-    id,
-    enabled: DEFAULT_ENABLED_TEMPLATES.includes(id),
-    ...(id === 'solo-portraits' ? { soloScope: 'kids' as const } : {}),
-  }));
+  return TEMPLATE_IDS.map((id) => ({ id, enabled: DEFAULT_TEMPLATE_IDS.includes(id) }));
 }
 
 export const DEFAULT_ORDER_OPTIONS: OrderOptions = {

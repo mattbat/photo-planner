@@ -2,7 +2,8 @@ import Dexie from 'dexie';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { clearDb, seedFamily } from '../test/helpers';
 import { db, PhotoPlannerDb } from './db';
-import { DEFAULT_ENABLED_TEMPLATES, defaultSettings } from './defaults';
+import { DEFAULT_TEMPLATE_IDS } from '../engine/templates';
+import { defaultSettings } from './defaults';
 import {
   addChild,
   addExtra,
@@ -16,6 +17,7 @@ import {
   addPosePhoto,
   createFamily,
   createShoot,
+  regenerateShoot,
   deleteExtra,
   deleteFamily,
   deleteLocation,
@@ -38,7 +40,8 @@ import {
   updateSettings,
   updateShoot,
 } from './repo';
-import { TEMPLATE_IDS, type Pose } from './types';
+import { TEMPLATE_IDS } from '../engine/templates';
+import type { Pose } from './types';
 
 beforeEach(clearDb);
 
@@ -136,6 +139,7 @@ describe('families and people', () => {
     const stranger = await addPerson(family.id, { name: 'Stranger' });
     const shoot = await createShoot(family);
     await updateShoot(shoot.id, { attendingIds: [ivy.id] });
+    await regenerateShoot(shoot.id);
     const before = (await db.shoots.get(shoot.id))!;
     await deletePerson(stranger.id);
     expect(await db.shoots.get(shoot.id)).toEqual(before);
@@ -169,11 +173,13 @@ describe('shoots', () => {
     const { family, ivy, dog } = await seedFamily();
     await updatePerson(ivy.id, { usuallyAbsent: true });
     const shoot = await createShoot(family, { title: 'Spring' });
-    expect(shoot).toMatchObject({ status: 'planned', title: 'Spring', date: today(), shots: [], order: [], manualOrder: false });
+    expect(shoot).toMatchObject({ status: 'planned', title: 'Spring', date: today(), manualOrder: false });
+    expect(shoot.shots.length).toBeGreaterThan(0);
+    expect(shoot.order).toEqual(shoot.shots.map((s) => s.id));
     expect(shoot.attendingIds).toHaveLength(5);
     expect(shoot.attendingIds).not.toContain(ivy.id);
     expect(shoot.attendingIds).toContain(dog.id);
-    expect(shoot.templates.filter((t) => t.enabled).map((t) => t.id).sort()).toEqual([...DEFAULT_ENABLED_TEMPLATES].sort());
+    expect(shoot.templates.filter((t) => t.enabled).map((t) => t.id).sort()).toEqual([...DEFAULT_TEMPLATE_IDS].sort());
     expect(await db.shoots.get(shoot.id)).toEqual(shoot);
   });
 
@@ -253,7 +259,7 @@ describe('settings', () => {
     const defaults = defaultSettings();
     expect(await getSettings()).toEqual(defaults);
     expect(defaults.defaultTemplates.map((t) => t.id)).toEqual([...TEMPLATE_IDS]);
-    expect(defaults.defaultTemplates.find((t) => t.id === 'solo-portraits')?.soloScope).toBe('kids');
+    expect(defaults.defaultTemplates.filter((t) => t.enabled).map((t) => t.id)).toContain('soloKids');
     const next = await updateSettings({ timeEstimates: { small: 1, medium: 2, large: 4, setup: 0 } });
     expect(next.timeEstimates.large).toBe(4);
     expect(await getSettings()).toEqual(next);

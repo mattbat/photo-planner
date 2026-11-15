@@ -1,3 +1,4 @@
+import { planShoot, suggestOrder, type PlanInput, type SoloScope } from '../domain/shotView';
 import { demoFamily } from '../tree/fixtures';
 import { ALL_TABLES, db } from './db';
 import { defaultSettings } from './defaults';
@@ -11,6 +12,8 @@ import type {
   Pose,
   PosePhoto,
   Shoot,
+  Shot,
+  TemplateId,
 } from './types';
 
 /**
@@ -35,8 +38,16 @@ export function newId(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+let lastStamp = 0;
+
+/**
+ * New records get a creation time that is strictly later than the previous
+ * one, so "oldest first" is the order they were added in (it fixes the order
+ * of people in the tree, and so branch colours, whatever their random ids).
+ */
 function stamp<T extends object>(fields: T): T & { id: string; createdAt: number; updatedAt: number } {
-  const now = Date.now();
+  const now = Math.max(Date.now(), lastStamp + 1);
+  lastStamp = now;
   return { id: newId(), createdAt: now, updatedAt: now, ...fields };
 }
 
@@ -277,11 +288,15 @@ export async function deleteExtra(id: string): Promise<void> {
 
 // Shoots
 
-/** Creates a planned shoot with the starting templates and order options from Settings. */
-export async function createShoot(
-  family: Pick<Family, 'id'>,
-  fields: Partial<Pick<Shoot, 'title' | 'date' | 'startTime' | 'locationId'>> = {},
-): Promise<Shoot> {
+/** What `createShoot` takes: the optional fields of a new shoot. */
+export type NewShoot = Partial<Pick<Shoot, 'title' | 'date' | 'startTime' | 'locationId' | 'attendingIds'>>;
+
+/**
+ * Creates a planned shoot with the starting templates and order options from
+ * Settings, and builds its shot list (E1). Everyone attends unless the
+ * caller says who does, except people "not usually at shoots" (F5).
+ */
+export async function createShoot(family: Pick<Family, 'id'>, fields: NewShoot = {}): Promise<Shoot> {
   const settings = await getSettings();
   const people = await db.people.where('familyId').equals(family.id).toArray();
   const extras = await db.extras.where('familyId').equals(family.id).filter((e) => e.shootId === undefined).toArray();
@@ -290,8 +305,7 @@ export async function createShoot(
     date: today(),
     ...fields,
     status: 'planned' as const,
-    // Everyone attends, except people "not usually at shoots" (F5).
-    attendingIds: [...people.filter((p) => !p.usuallyAbsent).map((p) => p.id), ...extras.map((e) => e.id)],
+    attendingIds: fields.attendingIds ?? [...people.filter((p) => !p.usuallyAbsent).map((p) => p.id), ...extras.map((e) => e.id)],
     templates: settings.defaultTemplates,
     shots: [],
     order: [],
@@ -302,11 +316,187 @@ export async function createShoot(
     events: [],
   });
   await db.shoots.add(shoot);
-  return shoot;
+  await regenerateShoot(shoot.id);
+  return (await db.shoots.get(shoot.id)) ?? shoot;
 }
 
 export async function updateShoot(id: string, changes: Changes<Shoot>): Promise<void> {
-  await db.shoots.update(id, { ...changes, updatedAt: Date.now() });
+  await db.transaction('rw', db.shoots, () => db.shoots.update(id, { ...changes, updatedAt: Date.now() }));
+}
+
+const SHOOT_TABLES = () => [db.shoots, db.people, db.partnerships, db.extras, db.families] as const;
+
+/** Everything the planner needs for one shoot, read in the caller's transaction. */
+async function planInput(shoot: Shoot): Promise<PlanInput> {
+  const family = await db.families.get(shoot.familyId);
+  return {
+    people: await db.people.where('familyId').equals(shoot.familyId).toArray(),
+    partnerships: await db.partnerships.where('familyId').equals(shoot.familyId).toArray(),
+    extras: await db.extras.where('familyId').equals(shoot.familyId).filter((e) => e.shootId === undefined || e.shootId === shoot.id).toArray(),
+    shoot,
+    ...(family ? { familyName: family.name } : {}),
+  };
+}
+
+/**
+ * Changes a shoot and rebuilds its shot list in one transaction (E6): the
+ * edit is applied first, then the shots are generated again with the
+ * photographer's edits put back. Nothing is written if nothing changed.
+ */
+async function editShoot(id: string, edit: (shoot: Shoot) => void): Promise<void> {
+  await db.transaction('rw', [...SHOOT_TABLES()], async () => {
+    const shoot = await db.shoots.get(id);
+    if (!shoot) return;
+    const before = JSON.stringify(shoot);
+    edit(shoot);
+    const plan = planShoot(await planInput(shoot));
+    shoot.shots = plan.shots;
+    shoot.order = plan.order;
+    if (JSON.stringify(shoot) !== before) {
+      shoot.updatedAt = Date.now();
+      await db.shoots.put(shoot);
+    }
+  });
+}
+
+/** Builds the shot list again from the family as it is now (after people, partnerships or extras changed). */
+export function regenerateShoot(id: string): Promise<void> {
+  return editShoot(id, () => undefined);
+}
+
+export function setTemplateEnabled(id: string, templateId: TemplateId, enabled: boolean): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.templates = shoot.templates.map((t) => (t.id === templateId ? { ...t, enabled } : t));
+  });
+}
+
+/** The solo-portraits scope picker (§6.1): none, or one of the three solo templates. */
+export function setSoloScope(id: string, scope: SoloScope): Promise<void> {
+  const on: TemplateId | undefined = scope === 'off' ? undefined : (`solo${scope[0]!.toUpperCase()}${scope.slice(1)}` as TemplateId);
+  return editShoot(id, (shoot) => {
+    shoot.templates = shoot.templates.map((t) => (t.id.startsWith('solo') ? { ...t, enabled: t.id === on } : t));
+  });
+}
+
+/** Ticks or unticks a person or extra as attending (E3). */
+export function setAttending(id: string, personId: string, attending: boolean): Promise<void> {
+  return editShoot(id, (shoot) => {
+    const rest = shoot.attendingIds.filter((x) => x !== personId);
+    shoot.attendingIds = attending ? [...rest, personId] : rest;
+  });
+}
+
+/** Adds a shot of your own (E4): people and extras by id. */
+export async function addCustomShot(id: string, fields: { name: string; personIds: string[] }): Promise<string> {
+  const shotId = `custom:${newId()}`;
+  await editShoot(id, (shoot) => {
+    shoot.shots = [
+      ...shoot.shots,
+      {
+        id: shotId,
+        name: fields.name.trim() || 'Custom shot',
+        nameEdited: false,
+        personIds: fields.personIds,
+        source: 'custom',
+        reasons: [],
+        mustHave: false,
+        notes: '',
+        status: 'todo',
+      },
+    ];
+    shoot.order = [...shoot.order, shotId];
+  });
+  return shotId;
+}
+
+/** Partial edit of one shot: must-have, notes, pose (E6). */
+export function updateShot(id: string, shotId: string, changes: Partial<Pick<Shot, 'mustHave' | 'notes' | 'poseId' | 'status'>>): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.shots = shoot.shots.map((s) => (s.id === shotId ? { ...s, ...changes } : s));
+  });
+}
+
+/** Renames a shot; an empty name goes back to the generated one. The name survives regenerating (E6). */
+export function renameShot(id: string, shotId: string, name: string): Promise<void> {
+  const clean = name.trim();
+  return editShoot(id, (shoot) => {
+    shoot.shots = shoot.shots.map((s) => (s.id === shotId ? { ...s, name: clean || s.name, nameEdited: clean !== '' } : s));
+  });
+}
+
+/** Removes a shot. A generated one is remembered as removed so it stays gone; a custom one is deleted (E6). */
+export function removeShot(id: string, shotId: string): Promise<void> {
+  return editShoot(id, (shoot) => {
+    const shot = shoot.shots.find((s) => s.id === shotId);
+    if (!shot) return;
+    if (shot.source !== 'custom') shoot.removedKeys = [...new Set([...shoot.removedKeys, shotId])];
+    shoot.shots = shoot.shots.filter((s) => s.id !== shotId);
+    shoot.order = shoot.order.filter((x) => x !== shotId);
+  });
+}
+
+export function restoreShot(id: string, key: string): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.removedKeys = shoot.removedKeys.filter((k) => k !== key);
+  });
+}
+
+/** Sets the shooting order by hand (O4): the suggestion won't override it until asked. */
+export function setShotOrder(id: string, order: string[]): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.order = order;
+    shoot.manualOrder = true;
+  });
+}
+
+export function setOrderOptions(id: string, options: Partial<Shoot['orderOptions']>): Promise<void> {
+  return editShoot(id, (shoot) => {
+    shoot.orderOptions = { ...shoot.orderOptions, ...options };
+  });
+}
+
+/**
+ * The suggested order (O1, O2). With `rest`, shots already taken keep their
+ * place at the front and only the rest are re-ordered (O4).
+ */
+export async function applySuggestedOrder(id: string, rest = false): Promise<void> {
+  const settings = await getSettings();
+  await db.transaction('rw', [...SHOOT_TABLES()], async () => {
+    const shoot = await db.shoots.get(id);
+    if (!shoot) return;
+    const input = await planInput(shoot);
+    const order = suggestOrder(
+      { ...input, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates },
+      rest,
+    );
+    await db.shoots.update(id, { order, manualOrder: false, updatedAt: Date.now() });
+  });
+}
+
+/** Copies a shoot as a new planned one for another date (P4): same people, templates and edits, nothing done yet. */
+export async function duplicateShoot(id: string, fields: { date?: string; title?: string } = {}): Promise<Shoot | undefined> {
+  const source = await db.shoots.get(id);
+  if (!source) return undefined;
+  const copy: Shoot = {
+    ...source,
+    ...stamp({}),
+    ...(fields.title !== undefined ? { title: fields.title } : {}),
+    date: fields.date ?? today(),
+    status: 'planned' as const,
+    shots: source.shots.map((s) => {
+      const rest = { ...s, status: 'todo' as const };
+      delete rest.doneAt;
+      return rest;
+    }),
+    presence: {},
+    events: [],
+  };
+  delete copy.currentShotId;
+  delete copy.startedAt;
+  delete copy.finishedAt;
+  delete copy.handoff;
+  await db.shoots.add(copy);
+  return copy;
 }
 
 export async function deleteShoot(id: string): Promise<void> {

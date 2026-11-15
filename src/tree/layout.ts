@@ -342,7 +342,8 @@ export function layoutTree(peopleIn: TreePerson[], opts: LayoutOptions = {}): Tr
   for (const r of rootOrder) {
     const heads = new Set<number>();
     for (const i of comps[r]!) for (const ch of children[i]!) heads.add(ch);
-    for (const h of [...heads].sort((a, b) => a - b)) {
+    // Left to right on the page (input order only breaks ties), so colours follow the picture, not the ids.
+    for (const h of [...heads].sort((a, b) => px[a]! - px[b]! || a - b)) {
       if (rootSet.has(compOf[h]!) || claimed.has(compOf[h]!)) continue;
       claim(compOf[h]!, h, nextColor++ % BRANCH_COLORS);
     }

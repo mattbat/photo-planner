@@ -200,8 +200,33 @@ describe('FamilyScreen', () => {
     const user = userEvent.setup();
     render(<FamilyScreen familyId={family.id} />);
     const problems = await screen.findByRole('region', { name: 'Problems' });
-    expect(problems).toHaveTextContent('Ivy Tester is listed as a child of both Max Tester and Max Tester\'s parent Gran Tester.');
+    expect(problems).toHaveTextContent('Ivy is listed as a child of both Max and Max\'s parent Gran.');
     await user.click(within(problems).getAllByRole('button')[0]!);
+    expect(await screen.findByRole('dialog', { name: 'Ivy Tester' })).toBeInTheDocument();
+  });
+
+  it('tells how two people are related in a banner (V6)', async () => {
+    const { family } = await seedFamily();
+    const user = userEvent.setup();
+    render(<FamilyScreen familyId={family.id} />);
+    const mode = await screen.findByRole('button', { name: 'How are they related?' });
+    await user.click(mode);
+    expect(screen.getByRole('status')).toHaveTextContent('Tap two people');
+    await user.click(await screen.findByRole('button', { name: /^Ivy Tester,/ }));
+    expect(screen.getByRole('status')).toHaveTextContent('Now tap someone else to compare with Ivy Tester');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Gran Tester,/ }));
+    expect(screen.getByRole('status')).toHaveTextContent(/Ivy is Gran.s granddaughter|grand/i);
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Tap two people');
+    await user.click(screen.getByRole('button', { name: /^Ivy Tester,/ }));
+    await user.click(screen.getByRole('button', { name: /^Ivy Tester,/ }));
+    await user.click(screen.getByRole('button', { name: /^Max Tester,/ }));
+    await user.click(screen.getByRole('button', { name: /^Nia Tester,/ }));
+    expect(screen.getByRole('status')).not.toHaveTextContent('Ivy');
+    await user.click(mode);
+    expect(screen.queryByText(/Tap two people/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Ivy Tester,/ }));
     expect(await screen.findByRole('dialog', { name: 'Ivy Tester' })).toBeInTheDocument();
   });
 

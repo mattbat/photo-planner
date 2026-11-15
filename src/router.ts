@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 
 export type Route =
   | { name: 'shoots' }
+  | { name: 'shoot'; id: string }
   | { name: 'families' }
   | { name: 'family'; id: string }
   | { name: 'poses' }
@@ -22,6 +23,8 @@ export type TabName = (typeof TABS)[number];
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   switch (parts[0]) {
+    case 'shoots':
+      return parts[1] ? { name: 'shoot', id: decodeURIComponent(parts[1]) } : { name: 'shoots' };
     case 'families':
       return parts[1] ? { name: 'family', id: decodeURIComponent(parts[1]) } : { name: 'families' };
     case 'poses':
@@ -37,6 +40,7 @@ export function parseRoute(hash: string): Route {
 
 export const paths = {
   shoots: () => '#/',
+  shoot: (id: string) => `#/shoots/${encodeURIComponent(id)}`,
   families: () => '#/families',
   family: (id: string) => `#/families/${encodeURIComponent(id)}`,
   poses: () => '#/poses',

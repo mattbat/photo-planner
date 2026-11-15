@@ -20,15 +20,15 @@ const shoot = {
   date: '2026-12-05',
   status: 'planned',
   attendingIds: ['a'],
-  templates: [{ id: 'full-group', enabled: true }],
+  templates: [{ id: 'fullGroup', enabled: true }],
   shots: [
     {
       id: 'x',
       name: 'Everyone',
       nameEdited: false,
       personIds: ['a'],
-      source: 'full-group',
-      reasons: ['full-group'],
+      source: 'fullGroup',
+      reasons: ['fullGroup'],
       mustHave: true,
       notes: '',
       status: 'todo',

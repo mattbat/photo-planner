@@ -4,9 +4,9 @@ Tracks every requirement in [REQUIREMENTS.md](../REQUIREMENTS.md). Update this f
 
 **Legend:** ✅ Done · 🟡 Partial · ⬜ Not started · ➖ Dropped · 📱 Needs checking on a real iPhone
 
-**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **Next:** M2, the shot engine (see §16 in the requirements).
+**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 27 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **Next:** M4, ordering on shoot day and the live checklist.
 
-Last updated: 2026-11-15 (M1)
+Last updated: 2026-11-15 (M2, M3)
 
 ## Milestones
 
@@ -14,8 +14,8 @@ Last updated: 2026-11-15 (M1)
 |---|-----------|--------|
 | M0 | Scaffold from next5 | ✅ |
 | M1 | Families + tree | ✅ |
-| M2 | Shot engine | ⬜ |
-| M3 | Shoots + shot list | ⬜ |
+| M2 | Shot engine | ✅ |
+| M3 | Shoots + shot list | ✅ |
 | M4 | Ordering + shoot day | ⬜ |
 | M5 | Light | ⬜ |
 | M6 | Assistant hand-off | ⬜ |
@@ -58,7 +58,7 @@ Last updated: 2026-11-15 (M1)
 | F4 | ✅ | Single parents, step-children (one parent), separated partners, unmarried grown children all draw and edit; shown by the demo family (M1). |
 | F5 | ✅ | "Not usually at shoots" switch on the person sheet; used when a shoot is created (M1). |
 | F6 | ✅ | Several top couples joined by marriage in one tree (demo family). Templates that start from each couple come with M2. |
-| F7 | ✅ | `src/domain/familyChecks.ts`: own ancestor, own parent, more than two parents, child of a person and their parent, parent who is also a partner; shown as a list on the family screen (M1). |
+| F7 | ✅ | Engine `validateFamily` (via `checkFamily` in `src/domain/shotView.ts`; the old `familyChecks.ts` was removed): own ancestor, own parent, more than two parents, child of a person and their parent, parent who is also a partner; shown as a list on the family screen (M1). |
 | F8 | ✅ | Guests and pets with a name, kind and emoji, per family (per-shoot extras arrive with shoots, M3). |
 
 ## 5a. Family tree diagram
@@ -66,12 +66,12 @@ Last updated: 2026-11-15 (M1)
 | ID | Status | Notes |
 |----|--------|-------|
 | V1 | ✅ | One row per generation, partners joined by a solid or dashed line, step-children linked to their own parent (M1). |
-| V2 | 🟡 | Branch colours are drawn; reuse on the shot list and shoot day comes with M3/M4. |
+| V2 | 🟡 | Branch colours are stable (follow the picture left to right, not ids) and used on shot list chips (M3); shoot day comes with M4. |
 | V3 | 🟡 | Cards with name or nickname, generation, initials, kid icon and household outline. Photo and the "not usually at shoots" icon are not on the card yet. |
 | V4 | ✅ | Pinch, drag, wheel zoom and Fit inside the tree box; the page never scrolls sideways (M1). 📱 |
 | V5 | 🟡 | Tap a person to edit and add parents, partners and children; "+" on a couple line adds a child. "How related" waits for V6. |
-| V6 | ⬜ | Hook point left in `src/domain/familyView.ts` (`RelationshipDescriber`) and the person sheet. |
-| V7 | 🟡 | `highlightIds` prop exists on the tree; used from the shot list in M3. |
+| V6 | ✅ | "How are they related?" mode on the family screen: tap two people, banner shows `describeRelationship` (M3). |
+| V7 | ✅ | Tapping a shot opens a sheet with its people highlighted on the tree (M3). |
 | V8 | 🟡 | `statusById` prop exists on the tree; used on shoots in M3/M4. |
 | V9 | ✅ | Share button on the family screen: SVG to PNG on a canvas, then the share sheet or a download (M1). 📱 |
 | V10 | 🟡 | Pure layout module with example and property tests (M1); sun and tree modules were integrated with the strict type settings. |
@@ -80,29 +80,29 @@ Last updated: 2026-11-15 (M1)
 
 | ID | Status | Notes |
 |----|--------|-------|
-| E1 | ⬜ |  |
-| E2 | ⬜ |  |
-| E3 | ⬜ |  |
-| E4 | ⬜ |  |
-| E5 | ⬜ |  |
-| E6 | ⬜ |  |
-| E7 | ⬜ |  |
-| O1 | ⬜ |  |
-| O2 | ⬜ |  |
-| O3 | ⬜ |  |
-| O4 | ⬜ |  |
-| O5 | ⬜ |  |
+| E1 | ✅ | `generateShots` builds the list from the family tree and templates (M2/M3). |
+| E2 | ✅ | Templates grouped per §6.1 with toggles and a solo scope picker; duplicates merge with reasons (M3). |
+| E3 | ✅ | Attendance sheet; shots that can't be made are listed in a warning section (M3). |
+| E4 | ✅ | + Custom shot from a list or the tree (M3). |
+| E5 | ✅ | Each template shows its shot count (+N before it is on) (M3). |
+| E6 | ✅ | Renames, must-haves, notes, removed and custom shots survive regenerating, which runs on every change (M3). |
+| E7 | 🟡 | Per-shot notes; pose attach arrives with M7 (`poseId` is kept). |
+| O1 | ✅ | Suggested order button (M3). |
+| O2 | ✅ | Four options as switches on the shoot (M3). |
+| O3 | ✅ | Call in ▲ / can leave ▼ / done for the day per step (M3). |
+| O4 | ✅ | Drag handle (and arrow keys) sets manual order; ↻ Re-order rest keeps shots already taken first (M3). |
+| O5 | ✅ | Total minutes and per-shot clock time from the start time and Settings estimates (M3). |
 | O6 | ⬜ |  |
 
 ## 7. Shoot planning
 
 | ID | Status | Notes |
 |----|--------|-------|
-| P1 | ⬜ |  |
-| P2 | ⬜ |  |
-| P3 | ⬜ |  |
-| P4 | ⬜ |  |
-| P5 | ⬜ |  |
+| P1 | ✅ | Shoots home: upcoming / in progress / finished (M3). |
+| P2 | ✅ | New shoot sheet (M3). |
+| P3 | 🟡 | Shoot header: date, family, attendees, estimated time (M3). Location picking arrives in M5. |
+| P4 | ✅ | Duplicate shoot (M3). |
+| P5 | ✅ | Share shot list as text (M3). |
 
 ## 8. Shoot day (checklist)
 

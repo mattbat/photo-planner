@@ -103,48 +103,25 @@ export interface Extra extends Stamped {
 // Shot templates and shots (§6)
 // ---------------------------------------------------------------------------
 
-/** Every template of §6.1 that generates shots. Custom shots have no template. */
-export const TEMPLATE_IDS = [
-  'full-group',
-  'full-group-no-partners',
-  'each-generation',
-  'each-generation-with-partners',
-  'grandparents-all-children',
-  'grandparents-all-grandkids',
-  'grandparents-all-grandkids-great-grandkids',
-  'all-siblings',
-  'all-sons-daughters',
-  'all-grandsons-granddaughters',
-  'cousins',
-  'each-branch',
-  'grandparents-each-branch',
-  'each-household',
-  'each-couple',
-  'each-parent-with-children',
-  'each-childs-kids',
-  'each-grandparent-each-grandkid',
-  'each-parent-each-child',
-  'grandma-granddaughters-grandpa-grandsons',
-  'solo-portraits',
-  'parents-all-grown-children',
-  'parents-each-grown-child',
-  'parents-each-grown-child-household',
-  'each-grown-child-household',
-] as const;
-
-export type TemplateId = (typeof TEMPLATE_IDS)[number];
+/**
+ * Every template of §6.1 that generates shots. The shot engine (src/engine)
+ * owns the list (TEMPLATE_IDS there); this is the same type, re-exported.
+ * Custom shots have no template.
+ */
+export type { TemplateId } from '../engine/types';
+import type { TemplateId } from '../engine/types';
 
 /** Where a shot came from: a template, or the photographer ("custom"). */
 export type ShotSource = TemplateId | 'custom';
-
-export type SoloScope = 'everyone' | 'kids' | 'adults';
 
 /** One template switched on or off for a shoot (or for new shoots, in Settings). */
 export interface TemplateSetting {
   id: TemplateId;
   enabled: boolean;
-  /** Solo portraits: who gets one (§6.1). */
-  soloScope?: SoloScope;
+  /**
+   * Solo portraits are three templates (everyone, kids, adults); the shoot
+   * screen's scope picker switches on one of them.
+   */
   /** Extras (pets, guests) added to every shot this template makes (§6.1). */
   extraIds?: string[];
 }
@@ -153,7 +130,7 @@ export interface TemplateSetting {
 export type ShotStatus = 'todo' | 'done' | 'skipped' | 'retake';
 
 export interface Shot {
-  /** Stable across regenerations, so edits stick (E6). */
+  /** The engine's shot key (primary template + sorted people), stable across regenerations so edits stick (E6). */
   id: string;
   name: string;
   /** The user renamed it, so regenerating keeps the name (E6). */
@@ -169,7 +146,7 @@ export interface Shot {
   /** The pose attached to it (§11), if any. */
   poseId?: string;
   status: ShotStatus;
-  /** The engine flagged it, e.g. "all sons" left with one son (E3). Plain-language text. */
+  /** Spare: flagged shots are not stored, they are worked out from who is attending (E3). */
   flag?: string;
   /** Epoch ms of the last Done / Skip / Retake, for the summary (D9). */
   doneAt?: number;
@@ -236,8 +213,8 @@ export interface Shoot extends Stamped {
   manualOrder: boolean;
   orderOptions: OrderOptions;
   /**
-   * Keys of generated shots the photographer removed, so regenerating does
-   * not bring them back (E6). A key is the sorted person ids joined by ",".
+   * Keys (`Shot.id`) of generated shots the photographer removed, so
+   * regenerating does not bring them back (E6).
    */
   removedKeys: string[];
   // Shoot day (§8)

@@ -62,20 +62,20 @@ export async function shareLink(url: string, title: string, text: string): Promi
  * Notes, Mail, Print...), or the clipboard where sharing isn't supported.
  * Says what happened, for a status message.
  */
-export async function shareText(title: string, text: string): Promise<string> {
+export async function shareText(title: string, text: string, what = 'Plan'): Promise<string> {
   if (typeof navigator.share === 'function') {
     try {
       await navigator.share({ title, text });
-      return 'Plan shared.';
+      return `${what} shared.`;
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return 'Sharing cancelled.';
     }
   }
   try {
     await navigator.clipboard.writeText(text);
-    return 'Plan copied. Paste it into a message or a note.';
+    return `${what} copied. Paste it into a message or a note.`;
   } catch {
-    return 'Couldn’t share or copy the plan.';
+    return `Couldn’t share or copy the ${what.toLowerCase()}.`;
   }
 }
 

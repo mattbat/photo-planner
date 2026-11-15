@@ -5,6 +5,7 @@ import { FamilyScreen } from './screens/FamilyScreen';
 import { FamiliesScreen } from './screens/FamiliesScreen';
 import { PosesScreen } from './screens/PosesScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { ShootScreen } from './screens/ShootScreen';
 import { ShootsScreen } from './screens/ShootsScreen';
 
 const TAB_SCREENS: Record<TabName, () => React.JSX.Element> = {
@@ -27,6 +28,8 @@ export function App() {
         </div>
       );
     }
+    case 'shoot':
+      return <ShootScreen key={route.id} shootId={route.id} />;
     case 'family':
       return <FamilyScreen key={route.id} familyId={route.id} />;
     case 'settings':
