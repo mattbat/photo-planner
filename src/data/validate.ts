@@ -135,6 +135,7 @@ export const isValidShoot = record(
     startedAt: isNumber,
     finishedAt: isNumber,
     handoff: exact({ n: isNumber, role: oneOf('photographer', 'assistant'), away: isBoolean }),
+    forecast: exact({ fetchedAt: isNumber, date: isString, latitude: isNumber, longitude: isNumber, hours: Array.isArray }),
   },
 );
 

@@ -17,7 +17,7 @@ Last updated: 2026-11-15 (M2, M3)
 | M2 | Shot engine | ✅ |
 | M3 | Shoots + shot list | ✅ |
 | M4 | Ordering + shoot day | ⬜ |
-| M5 | Light | ⬜ |
+| M5 | Light | ✅ |
 | M6 | Assistant hand-off | ⬜ |
 | M7 | Pose library | ⬜ |
 | M8 | Help + polish → 1.0 | ⬜ |
@@ -40,13 +40,13 @@ Last updated: 2026-11-15 (M2, M3)
 |----|--------|-------|
 | T1 | 🟡 | Manifest, standalone display and generated icons are in place (M0). Installing on a real iPhone still to be checked. 📱 |
 | T2 | ✅ | Base path `/photo-planner/` and hash routing (M0). The final address depends on the name decision (Q13). |
-| T3 | 🟡 | Workbox precache and an offline-launch test in Chromium (M0). The online extras arrive in M5. |
+| T3 | 🟡 | Workbox precache and an offline-launch test in Chromium (M0). Online extras (place search, map, forecast, time zone) are in (M5); map tiles are never precached. |
 | T4 | 🟡 | Dexie database `photo-planner` v1 with all tables; persistent storage requested at startup (M0). Migration tests grow with each new version. |
 | T5 | 🟡 | Update banner never applies silently, with an hourly check; hidden on shoots in progress via `useInLiveShoot` (M0). Shoot routes arrive in M3/M4. |
 | T6 | ✅ | React, TypeScript, Vite, vite-plugin-pwa, Dexie, Vitest, fast-check, Testing Library, Playwright (WebKit at iPhone 17 size). |
-| T7 | 🟡 | `src/sun` (position, golden hour, plan, time zones) is in with tests; the screens arrive in M5. |
+| T7 | 🟡 | `src/sun` (position, golden hour, plan, time zones) is in with tests; the screens are in (M5). |
 | T8 | ⬜ | Photo resizing arrives with the pose library (M7); photos are stored as data URLs. |
-| T9 | ✅ | No analytics or tracking. The only network calls are the app's own update checks (M0). |
+| T9 | ✅ | No analytics or tracking. The only network calls are the app's own update checks (M0) and the buttons in the Light section (place search, time zone, map tiles, forecast), each only when tapped (M5); all in `src/data/online.ts`. |
 
 ## 5. Families and people
 
@@ -123,14 +123,14 @@ Last updated: 2026-11-15 (M2, M3)
 
 | ID | Status | Notes |
 |----|--------|-------|
-| L1 | ⬜ |  |
-| L2 | ⬜ |  |
-| L3 | ⬜ |  |
-| L4 | ⬜ |  |
-| L5 | ⬜ |  |
-| L6 | ⬜ |  |
-| L7 | ⬜ |  |
-| L8 | ⬜ |  |
+| L1 | ✅ | Light section on the shoot: saved places (reused across shoots, Forget to remove), Use my location, place search (Open-Meteo geocoding, gives the time zone), typed coordinates, and a map pin (Leaflet + OpenStreetMap tiles, lazy-loaded, online only). GPS/pin/coordinates ask the forecast service for the time zone when online, else use the phone's. Offline, online options say "Needs a connection" and never block (M5). 📱 GPS permission to check on iPhone. |
+| L2 | ✅ | Coloured day bar (night, blue hour, golden hour, daylight) with the planned shoot overlaid, and a list of blue hour, sunrise, golden hour, solar noon, sunset (`src/domain/light.ts`, `LightSection`). Polar days/nights and half-missing spans give plain wording (M5). |
+| L3 | ✅ | "What do golden hour and blue hour mean?" fold in the Light section (M5). The full help topic lands with M8. |
+| L4 | ✅ | Morning/Evening choice, suggested start and end, warning from `suggestStart` when the list is longer than golden hour, "Use this start time" sets `startTime` (M5). Must-have-first weighting is not exposed. |
+| L5 | ✅ | Bearing, 16-point label and altitude at the planned time, arrow in a compass rose; "Use compass" turns the rose live (iOS permission asked on the tap; hidden when the phone has no orientation sensor) (M5). 📱 Compass to check on iPhone. |
+| L6 | ✅ | "Pick a date" fold lists the next 21 days with evening and morning golden hours; tap one to set the shoot date (M5). |
+| L7 | ✅ | "Get forecast" for shoots within 14 days (cloud, rain chance, wind, temperature for the shoot hours). Stored on the shoot as `forecast` (no schema change; backup validates it) and shown offline with its fetch time (M5). |
+| L8 | ✅ | `LightBanner({shoot, location, now})` in `src/components/LightBanner.tsx` for the live screen's `lightBanner` slot; not wired into the live screen yet (M5). |
 
 ## 11. Pose library
 

@@ -226,6 +226,29 @@ export interface Shoot extends Stamped {
   finishedAt?: number;
   /** Set once the shoot has been shared with the assistant (§9). */
   handoff?: Handoff;
+  /** The last weather forecast fetched for this shoot's date and place, kept for offline viewing (L7). */
+  forecast?: ShootForecast;
+}
+
+/** One hour of forecast, in the location's local time (L7). */
+export interface ForecastHour {
+  /** HH:mm. */
+  time: string;
+  cloudPercent: number | null;
+  rainPercent: number | null;
+  windKmh: number | null;
+  tempC: number | null;
+}
+
+/** A cached Open-Meteo forecast for one date at one place (L7). */
+export interface ShootForecast {
+  /** Epoch ms when it was fetched. */
+  fetchedAt: number;
+  /** yyyy-mm-dd the hours are for. */
+  date: string;
+  latitude: number;
+  longitude: number;
+  hours: ForecastHour[];
 }
 
 // ---------------------------------------------------------------------------

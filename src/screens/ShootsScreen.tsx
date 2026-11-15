@@ -6,6 +6,8 @@ import { Empty, Section, TopBar } from '../components/ui';
 import { db } from '../data/db';
 import type { Shoot } from '../data/types';
 import { formatDate } from '../domain/dates';
+import { goldenHourLabel } from '../domain/light';
+import { guessTimeZone } from '../sun';
 import { navigate, paths } from '../router';
 
 /** Shoots home screen (P1): upcoming, in progress and finished shoots. */
@@ -18,7 +20,7 @@ export function ShootsScreen() {
   const [creating, setCreating] = useState(false);
 
   const familyName = new Map((data?.families ?? []).map((f) => [f.id, f.name]));
-  const locationName = new Map((data?.locations ?? []).map((l) => [l.id, l.name]));
+  const locationById = new Map((data?.locations ?? []).map((l) => [l.id, l]));
   const shoots = data?.shoots ?? [];
   const groups: { title: string; shoots: Shoot[] }[] = [
     { title: 'Upcoming', shoots: shoots.filter((s) => s.status === 'planned') },
@@ -59,7 +61,8 @@ export function ShootsScreen() {
             <ul className="list">
               {g.shoots.map((shoot) => {
                 const done = shoot.shots.filter((s) => s.status === 'done').length;
-                const place = shoot.locationId ? locationName.get(shoot.locationId) : undefined;
+                const place = shoot.locationId ? locationById.get(shoot.locationId) : undefined;
+                const golden = place ? goldenHourLabel(shoot.date, place, guessTimeZone()) : null;
                 return (
                   <li key={shoot.id}>
                     <a className="list-item" href={paths.shoot(shoot.id)}>
@@ -69,7 +72,8 @@ export function ShootsScreen() {
                         <span className="list-sub">
                           {formatDate(shoot.date)}
                           {shoot.startTime ? ` ${shoot.startTime}` : ''}
-                          {place ? ` · ${place}` : ''}
+                          {place ? ` · ${place.name}` : ''}
+                          {golden ? ` · ${golden}` : ''}
                         </span>
                       </span>
                       <span className="list-meta" aria-label={`${done} of ${shoot.shots.length} shots done`}>
