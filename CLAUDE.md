@@ -10,7 +10,7 @@ iPhone PWA for planning family photo shoots: a family tree builds the shot list,
 - Releases: versions are x.y.z. Propose the bump from `npm run release`, but always ask the user before a minor or major one. A release (`npm run release -- <bump>`) is its own pull request; merging it is what deploys.
 - New features go up as a draft pull request and wait for the user to try them on the Cloudflare beta preview (REL5) before merging. Don't merge one until they say so.
 - Add tests with every feature. The pure modules need example tests and, where a rule is involved, a property test (fast-check).
-- Keep the pure modules pure: no React, Dexie, DOM or `window` imports in `src/engine`, `src/tree`, `src/sun` or `src/domain`. They may import types from `src/data/types.ts` (it imports nothing). Coverage: 95% lines for engine, tree and sun (enforced automatically once a folder has code), 80% overall.
+- Keep the pure modules pure: no React, Dexie, DOM or `window` imports in `src/engine`, `src/tree`, `src/sun` or `src/domain`. They may import types from `src/data/types.ts` (it imports nothing). Coverage: 95% lines for engine, tree, sun and domain (enforced automatically once a folder has code), 90% overall.
 - Data is written only through `src/data/repo.ts`. Screens read with `useLiveQuery`. For quick edits use the `update*` functions (partial update), not a whole-record save, so fast taps can't overwrite each other.
 - Never edit an existing Dexie `version(n)` in `src/data/db.ts`. Add a new version with a migration and a test. Backups from older layouts must still restore.
 - Use made-up names only (families, people, pets, places). The repo is public.

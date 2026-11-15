@@ -221,6 +221,17 @@ describe('receiveShoot and the round trip between two phones', () => {
     expect(await get(shootId)).toMatchObject({ handoff: { n: 1, role: 'assistant', away: false } });
   });
 
+  it('a planned shoot shared to the other phone can’t be started here until control is taken back (SH5)', async () => {
+    const { shootId } = await planned();
+    const b = await build(shootId);
+    await markSent(shootId, b.n);
+    await startShoot(shootId);
+    expect((await get(shootId)).status).toBe('planned');
+    await takeBack(shootId);
+    await startShoot(shootId);
+    expect((await get(shootId)).status).toBe('live');
+  });
+
   it('goes there and back: the assistant marks shots done and the photographer accepts', async () => {
     const { shootId } = await planned();
     await startShoot(shootId);

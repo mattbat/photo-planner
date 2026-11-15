@@ -225,6 +225,28 @@ describe('properties', () => {
       }),
     );
   });
+  it('events stay in order, and inside the local day, across DST zones and every day of the year', () => {
+    const zones: [string, number, number][] = [['America/Denver', 39.74, -104.99], ['Europe/London', 51.5, -0.12], ['Australia/Sydney', -33.87, 151.2]];
+    fc.assert(
+      fc.property(fc.constantFrom(...zones), fc.integer({ min: 0, max: 364 }), ([tz, lat, lng], doy) => {
+        const u = new Date(Date.UTC(2026, 0, 1 + doy));
+        const ymd = { y: 2026, m: u.getUTCMonth() + 1, d: u.getUTCDate() };
+        const t = sunTimes(ymd, lat, lng, tz);
+        const { start, end } = localDayBounds(ymd, tz);
+        const seq = [t.civilDawn, t.goldenMorning.start, t.sunrise, t.goldenMorning.end, t.solarNoon, t.goldenEvening.start, t.sunset, t.goldenEvening.end, t.blueEvening.end, t.civilDusk].map((d) => d!.getTime());
+        for (let i = 1; i < seq.length; i++) expect(seq[i]!).toBeGreaterThanOrEqual(seq[i - 1]!);
+        expect(seq[0]!).toBeGreaterThanOrEqual(start.getTime());
+        expect(seq[seq.length - 1]!).toBeLessThan(end.getTime());
+        // The day is 23, 24 or 25 hours long, and solar noon is around local midday whatever the clocks did.
+        const hours = (end.getTime() - start.getTime()) / 3_600_000;
+        expect([23, 24, 25]).toContain(hours);
+        const noon = minOfDay(t.solarNoon, tz) / 60;
+        expect(noon).toBeGreaterThan(10.5);
+        expect(noon).toBeLessThan(14.5);
+      }),
+      { numRuns: 300 },
+    );
+  });
   it('zonedTimeToUtc round-trips', () => {
     fc.assert(fc.property(fc.integer({ min: 1, max: 28 }), fc.integer({ min: 1, max: 12 }), fc.integer({ min: 3, max: 23 }), (d, m, h) => {
       const u = zonedTimeToUtc(2026, m, d, h, 30, 'Europe/London');

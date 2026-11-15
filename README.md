@@ -114,7 +114,7 @@ Dexie database `photo-planner`: `families`, `people`, `partnerships`, `extras`, 
 
 ### Tests
 
-Unit tests for pure code run in Node, screen tests in jsdom (see `test.projects` in `vite.config.ts`). Coverage must stay at 80% overall and 95% for `src/engine`, `src/tree` and `src/sun`. End-to-end tests (`e2e/`) run in WebKit at iPhone 17 size (402×874), plus an offline-launch test in Chromium; they start past the first-run intro (`photo-planner.introSeen` in `playwright.config.ts`), and `e2e/help.spec.ts` tests it from a fresh phone. Use made-up names only: the repo is public.
+Unit tests for pure code run in Node, screen tests in jsdom (see `test.projects` in `vite.config.ts`). Coverage must stay at 90% overall and 95% for `src/engine`, `src/tree`, `src/sun` and `src/domain`. End-to-end tests (`e2e/`) run in WebKit at iPhone 17 size (402×874), plus an offline-launch test in Chromium; they start past the first-run intro (`photo-planner.introSeen` in `playwright.config.ts`), and `e2e/help.spec.ts` tests it from a fresh phone. Use made-up names only: the repo is public.
 
 ### Releases and deploy
 
