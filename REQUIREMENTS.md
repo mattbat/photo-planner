@@ -288,10 +288,8 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 
 | # | Question | Default assumption until decided |
 |---|----------|----------------------------------|
-| Q1 | Typical size: how many people and how many shots at your biggest shoot? | Up to ~40 people and ~80 shots; design for 4–60 people. |
 | Q12 | **Starting shot types.** When you create a new shoot, which of the §6.1 shot types should already be ticked? (You can always tick or untick them per shoot.) Put another way: what's on your usual list? | Full group · grandparents · grandparents + all grandkids · parents + all grown children · parents + each grown child's household · each household · each couple · all siblings · cousins · solo portraits of the kids. |
 | Q13 | App name. | "Photo Planner" for now. Ideas below. |
-| Q14 | Should the tree also show people who have died (for memorial context) without putting them in shots? | No. |
 
 **Name ideas** (the address would follow, e.g. `mattbat.com/shotcall/`):
 
@@ -320,6 +318,9 @@ Light (M5) and poses (M7) are independent of M4 and could be swapped if one matt
 | 2026-11-15 | Theme follows the phone's setting by default. |
 | 2026-11-15 | Skipped for now: gear checklists, location notes, letting the family use the app, and "keep these people apart". |
 | 2026-11-15 | A family tree diagram (§5a) is part of v1, built with the families milestone (M1). |
+| 2026-11-15 | The biggest shoot is about 20 people. Design and test for 2–30 people and up to ~80 shots. |
+| 2026-11-15 | No deceased people in the tree. |
+| 2026-11-15 | Build started; the Q12 default shot types are used until changed. Built by Claude with subagents, milestone by milestone. |
 
 ## 18. Risks
 
