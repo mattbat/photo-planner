@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-11-16",
+    "improved": [
+      "Delete and replace questions now appear in a clean sheet with clear buttons.",
+      "Shots for each household now come together in one run, after the grandparents and the cousins, so families aren't called back and forth."
+    ]
+  },
+  {
     "version": "0.3.0",
     "date": "2026-11-15",
     "new": [
