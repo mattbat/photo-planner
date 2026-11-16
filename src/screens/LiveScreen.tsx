@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CustomShotSheet } from '../components/CustomShotSheet';
-import { PriorityBadge, PriorityControl } from '../components/PrioritySheet';
+import { PriorityBadge, PriorityRow } from '../components/PrioritySheet';
 import { MoreIcon } from '../components/icons';
 import { applyPriority } from '../components/priority';
 import { ShareShootSheet, SharedBanner } from '../components/ShareShoot';
@@ -592,29 +592,26 @@ function WhoSheet({ data, nameOf, onNote, onClose }: { data: ShootData; nameOf: 
           {g.people.map((p) => {
             const now = shoot.presence[p.id] ?? 'here';
             return (
-              <li key={p.id} className="live-who-row">
-                <span className="live-who-name">
-                  {displayName(p)}
-                  <PriorityBadge value={shoot.priorities?.[p.id]} />
-                </span>
-                <div className="segmented" role="radiogroup" aria-label={`${displayName(p)} is`}>
-                  {PRESENCE.map((o) => (
-                    <button key={o.value} type="button" role="radio" aria-checked={o.value === now} className={o.value === now ? 'on' : ''} onClick={() => set(p, o.value)}>
-                      {o.label}
-                    </button>
-                  ))}
-                </div>
-                <PriorityControl
-                  name={displayName(p)}
-                  value={shoot.priorities?.[p.id] ?? 'normal'}
-                  onChange={(v) =>
-                    void applyPriority(shoot, [p.id], v, nameOf).then((text) => {
-                      setNote(text);
-                      onNote(text);
-                    })
-                  }
-                />
-              </li>
+              <PriorityRow
+                key={p.id}
+                name={displayName(p)}
+                value={shoot.priorities?.[p.id] ?? 'normal'}
+                onChange={(v) =>
+                  void applyPriority(shoot, [p.id], v, nameOf).then((text) => {
+                    setNote(text);
+                    onNote(text);
+                  })
+                }
+                below={
+                  <div className="segmented" role="radiogroup" aria-label={`${displayName(p)} is`}>
+                    {PRESENCE.map((o) => (
+                      <button key={o.value} type="button" role="radio" aria-checked={o.value === now} className={o.value === now ? 'on' : ''} onClick={() => set(p, o.value)}>
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                }
+              />
             );
           })}
         </ul>

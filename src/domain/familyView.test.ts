@@ -2,7 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import type { Partnership, Person } from '../data/types';
 import { demoFamily } from '../tree/fixtures';
-import { branchColors, displayName, groupByGeneration, indexFamily, isGrown, orderedPeople, toTreePeople } from './familyView';
+import { branchColors, displayName, groupByGeneration, groupByHousehold, indexFamily, isGrown, orderedPeople, toTreePeople } from './familyView';
 
 const person = (id: string, fields: Partial<Person> = {}): Person => ({
   id,
@@ -125,5 +125,41 @@ describe('branch colors (V2)', () => {
   it('puts people in a fixed order: oldest first, then by name', () => {
     const people = [person('z', { name: 'Zed', createdAt: 2 }), person('b', { name: 'Bea', createdAt: 2 }), person('a', { name: 'Ann', createdAt: 1 }), person('c', { name: 'Bea', createdAt: 2 })];
     expect(orderedPeople(people).map((p) => p.id)).toEqual(['a', 'b', 'c', 'z']);
+  });
+});
+
+describe('groupByHousehold', () => {
+  it('lists the top couple first, then one group per branch, older generations first', () => {
+    const people = [
+      person('gm', { name: 'Gran' }),
+      person('gp', { name: 'Gramps' }),
+      person('kid', { name: 'Abby', parentIds: ['dad'] }),
+      person('dad', { name: 'Dad', parentIds: ['gm', 'gp'] }),
+      person('aunt', { name: 'Aunt', parentIds: ['gm', 'gp'] }),
+    ];
+    const groups = groupByHousehold(people, people, [pair('gm', 'gp')]);
+    expect(groups[0]!.headId).toBeUndefined();
+    expect(groups[0]!.people.map((p) => p.id).sort()).toEqual(['gm', 'gp']);
+    expect(groups.slice(1).every((g) => g.headId && g.colorIndex !== undefined)).toBe(true);
+    const dads = groups.find((g) => g.people.some((p) => p.id === 'dad'))!;
+    expect(dads.people.map((p) => p.id)).toEqual(['dad', 'kid']);
+    expect(groups.flatMap((g) => g.people).length).toBe(people.length);
+  });
+
+  it('keeps every listed person exactly once, even for a partial list', () => {
+    fc.assert(
+      fc.property(fc.subarray(['gm', 'gp', 'kid', 'dad', 'aunt']), (ids) => {
+        const all = [
+          person('gm'),
+          person('gp'),
+          person('kid', { parentIds: ['dad'] }),
+          person('dad', { parentIds: ['gm', 'gp'] }),
+          person('aunt', { parentIds: ['gm', 'gp'] }),
+        ];
+        const listed = all.filter((p) => ids.includes(p.id));
+        const out = groupByHousehold(listed, all, [pair('gm', 'gp')]).flatMap((g) => g.people.map((p) => p.id));
+        expect([...out].sort()).toEqual(listed.map((p) => p.id).sort());
+      }),
+    );
   });
 });

@@ -297,7 +297,7 @@ describe('ShootScreen', () => {
 });
 
 describe('ShootScreen early and late people', () => {
-  it('marks people Early or Late one at a time or several at once, with badges on their chips (O7)', async () => {
+  it('marks people Early or Late one at a time, with badges on their chips (O7)', async () => {
     const { shoot, user, gran, ivy, nia } = await open();
     await user.click(screen.getByRole('button', { name: 'Early or late people' }));
     const sheet = await screen.findByRole('dialog', { name: 'Who goes first or last' });
@@ -307,14 +307,38 @@ describe('ShootScreen early and late people', () => {
     const shots = (await reload(shoot.id)).shots;
     const flags = order.map((id) => shots.find((x) => x.id === id)!.personIds.includes(gran.id));
     expect(flags.slice(flags.indexOf(false)).every((f) => !f)).toBe(true);
-    await user.click(within(sheet).getByRole('checkbox', { name: 'Select Ivy Tester' }));
-    await user.click(within(sheet).getByRole('checkbox', { name: 'Select Nia Tester' }));
-    await user.click(within(within(sheet).getByRole('group', { name: 'Set the selected people' })).getByRole('button', { name: 'Late' }));
+    expect(within(sheet).queryByRole('checkbox')).toBeNull();
+    await user.click(within(within(sheet).getByRole('radiogroup', { name: 'Ivy Tester goes' })).getByRole('radio', { name: 'Late' }));
+    await user.click(within(within(sheet).getByRole('radiogroup', { name: 'Nia Tester goes' })).getByRole('radio', { name: 'Late' }));
     await waitFor(async () => expect((await reload(shoot.id)).priorities).toEqual({ [gran.id]: 'early', [ivy.id]: 'late', [nia.id]: 'late' }));
     await user.click(within(sheet).getByRole('button', { name: 'Done' }));
     expect(screen.getByRole('button', { name: '3 early or late' })).toBeInTheDocument();
     expect(screen.getAllByText('Early').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Late').length).toBeGreaterThan(0);
+  });
+
+  it('resets everyone to Normal after a confirm, and only shows the reset when someone is Early or Late', async () => {
+    const { shoot, user, gran, ivy } = await open();
+    await user.click(screen.getByRole('button', { name: 'Early or late people' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Who goes first or last' });
+    expect(within(sheet).queryByRole('button', { name: 'Reset all to Normal' })).toBeNull();
+    await user.click(within(within(sheet).getByRole('radiogroup', { name: 'Gran Tester goes' })).getByRole('radio', { name: 'Early' }));
+    await user.click(within(within(sheet).getByRole('radiogroup', { name: 'Ivy Tester goes' })).getByRole('radio', { name: 'Late' }));
+    await waitFor(async () => expect((await reload(shoot.id)).priorities).toEqual({ [gran.id]: 'early', [ivy.id]: 'late' }));
+    await user.click(await within(sheet).findByRole('button', { name: 'Reset all to Normal' }));
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Cancel' }));
+    expect(Object.keys((await reload(shoot.id)).priorities ?? {})).toHaveLength(2);
+    await user.click(within(sheet).getByRole('button', { name: 'Reset all to Normal' }));
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Reset all' }));
+    await waitFor(async () => expect(Object.values((await reload(shoot.id)).priorities ?? {}).filter(Boolean)).toHaveLength(0));
+    await waitFor(() => expect(within(sheet).queryByRole('button', { name: 'Reset all to Normal' })).toBeNull());
+  });
+
+  it('groups people by household, grandparents first', async () => {
+    await open();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Early or late people' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Who goes first or last' });
+    expect(within(sheet).getAllByRole('heading', { level: 3 })[0]).toHaveTextContent('Grandparents');
   });
 
   it('tells you when a hand-ordered list was left alone (O7)', async () => {
