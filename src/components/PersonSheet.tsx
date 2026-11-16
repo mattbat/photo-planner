@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { displayName, indexFamily, isGrown } from '../domain/familyView';
 import { addChild, addPerson, deletePartnership, deletePerson, ensurePartnership, linkChild, linkParent, linkPartner, updatePartnership, updatePerson, type LinkResult } from '../data/repo';
 import { linkCandidates, type LinkRole } from '../domain/links';
+import { useConfirm } from './ConfirmSheet';
 import { ChoosePerson, DuplicateHint } from './ChoosePerson';
 import type { Partnership, Person, Sex } from '../data/types';
 import { Info, Segmented, Sheet, Toggle } from './ui';
@@ -29,6 +30,7 @@ export function PersonSheet({ personId, people, partnerships, onClose, onOpen }:
 }
 
 function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Props, 'personId'> & { person: Person }) {
+  const { confirm, confirmSheet } = useConfirm();
   const [name, setName] = useState(person.name);
   const [nickname, setNickname] = useState(person.nickname ?? '');
   const [birthYear, setBirthYear] = useState(person.birthYear?.toString() ?? '');
@@ -90,7 +92,13 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
   };
 
   const remove = async () => {
-    if (!window.confirm(`Delete ${person.name}? They are taken out of the tree and out of shoots. This can’t be undone.`)) return;
+    const ok = await confirm({
+      title: `Delete ${person.name}?`,
+      body: 'They’re taken out of the tree and out of shoots. This can’t be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!ok) return;
     await deletePerson(person.id);
     onClose();
   };
@@ -310,6 +318,7 @@ function PersonForm({ person, people, partnerships, onClose, onOpen }: Omit<Prop
       <button type="button" className="btn danger wide" onClick={() => void remove()}>
         Delete {person.name}
       </button>
+      {confirmSheet}
     </Sheet>
   );
 }

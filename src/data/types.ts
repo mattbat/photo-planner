@@ -165,6 +165,8 @@ export interface OrderOptions {
   mustHavesEarly: boolean;
   /** Everyone shots open the shoot, largest first (O9). Missing in older data, which counts as on. */
   everyoneFirst?: boolean;
+  /** Each household's shots come together in one run, after the grandparents and the cross-household shots (O10). Missing in older data, which counts as on. */
+  groupHouseholds?: boolean;
 }
 
 /** Who to finish first or push to the end on a shoot (O7); anyone not listed is normal. */

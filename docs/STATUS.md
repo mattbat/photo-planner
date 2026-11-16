@@ -97,6 +97,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | O7 | ✅ | `priorities` option in `orderShots` (`src/engine/order.ts`: tiers plus early release, still pure and deterministic); `Shoot.priorities` (optional, no Dexie version); `setPriorities` in `repo.ts`; `PrioritySheet` (per person and multi-select) on the shoot screen; Early/Late badges on shot chips, the live card and Who's here; validated in `validate.ts` and carried in the hand-off. Example, property (permutation, prefix kept, tiers in order, deterministic) and screen tests. |
 | O8 | ✅ | Who's here on shoot day has Normal / Early / Late; `suggestDayOrder` in `src/domain/shotView.ts` re-orders only to-do shots into their own slots (done shots never move, the current shot stays first); `reorderNote` gives the note. Undo does not undo a re-order. |
 | O9 | ✅ | `everyoneFirst` order option (`src/engine/order.ts`, `everyoneShotKeys`): everyone shots form a front tier, largest first; a shot with a Late person drops out of it. On by default (`DEFAULT_ORDER_OPTIONS`, Settings › New shoots, "Everyone first" on the shoot); missing in older data counts as on. "Full group waits for …" via `everyoneWaitsFor`. Example and property tests. |
+| O10 | ✅ | `groupHouseholds` order option (`src/engine/order.ts`, tiers plus `arrangeBlocks`): everyone, early, oldest generation, cross-household shots, then one contiguous block per household, then late. On by default (`DEFAULT_ORDER_OPTIONS`, Settings › New shoots, "Group each household" on the shoot); missing in older data counts as on. Example, property and performance tests. |
 | O6 | ⬜ |  |
 
 ## 7. Shoot planning
@@ -219,4 +220,4 @@ The template ids and their starting on/off choices (Q12) are defined in `src/dat
 | iPhone 17 layout, safe areas, 44 pt targets | 🟡 | Tab bar, top bar and sheets respect safe areas; checked in WebKit at 402×874 (M0). 📱 |
 | Theme follows the phone, Light and Dark in Settings | ✅ | Default "Match phone"; no flash on launch (M0). |
 | Warm photographic look | 🟡 | Amber accent and warm neutral palette; aperture icon (M0). |
-| Destructive actions confirm first | ✅ | Replace everything and beta erase confirm (M0). |
+| Destructive actions confirm first | ✅ | Every delete, replace and erase asks in one bottom ConfirmSheet (full-width stacked buttons, alertdialog, Escape cancels); no `window.confirm` left. Shoot start time can be cleared. |

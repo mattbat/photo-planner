@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
+import { useConfirm } from '../components/ConfirmSheet';
 import { NameSheet } from '../components/NameSheet';
 import { QuickAddFamilySheet } from '../components/QuickAddFamilySheet';
 import { Empty, Sheet, SettingsLink, TopBar } from '../components/ui';
@@ -142,6 +143,7 @@ export function FamiliesScreen() {
 }
 
 function FamilyOptions({ family, onClose, onRename }: { family: Family; onClose: () => void; onRename: () => void }) {
+  const { confirm, confirmSheet } = useConfirm();
   return (
     <Sheet title={family.name} onClose={onClose}>
       <button type="button" className="btn secondary wide" onClick={onRename}>
@@ -157,13 +159,18 @@ function FamilyOptions({ family, onClose, onRename }: { family: Family; onClose:
       <button
         type="button"
         className="btn danger wide"
-        onClick={() => {
-          if (!window.confirm(`Delete ${family.name} with all its people and shoots? This can’t be undone.`)) return;
-          void deleteFamily(family.id).then(onClose);
-        }}
+        onClick={() =>
+          void confirm({
+            title: `Delete ${family.name}?`,
+            body: 'All its people and shoots will be gone for good.',
+            confirmLabel: 'Delete',
+            destructive: true,
+          }).then((ok) => (ok ? deleteFamily(family.id).then(onClose) : undefined))
+        }
       >
         Delete
       </button>
+      {confirmSheet}
     </Sheet>
   );
 }

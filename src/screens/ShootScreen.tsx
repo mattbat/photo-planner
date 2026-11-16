@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { MoreIcon } from '../components/icons';
 import { AttendanceList } from '../components/AttendanceList';
+import { useConfirm } from '../components/ConfirmSheet';
 import { LiveControls } from '../components/LiveControls';
 import { LightSection } from '../components/LightSection';
 import { CustomShotSheet } from '../components/CustomShotSheet';
@@ -194,6 +195,7 @@ function Shoot({ data }: { data: ShootData }) {
         <details className="fold">
           <summary>Order options{shoot.manualOrder ? ' (you ordered these by hand)' : ''}</summary>
           <Toggle label="Everyone first" info="The full-group shots, with or without pets and guests, open the shoot, largest first, while everyone is fresh. A full group that includes someone you marked Late waits for them." checked={shoot.orderOptions.everyoneFirst !== false} onChange={(v) => void setOrderOptions(shoot.id, { everyoneFirst: v })} />
+          <Toggle label="Group each household" info="After the everyone shots and the grandparents' shots, the shots that mix families (cousins, siblings) come first. Then each household's shots come in one run: the biggest first, solos last. Late people's shots still go to the end." checked={shoot.orderOptions.groupHouseholds !== false} onChange={(v) => void setOrderOptions(shoot.id, { groupHouseholds: v })} />
           <Toggle label="Kids first" info="Little ones are photographed before they get tired. They sit under their parents, so those shots stay together." checked={shoot.orderOptions.kidsFirst} onChange={(v) => void setOrderOptions(shoot.id, { kidsFirst: v })} />
           <Toggle label="Release older people early" info="Shots with the oldest guests come first, so grandparents can sit down or leave early." checked={shoot.orderOptions.releaseOlderEarly} onChange={(v) => void setOrderOptions(shoot.id, { releaseOlderEarly: v })} />
           <Toggle label="Big group first" info="The full group goes first, while everyone is fresh and still here." checked={shoot.orderOptions.bigGroupFirst} onChange={(v) => void setOrderOptions(shoot.id, { bigGroupFirst: v })} />
@@ -389,7 +391,20 @@ function ShotRow({
 
 function OptionsSheet({ data, onClose, onShare }: { data: ShootData; onClose: () => void; onShare: () => void }) {
   const { shoot } = data;
-  const [confirming, setConfirming] = useState(false);
+  const { confirm, confirmSheet } = useConfirm();
+  const [start, setStart] = useState(shoot.startTime ?? '');
+  const onDelete = async () => {
+    const ok = await confirm({
+      title: 'Delete shoot?',
+      body: 'The shoot and its shot list will be gone for good.',
+      confirmLabel: 'Delete shoot',
+      destructive: true,
+    });
+    if (!ok) return;
+    await deleteShoot(shoot.id);
+    onClose();
+    navigate(paths.shoots());
+  };
   return (
     <Sheet title="Shoot options" onClose={onClose}>
       <label className="row stack">
@@ -401,14 +416,38 @@ function OptionsSheet({ data, onClose, onShare }: { data: ShootData; onClose: ()
           <span>Date</span>
           <input type="date" defaultValue={shoot.date} onChange={(e) => e.target.value && void updateShoot(shoot.id, { date: e.target.value })} />
         </label>
-        <label className="field">
-          <span>Start time</span>
-          <input
-            type="time"
-            defaultValue={shoot.startTime ?? ''}
-            onChange={(e) => e.target.value && void updateShoot(shoot.id, { startTime: e.target.value })}
-          />
-        </label>
+        <div className="field">
+          <label htmlFor="shoot-start-time">Start time</label>
+          <div className="time-wrap">
+            <input
+              id="shoot-start-time"
+              type="time"
+              value={start}
+              onChange={(e) => {
+                setStart(e.target.value);
+                if (e.target.value) void updateShoot(shoot.id, { startTime: e.target.value });
+              }}
+            />
+            {!start && (
+              <span className="time-empty" aria-hidden="true">
+                Not set
+              </span>
+            )}
+            {start && (
+              <button
+                type="button"
+                className="time-clear"
+                aria-label="Clear start time"
+                onClick={() => {
+                  setStart('');
+                  void updateShoot(shoot.id, { startTime: undefined });
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
       </div>
       <button type="button" className="btn secondary wide" onClick={onShare}>
         Share shot list as text
@@ -425,27 +464,10 @@ function OptionsSheet({ data, onClose, onShare }: { data: ShootData; onClose: ()
       >
         Duplicate shoot
       </button>
-      {confirming ? (
-        <div className="problems">
-          <p>Delete this shoot and its shot list? This can’t be undone.</p>
-          <button
-            type="button"
-            className="btn danger wide"
-            onClick={() =>
-              void deleteShoot(shoot.id).then(() => {
-                onClose();
-                navigate(paths.shoots());
-              })
-            }
-          >
-            Yes, delete shoot
-          </button>
-        </div>
-      ) : (
-        <button type="button" className="btn danger wide" onClick={() => setConfirming(true)}>
-          Delete shoot
-        </button>
-      )}
+      <button type="button" className="btn danger-row wide" onClick={() => void onDelete()}>
+        Delete shoot
+      </button>
+      {confirmSheet}
     </Sheet>
   );
 }

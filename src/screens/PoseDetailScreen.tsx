@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
+import { useConfirm } from '../components/ConfirmSheet';
 import { Empty, Section, TopBar } from '../components/ui';
 import { db } from '../data/db';
 import { addPosePhoto, deletePose, deletePosePhoto, seedStarterPoses, setPoseFavorite } from '../data/repo';
@@ -12,6 +13,7 @@ import { poseImageSrc, resizePhoto } from './posePhoto';
 export function PoseDetailScreen({ poseId }: { poseId: string }) {
   // `null` once looked up and missing; `undefined` while loading.
   const pose = useLiveQuery(async () => (await db.poses.get(poseId)) ?? null, [poseId]);
+  const { confirm, confirmSheet } = useConfirm();
   const photos = useLiveQuery(() => db.posePhotos.where('poseId').equals(poseId).sortBy('createdAt'), [poseId]);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState('');
@@ -41,7 +43,8 @@ export function PoseDetailScreen({ poseId }: { poseId: string }) {
   };
 
   const remove = async () => {
-    if (!window.confirm(`Delete “${pose.name}” and its photos?`)) return;
+    const ok = await confirm({ title: `Delete “${pose.name}”?`, body: 'The pose and its photos will be gone for good.', confirmLabel: 'Delete', destructive: true });
+    if (!ok) return;
     await deletePose(pose.id);
     navigate(paths.poses());
   };
@@ -148,6 +151,7 @@ export function PoseDetailScreen({ poseId }: { poseId: string }) {
         </div>
       )}
       {editing && <PoseEditSheet pose={pose} onClose={() => setEditing(false)} onSaved={() => setEditing(false)} />}
+      {confirmSheet}
     </main>
   );
 }

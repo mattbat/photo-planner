@@ -51,4 +51,13 @@ describe('performance', () => {
     orderShots(shots, people, { kidsFirst: true, releaseOlderEarly: true, bigGroupFirst: true, mustHavesEarly: true });
     expect(Date.now() - t0).toBeLessThan(2000);
   });
+  it('orders ~30 people / 80 shots with groupHouseholds on within the same budget', () => {
+    const people = bigFamily();
+    const r = generateShots({ people, extras: [], attendingIds: people.map((p) => p.id), templateIds: TEMPLATE_IDS.filter((t) => !['grandparentGrandkid', 'parentChild', 'soloEveryone'].includes(t)) });
+    const shots = r.shots.slice(0, 80);
+    const t0 = Date.now();
+    const o = orderShots(shots, people, { kidsFirst: true, releaseOlderEarly: true, bigGroupFirst: true, everyoneFirst: true, groupHouseholds: true });
+    expect(o.order).toHaveLength(80);
+    expect(Date.now() - t0).toBeLessThan(1000);
+  });
 });

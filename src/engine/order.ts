@@ -13,6 +13,17 @@ export interface OrderOptions {
    * that person, see `priorities`). Everything after is ordered as usual.
    */
   everyoneFirst?: boolean;
+  /**
+   * Keep each household together. After the fixed prefix, the early people,
+   * the everyone shots and (with `releaseOlderEarly`) the shots with the
+   * oldest generation, the shots that mix households (cousins, siblings,
+   * all the grandkids) come first, then one contiguous block per household
+   * (a grown child, partner and not-grown kids): biggest shot first, solos
+   * last. Late people's shots go to the end as usual. Blocks are ordered for
+   * the fewest changes, ties by branch order. Kids-first and must-haves stay
+   * tie-breakers inside a tier or block and never split a block.
+   */
+  groupHouseholds?: boolean;
   mustHaveKeys?: Iterable<string>;
   /**
    * People to finish first ("early", e.g. an older guest) or push to the end
@@ -111,7 +122,10 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
     (how === 'early' ? earlyMask : lateMask)[b >> 5]! |= 1 << (b & 31);
   }
   const everyone = options.everyoneFirst ? everyoneShotKeys(shots) : new Set<string>();
-  const tier = new Uint8Array(n); // 0 everyone, 1 early only, 2 neither or both, 3 late only
+  // 0 everyone, 1 early only, 2 neither or both, 3 late only.
+  // With groupHouseholds: 0 everyone, 1 early only, 2 oldest generation, 3 cross-household,
+  // 4 household blocks (ordered after the main pass), 5 late only.
+  const tier = new Uint8Array(n);
   const earlyCount = new Int32Array(n);
   let tiered = false;
   for (let i = 0; i < n; i++) {
@@ -120,6 +134,32 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
     earlyCount[i]! = e;
     tier[i]! = everyone.has(shots[i]!.key) && l === 0 ? 0 : e > 0 && l === 0 ? 1 : l > 0 && e === 0 ? 3 : 2;
     if (tier[i]! !== 2) tiered = true;
+  }
+  const LATE_TIER = options.groupHouseholds ? 5 : 3;
+  const blockOf = new Int32Array(n).fill(-1);
+  const blockHouseholds: number[] = []; // block id -> index in fam.households
+  if (options.groupHouseholds) {
+    tiered = true;
+    const hhIdx = new Map<string, number[]>();
+    fam.households.forEach((h, hi) => { for (const m of h.memberIds) (hhIdx.get(m) ?? hhIdx.set(m, []).get(m)!).push(hi); });
+    const blockIds = new Map<number, number>();
+    for (let i = 0; i < n; i++) {
+      if (tier[i]! === 3) { tier[i]! = LATE_TIER; continue; }
+      if (tier[i]! !== 2) continue;
+      let older = 0;
+      for (let k = 0; k < W; k++) older += pop(M[i * W + k]! & olderMask[k]!);
+      if (options.releaseOlderEarly && older > 0) continue; // stays tier 2
+      const ppl = shots[i]!.peopleIds;
+      let hh = -1;
+      if (ppl.length) {
+        const cands = hhIdx.get(ppl[0]!) ?? [];
+        hh = cands.find((hi) => ppl.every((id) => fam.households[hi]!.memberIds.includes(id))) ?? -1;
+      }
+      if (hh < 0) { tier[i]! = 3; continue; }
+      tier[i]! = 4;
+      if (!blockIds.has(hh)) { blockIds.set(hh, blockHouseholds.length); blockHouseholds.push(hh); }
+      blockOf[i]! = blockIds.get(hh)!;
+    }
   }
   const hasEarly = earlyMask.some((m) => m !== 0);
   const must = new Set(options.mustHaveKeys ?? []);
@@ -200,7 +240,7 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
       let cur = s, pos = P;
       ord[pos++]! = cur; taken[cur]! = 1;
       while (pos < n) {
-        let bj = -1, bc = Infinity, minTier = 3;
+        let bj = -1, bc = Infinity, minTier = LATE_TIER;
         if (tiered) for (const j of free) if (!taken[j]! && tier[j]! < minTier) minTier = tier[j]!;
         for (const j of free) {
           if (taken[j]! || (tiered && tier[j]! !== minTier)) continue;
@@ -238,6 +278,7 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
         }
       }
     }
+    if (options.groupHouseholds && blockHouseholds.length) arrangeBlocks(best, P);
     // orientation: prefer peeling off from the bigger end when nothing else decides
     if (!P && !options.bigGroupFirst && !tiered) {
       const rev = Int32Array.from(best).reverse();
@@ -245,6 +286,57 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
       if (rc < bestCost - 1e-9 || (Math.abs(rc - bestCost) <= 1e-9 && sizes[rev[0]!]! > sizes[best[0]!]!)) best = rev;
     }
   } else prefix.forEach((v, i) => { best[i]! = v; });
+
+  /** Rewrites the household-tier run of `ord` as contiguous blocks (see `groupHouseholds`). */
+  function arrangeBlocks(ord: Int32Array, from: number) {
+    let a = from;
+    while (a < n && tier[ord[a]!]! !== 4) a++;
+    let b = a;
+    while (b < n && tier[ord[b]!]! === 4) b++;
+    if (a >= b) return;
+    const members: number[][] = blockHouseholds.map(() => []);
+    for (let p = a; p < b; p++) members[blockOf[ord[p]!]!]!.push(ord[p]!);
+    // blocks follow the order of the branches in the tree, then the households' own order
+    const rank = blockHouseholds.map((hi) => {
+      const h = fam.households[hi]!;
+      const br = fam.branches.findIndex((x) => h.adultIds.some((id) => x.memberIds.includes(id)));
+      return (br < 0 ? fam.branches.length : br) * 10000 + hi;
+    });
+    // inside a block: biggest first, then by must-have / kids weight, then fewest changes, then input order
+    const inside = (blk: number[], cur: number): number[] => {
+      const left = [...blk].sort((x, y) => x - y);
+      const out: number[] = [];
+      while (left.length) {
+        let bi = 0;
+        for (let q = 1; q < left.length; q++) {
+          const x = left[q]!, y = left[bi]!;
+          const d = sizes[y]! - sizes[x]! || wPos[y]! - wPos[x]! || (cur >= 0 ? ham(cur, x) - ham(cur, y) : 0);
+          if (d < 0 || (d === 0 && x < y)) bi = q;
+        }
+        cur = left.splice(bi, 1)[0]!;
+        out.push(cur);
+      }
+      return out;
+    };
+    const placed = new Set<number>();
+    const result: number[] = [];
+    let prev = a > 0 ? ord[a - 1]! : -1;
+    while (placed.size < members.length) {
+      let bestBlk = -1, bestCost = Infinity;
+      for (let blk = 0; blk < members.length; blk++) {
+        if (placed.has(blk) || !members[blk]!.length) continue;
+        const first = inside(members[blk]!, prev)[0]!;
+        const cost = prev >= 0 ? ham(prev, first) : 0;
+        if (cost < bestCost || (cost === bestCost && rank[blk]! < rank[bestBlk]!)) { bestCost = cost; bestBlk = blk; }
+      }
+      if (bestBlk < 0) break;
+      placed.add(bestBlk);
+      const seq = inside(members[bestBlk]!, prev);
+      result.push(...seq);
+      prev = seq[seq.length - 1]!;
+    }
+    result.forEach((v, k) => { ord[a + k]! = v; });
+  }
 
   const order = [...best].map((i) => shots[i]!.key);
   const people2 = (i: number) => [...shots[i]!.peopleIds, ...shots[i]!.extraIds];
