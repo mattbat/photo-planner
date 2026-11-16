@@ -4,6 +4,13 @@ What changed in each release of Photo Planner, in plain words. Newest first. The
 
 Changes that are merged but not released yet wait as notes in [`changes/`](changes/README.md). See "Releases" in the README for how a release is made.
 
+## 0.4.0 (2026-11-16)
+
+### Improved
+
+- Delete and replace questions now appear in a clean sheet with clear buttons.
+- Shots for each household now come together in one run, after the grandparents and the cousins, so families aren't called back and forth.
+
 ## 0.3.0 (2026-11-15)
 
 ### New
