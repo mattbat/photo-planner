@@ -82,6 +82,18 @@ describe('newId', () => {
 });
 
 describe('families and people', () => {
+  it('an edit right after creating many records is still stamped later than the record', async () => {
+    // Creating many records in one millisecond pushes their stamps ahead of the clock.
+    const { family } = await seedFamily();
+    for (let i = 0; i < 50; i++) await createFamily(`Extra ${i}`);
+    const before = (await db.families.get(family.id))!.updatedAt;
+    const newest = Math.max(...(await db.families.toArray()).map((f) => f.updatedAt));
+    await updateFamily(family.id, { name: 'Renamed' });
+    const after = (await db.families.get(family.id))!.updatedAt;
+    expect(after).toBeGreaterThan(before);
+    expect(after).toBeGreaterThan(newest);
+  });
+
   it('creates, renames, archives and deletes a family with everything in it', async () => {
     const { family } = await seedFamily();
     expect(await db.families.get(family.id)).toMatchObject({ name: 'The Testers', archived: false });

@@ -50,7 +50,10 @@ for (const [w, h] of [
         expect(g.right).toBeLessThanOrEqual(w);
       }
       const scroll = await page.evaluate(() => {
-        const bad = [document.documentElement, document.body, ...document.querySelectorAll('[role=dialog], [role=dialog] *')].filter((e) => e.scrollWidth > e.clientWidth + 1);
+        const bad = [document.documentElement, document.body, ...document.querySelectorAll('[role=dialog], [role=dialog] *')].filter(
+          // Text cut off with "…" on purpose is wider than its box by design.
+          (e) => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).textOverflow !== 'ellipsis',
+        );
         return bad.map((e) => e.className || e.tagName);
       });
       expect(scroll).toEqual([]);

@@ -53,9 +53,19 @@ let lastStamp = 0;
  * of people in the tree, and so branch colors, whatever their random ids).
  */
 function stamp<T extends object>(fields: T): T & { id: string; createdAt: number; updatedAt: number } {
-  const now = Math.max(Date.now(), lastStamp + 1);
-  lastStamp = now;
+  const now = tick();
   return { id: newId(), createdAt: now, updatedAt: now, ...fields };
+}
+
+/**
+ * The time for `updatedAt`: never earlier than (or equal to) any stamp this
+ * phone has already given out. Creation stamps can run a few ms ahead of the
+ * clock, so a plain Date.now() edit right after could look older than the
+ * record it changes, and a backup merge would keep the wrong copy.
+ */
+function tick(): number {
+  lastStamp = Math.max(Date.now(), lastStamp + 1);
+  return lastStamp;
 }
 
 /** Today as yyyy-mm-dd in the phone's time zone. */
@@ -76,7 +86,7 @@ export async function createFamily(name: string): Promise<Family> {
 }
 
 export async function updateFamily(id: string, changes: Changes<Family>): Promise<void> {
-  await db.families.update(id, { ...changes, updatedAt: Date.now() });
+  await db.families.update(id, { ...changes, updatedAt: tick() });
 }
 
 /** Archives a family (F1): it leaves the list but keeps its people and shoots. */
@@ -112,7 +122,7 @@ export async function addChild(familyId: string, name: string, parentIds: string
 }
 
 export async function updatePerson(id: string, changes: Changes<Omit<Person, 'familyId'>>): Promise<void> {
-  await db.people.update(id, { ...changes, updatedAt: Date.now() });
+  await db.people.update(id, { ...changes, updatedAt: tick() });
 }
 
 /**
@@ -121,7 +131,7 @@ export async function updatePerson(id: string, changes: Changes<Omit<Person, 'fa
  */
 export async function deletePerson(id: string): Promise<void> {
   await db.transaction('rw', [db.people, db.partnerships, db.shoots], async () => {
-    const now = Date.now();
+    const now = tick();
     await db.partnerships.where('personIds').equals(id).delete();
     await db.people
       .where('parentIds')
@@ -153,7 +163,7 @@ export async function addPartnership(
 }
 
 export async function updatePartnership(id: string, changes: Pick<Partial<Partnership>, 'status'>): Promise<void> {
-  await db.partnerships.update(id, { ...changes, updatedAt: Date.now() });
+  await db.partnerships.update(id, { ...changes, updatedAt: tick() });
 }
 
 export async function deletePartnership(id: string): Promise<void> {
@@ -216,7 +226,7 @@ export async function linkChild(parentId: string, childId: string, withParentId?
     const after = { ...before, people: before.people.map((p) => (p.id === childId ? { ...p, parentIds } : p)) };
     const problems = newProblems(before, after);
     if (problems.length) return refuse(problems);
-    await db.people.update(childId, { parentIds, updatedAt: Date.now() });
+    await db.people.update(childId, { parentIds, updatedAt: tick() });
     return { ok: true } as LinkResult;
   });
 }
@@ -294,7 +304,7 @@ export async function quickAddFamily(input: QuickAddInput): Promise<Family> {
   };
   const withParents = (id: string, parentIds: string[]) => {
     const p = existing(id);
-    const next = { ...p, parentIds: [...new Set([...p.parentIds, ...parentIds])], updatedAt: Date.now() };
+    const next = { ...p, parentIds: [...new Set([...p.parentIds, ...parentIds])], updatedAt: tick() };
     changed.set(id, next);
     known.set(id, next);
     return next;
@@ -398,7 +408,7 @@ export async function addExtra(
 }
 
 export async function updateExtra(id: string, changes: Changes<Omit<Extra, 'familyId'>>): Promise<void> {
-  await db.extras.update(id, { ...changes, updatedAt: Date.now() });
+  await db.extras.update(id, { ...changes, updatedAt: tick() });
 }
 
 export async function deleteExtra(id: string): Promise<void> {
@@ -440,7 +450,7 @@ export async function createShoot(family: Pick<Family, 'id'>, fields: NewShoot =
 }
 
 export async function updateShoot(id: string, changes: Changes<Shoot>): Promise<void> {
-  await db.transaction('rw', db.shoots, () => db.shoots.update(id, { ...changes, updatedAt: Date.now() }));
+  await db.transaction('rw', db.shoots, () => db.shoots.update(id, { ...changes, updatedAt: tick() }));
 }
 
 const SHOOT_TABLES = () => [db.shoots, db.people, db.partnerships, db.extras, db.families] as const;
@@ -474,7 +484,7 @@ async function editShoot(id: string, edit: (shoot: Shoot) => void, { day = false
     shoot.shots = plan.shots;
     shoot.order = plan.order;
     if (JSON.stringify(shoot) !== before) {
-      shoot.updatedAt = Date.now();
+      shoot.updatedAt = tick();
       await db.shoots.put(shoot);
     }
   });
@@ -710,7 +720,7 @@ export async function applySuggestedOrder(id: string, rest = false): Promise<voi
       { ...input, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities },
       rest,
     );
-    await db.shoots.update(id, { order, manualOrder: false, updatedAt: Date.now() });
+    await db.shoots.update(id, { order, manualOrder: false, updatedAt: tick() });
   });
 }
 
@@ -737,7 +747,7 @@ export async function setPriorities(id: string, personIds: string[], how: Priori
     if (shoot.status === 'live') order = suggestDayOrder(input, currentShot(shoot)?.id);
     else if (shoot.status === 'planned' && !shoot.manualOrder) order = suggestOrder(input);
     const reordered = order.join() !== shoot.order.join();
-    await db.shoots.put({ ...shoot, order, updatedAt: Date.now() });
+    await db.shoots.put({ ...shoot, order, updatedAt: tick() });
     return { reordered };
   });
 }
@@ -798,7 +808,7 @@ export async function takeBack(shootId: string): Promise<void> {
   await db.transaction('rw', db.shoots, async () => {
     const shoot = await db.shoots.get(shootId);
     if (!shoot?.handoff) return;
-    await db.shoots.update(shootId, { handoff: { n: shoot.handoff.n + 1, role: shoot.handoff.role, away: false }, updatedAt: Date.now() });
+    await db.shoots.update(shootId, { handoff: { n: shoot.handoff.n + 1, role: shoot.handoff.role, away: false }, updatedAt: tick() });
   });
 }
 
@@ -843,7 +853,7 @@ export async function addLocation(fields: Omit<Location, 'id' | 'createdAt' | 'u
 }
 
 export async function updateLocation(id: string, changes: Changes<Location>): Promise<void> {
-  await db.locations.update(id, { ...changes, updatedAt: Date.now() });
+  await db.locations.update(id, { ...changes, updatedAt: tick() });
 }
 
 export async function deleteLocation(id: string): Promise<void> {
@@ -852,7 +862,7 @@ export async function deleteLocation(id: string): Promise<void> {
       .filter((s) => s.locationId === id)
       .modify((s: Shoot) => {
         delete s.locationId;
-        s.updatedAt = Date.now();
+        s.updatedAt = tick();
       });
     await db.locations.delete(id);
   });
@@ -867,7 +877,7 @@ export async function addPose(fields: Omit<Pose, 'id' | 'createdAt' | 'updatedAt
 }
 
 export async function updatePose(id: string, changes: Changes<Pose>): Promise<void> {
-  await db.poses.update(id, { ...changes, updatedAt: Date.now() });
+  await db.poses.update(id, { ...changes, updatedAt: tick() });
 }
 
 /** Deletes a pose and its photos, and detaches it from shots that used it. */
@@ -883,7 +893,7 @@ export async function deletePose(id: string): Promise<void> {
         const left = (poseIds ?? (poseId ? [poseId] : [])).filter((p) => p !== id);
         return left.length ? { ...rest, poseIds: left } : rest;
       });
-      shoot.updatedAt = Date.now();
+      shoot.updatedAt = tick();
     });
     await db.poses.delete(id);
   });
@@ -906,7 +916,7 @@ export async function seedStarterPoses(): Promise<number> {
 }
 
 export async function setPoseFavorite(id: string, favorite: boolean): Promise<void> {
-  await db.poses.update(id, { favorite, updatedAt: Date.now() });
+  await db.poses.update(id, { favorite, updatedAt: tick() });
 }
 
 export async function addPosePhoto(fields: Pick<PosePhoto, 'poseId' | 'dataUrl' | 'width' | 'height'>): Promise<PosePhoto> {
@@ -930,7 +940,7 @@ export async function getSettings(): Promise<AppSettings> {
 
 export async function updateSettings(changes: Partial<AppSettings>): Promise<AppSettings> {
   const next = { ...(await getSettings()), ...changes };
-  await db.settings.put({ key: 'app', value: next, updatedAt: Date.now() });
+  await db.settings.put({ key: 'app', value: next, updatedAt: tick() });
   return next;
 }
 
