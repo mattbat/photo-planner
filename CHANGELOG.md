@@ -4,6 +4,16 @@ What changed in each release of Photo Planner, in plain words. Newest first. The
 
 Changes that are merged but not released yet wait as notes in [`changes/`](changes/README.md). See "Releases" in the README for how a release is made.
 
+## 0.4.1 (2026-11-16)
+
+### Improved
+
+- The Early/Late list is simpler: one row per person, grouped by household, no checkboxes.
+
+### Fixed
+
+- A change made right after adding something is no longer mistaken for an older copy when you restore a backup with Merge.
+
 ## 0.4.0 (2026-11-16)
 
 ### Improved
