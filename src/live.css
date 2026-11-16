@@ -231,22 +231,6 @@
   margin: 0 0 8px;
 }
 
-.live-who-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px 0;
-}
-
-.live-who-name {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.live-who .segmented button {
-  min-height: 44px;
-}
-
 .live-footer {
   padding-top: 10px;
 }

@@ -117,3 +117,35 @@ export function branchColors(treePeople: TreePerson[]): Map<string, number> {
   for (const n of layoutTree(treePeople).nodes) if (n.branchId) out.set(n.id, n.colorIndex);
   return out;
 }
+
+export interface HouseholdGroup {
+  /** The person heading the branch (a child of the top couple), or undefined for the top couples. */
+  headId?: string;
+  /** Branch color 0 to 7, as the tree draws it; undefined for the top couples. */
+  colorIndex?: number;
+  people: Person[];
+}
+
+/**
+ * People grouped the way the tree colors them: the top couples (the grandparents)
+ * first, then one group per branch from left to right. Inside a group, older
+ * generations come first, then name order. Only `people` are listed, but the
+ * branches are worked out from `everyone`, so a partial list keeps its groups.
+ */
+export function groupByHousehold(people: Person[], everyone: Person[], partnerships: Partnership[]): HouseholdGroup[] {
+  const nodes = new Map(layoutTree(toTreePeople(everyone, partnerships)).nodes.map((n) => [n.id, n]));
+  const groups = new Map<string, HouseholdGroup>();
+  for (const p of people) {
+    const n = nodes.get(p.id);
+    const key = n?.branchId ?? '';
+    let g = groups.get(key);
+    if (!g) {
+      g = n?.branchId ? { headId: n.branchId, colorIndex: n.colorIndex, people: [] } : { people: [] };
+      groups.set(key, g);
+    }
+    g.people.push(p);
+  }
+  const gen = (p: Person) => nodes.get(p.id)?.generation ?? 1;
+  for (const g of groups.values()) g.people.sort((a, b) => gen(a) - gen(b) || a.name.localeCompare(b.name));
+  return [...groups.values()].sort((a, b) => (a.colorIndex ?? -1) - (b.colorIndex ?? -1));
+}

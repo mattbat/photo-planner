@@ -2390,24 +2390,99 @@ textarea::placeholder {
   border: 1px solid var(--text-2);
 }
 
-.prio-name {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.prio-group {
+  margin: 12px 0 0;
 }
 
-.prio-name input {
-  width: 22px;
-  height: 22px;
-  flex: none;
-}
-
-.prio-bulk {
+.prio-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin: 8px 0;
+  margin: 0;
+  padding: 4px 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.prio-dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.prio-list {
+  margin: 0;
+}
+
+.prio-row {
+  padding: 8px 0;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.prio-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+}
+
+.prio-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.prio-row .prio-line .segmented {
+  flex: none;
+  width: 200px;
+  box-sizing: border-box;
+  height: 36px;
+  padding: 2px;
+}
+
+.prio-row .prio-line .segmented button {
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  font-size: 14px;
+}
+
+/* Normal is a quiet fill; Early and Late use the accent. */
+.prio-row .prio-line .segmented button.on {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.prio-row .prio-line .segmented button.on[data-v='early'],
+.prio-row .prio-line .segmented button.on[data-v='late'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: none;
+}
+
+.prio-row > .segmented {
+  margin-top: 6px;
+}
+
+.prio-row > .segmented button {
+  min-height: 44px;
+}
+
+.prio-reset {
+  display: block;
+  margin: 16px auto 4px;
+  min-height: 44px;
 }
 
 /* Chosen poses on a shot (PL5). */
