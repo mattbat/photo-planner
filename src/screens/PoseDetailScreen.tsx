@@ -46,7 +46,7 @@ export function PoseDetailScreen({ poseId }: { poseId: string }) {
     const ok = await confirm({ title: `Delete “${pose.name}”?`, body: 'The pose and its photos will be gone for good.', confirmLabel: 'Delete', destructive: true });
     if (!ok) return;
     await deletePose(pose.id);
-    navigate(paths.poses());
+    navigate(paths.poses(), { replace: true });
   };
 
   return (

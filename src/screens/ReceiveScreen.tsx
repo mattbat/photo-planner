@@ -47,7 +47,7 @@ export function ReceiveScreen({ data }: { data: string }) {
   const { handoff, local, decision } = state;
   const { shoot, family } = handoff;
   const inApp = isStandalone();
-  const open = (target: Shoot) => navigate(target.status === 'live' ? paths.live(target.id) : paths.shoot(target.id));
+  const open = (target: Shoot) => navigate(target.status === 'live' ? paths.live(target.id) : paths.shoot(target.id), { replace: true });
 
   const keep = async () => {
     await receiveShoot(handoff);

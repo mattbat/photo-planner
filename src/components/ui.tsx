@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { BETA } from '../beta';
-import { canGoBack, paths } from '../router';
+import { goBack, paths } from '../router';
 import { ChevronLeftIcon, GearIcon } from './icons';
 
 /** Small shared building blocks used across screens. */
@@ -14,7 +14,7 @@ export function TopBar({
 }: {
   title: ReactNode;
   back?: string;
-  /** Back returns to the previous page, like Safari's back; `back` is used when there isn't one. */
+  /** Back returns to the previous page, like Safari's back, unless that page is under this one; `back` is used otherwise. */
   historyBack?: boolean;
   /** Shown on the left when there's no back button. */
   lead?: ReactNode;
@@ -28,9 +28,8 @@ export function TopBar({
           href={back}
           aria-label="Back"
           onClick={(e) => {
-            if (!historyBack || !canGoBack()) return;
             e.preventDefault();
-            window.history.back();
+            goBack(back, historyBack);
           }}
         >
           <ChevronLeftIcon />
