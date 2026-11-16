@@ -1,5 +1,15 @@
 [
   {
+    "version": "0.4.1",
+    "date": "2026-11-16",
+    "improved": [
+      "The Early/Late list is simpler: one row per person, grouped by household, no checkboxes."
+    ],
+    "fixed": [
+      "A change made right after adding something is no longer mistaken for an older copy when you restore a backup with Merge."
+    ]
+  },
+  {
     "version": "0.4.0",
     "date": "2026-11-16",
     "improved": [
