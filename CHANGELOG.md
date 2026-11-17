@@ -4,6 +4,12 @@ What changed in each release of Photo Planner, in plain words. Newest first. The
 
 Changes that are merged but not released yet wait as notes in [`changes/`](changes/README.md). See "Releases" in the README for how a release is made.
 
+## 0.4.2 (2026-11-17)
+
+### Fixed
+
+- Back no longer goes round in a loop after a shoot is finished. From the summary, Back takes you to the shoot and then home to Shoots, wherever you started.
+
 ## 0.4.1 (2026-11-16)
 
 ### Improved

@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.4.2",
+    "date": "2026-11-17",
+    "fixed": [
+      "Back no longer goes round in a loop after a shoot is finished. From the summary, Back takes you to the shoot and then home to Shoots, wherever you started."
+    ]
+  },
+  {
     "version": "0.4.1",
     "date": "2026-11-16",
     "improved": [
