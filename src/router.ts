@@ -3,8 +3,6 @@ import { useEffect, useState } from 'react';
 /**
  * Tiny hash router. GitHub Pages can't fall back to index.html for deep
  * links, so routes live after the # (REQUIREMENTS.md T2).
- *
- * Later milestones add the family, shoot and shoot-day routes here.
  */
 
 export type Route =
@@ -67,8 +65,75 @@ export const paths = {
   welcome: () => '#/welcome',
 };
 
-export function navigate(hash: string): void {
-  window.location.hash = hash;
+/** Opens a page. With `replace`, it takes the current page's place in the history instead of adding one. */
+export function navigate(hash: string, { replace = false }: { replace?: boolean } = {}): void {
+  if (!replace) {
+    window.location.hash = hash;
+    return;
+  }
+  if (normalize(hash) === normalize(window.location.hash)) return;
+  replacing = true;
+  window.location.replace(hash);
+}
+
+/** The page a screen's back button leads up to, or null for the three tabs. */
+export function parentOf(hash: string): string | null {
+  const route = parseRoute(hash);
+  switch (route.name) {
+    case 'shoots':
+    case 'families':
+    case 'poses':
+      return null;
+    case 'shoot':
+      return paths.shoots();
+    case 'live':
+      return paths.shoot(route.id);
+    case 'family':
+      return paths.families();
+    case 'pose':
+      return paths.poses();
+    case 'diagnostics':
+      return paths.settings();
+    case 'help':
+      return route.topic ? paths.help() : paths.settings();
+    case 'receive':
+    case 'settings':
+    case 'welcome':
+      return paths.shoots();
+  }
+}
+
+/** True when `hash` is a page somewhere under `above` (e.g. shoot day under its shoot). */
+export function isBelow(hash: string, above: string): boolean {
+  const target = normalize(above);
+  let at = parentOf(hash);
+  for (let i = 0; at !== null && i < 10; i++) {
+    if (normalize(at) === target) return true;
+    at = parentOf(at);
+  }
+  return false;
+}
+
+/** One spelling per page, so `#/`, `#` and `` all read as Shoots. */
+function normalize(hash: string): string {
+  return '#/' + hash.replace(/^#\/?/, '').replace(/\/+$/, '');
+}
+
+/**
+ * What a top bar's back button does. It never adds a page, so back can't go
+ * round in a loop (e.g. summary → shoot → summary → …):
+ * - goes back in the history when the page before is `target`, or, with
+ *   `followHistory`, any page that isn't under this one;
+ * - otherwise this page is swapped for `target`.
+ */
+export function goBack(target: string, followHistory = false): void {
+  const prev = previousHash;
+  const here = window.location.hash;
+  if (canGoBack() && prev !== null && (normalize(prev) === normalize(target) || (followHistory && !isBelow(prev, here) && normalize(prev) !== normalize(here)))) {
+    window.history.back();
+    return;
+  }
+  navigate(target, { replace: true });
 }
 
 /**
@@ -84,10 +149,15 @@ export function navigate(hash: string): void {
 let depth = 0;
 let currentKey: string | null = null;
 let currentHash: string | null = null;
+/** The page before this one in the visit, if known. */
+let previousHash: string | null = null;
+/** Set while navigate(…, { replace: true }) swaps the current page. */
+let replacing = false;
 
 interface Stamp {
   ppKey?: string;
   ppDepth?: number;
+  ppPrev?: string | null;
 }
 
 /** Reads this page's place in the visit, or stamps it on a page not seen before. */
@@ -95,17 +165,23 @@ function stampHistory(opened: boolean): void {
   const hash = window.location.hash;
   // The same page again (e.g. a repeated event): nothing has moved.
   if (!opened && hash === currentHash) return;
+  const swapped = replacing;
+  replacing = false;
   const state = (window.history.state ?? {}) as Stamp;
   const known = typeof state.ppKey === 'string' && typeof state.ppDepth === 'number';
-  if (known && (opened || state.ppKey !== currentKey)) {
+  if (known && !swapped && (opened || state.ppKey !== currentKey)) {
     // Opened (or reloaded) on a page, or back or forward to one we've been on.
     depth = state.ppDepth!;
     currentKey = state.ppKey!;
+    previousHash = typeof state.ppPrev === 'string' ? state.ppPrev : null;
   } else {
-    // A new page: the first if the app just opened, otherwise one deeper.
-    depth = opened ? 0 : depth + 1;
+    // A new page: the first if the app just opened, one deeper, or (swapped) in the same place.
+    if (!swapped) {
+      previousHash = opened ? null : currentHash;
+      depth = opened ? 0 : depth + 1;
+    }
     currentKey = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-    window.history.replaceState({ ...state, ppKey: currentKey, ppDepth: depth }, '');
+    window.history.replaceState({ ...state, ppKey: currentKey, ppDepth: depth, ppPrev: previousHash }, '');
   }
   currentHash = hash;
 }

@@ -39,7 +39,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | ID | Status | Notes |
 |----|--------|-------|
 | T1 | 🟡 | Manifest, standalone display and generated icons are in place (M0). Installing on a real iPhone still to be checked. 📱 |
-| T2 | ✅ | Base path `/photo-planner/` and hash routing (M0). The final address depends on the name decision (Q13). |
+| T2 | ✅ | Base path `/photo-planner/` and hash routing (M0). The final address depends on the name decision (Q13). Back buttons never add a page: they go back in the history when the page before is where they lead (or, for "back to where you came from" buttons, any page not under this one), otherwise they swap this page for their target (`goBack` in `src/router.ts`), so there are no back loops. |
 | T3 | 🟡 | Workbox precache and an offline-launch test in Chromium (M0). Online extras (place search, map, forecast, time zone) are in (M5); map tiles are never precached. |
 | T4 | 🟡 | Dexie database `photo-planner` v1 with all tables; persistent storage requested at startup (M0). Migration tests grow with each new version. |
 | T5 | ✅ | Update banner never applies silently, with an hourly check; hidden on a shoot in progress and its shoot-day screen via `useInLiveShoot` (M0, M4). |

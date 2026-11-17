@@ -49,7 +49,7 @@ import { LightBanner } from '../components/LightBanner';
 import { db } from '../data/db';
 import { layoutTree } from '../tree/layout';
 import type { AttendanceStatus } from '../tree/types';
-import { paths } from '../router';
+import { goBack, paths } from '../router';
 import '../live.css';
 
 /** Shoot day (§8): the checklist the assistant uses outdoors. `lightBanner` is a slot for the golden-hour countdown (D7). */
@@ -69,7 +69,7 @@ export function LiveScreen({ shootId, lightBanner }: { shootId: string; lightBan
       <main className="screen">
         <TopBar title="Shoot day" back={paths.shoot(shootId)} />
         <Empty>
-          This shoot hasn’t started. <a href={paths.shoot(shootId)}>Open the shoot</a> and tap Start shoot.
+          This shoot hasn’t started. <a href={paths.shoot(shootId)} onClick={(e) => { e.preventDefault(); goBack(paths.shoot(shootId)); }}>Open the shoot</a> and tap Start shoot.
         </Empty>
       </main>
     );
@@ -322,7 +322,14 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
             </button>
           )}
           <HelpLink topic="shoot-day">How shoot day works</HelpLink>
-          <a className="btn secondary wide" href={paths.shoot(shoot.id)}>
+          <a
+            className="btn secondary wide"
+            href={paths.shoot(shoot.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              goBack(paths.shoot(shoot.id));
+            }}
+          >
             Back to the shot list
           </a>
         </Sheet>

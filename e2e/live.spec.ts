@@ -54,3 +54,38 @@ test('demo family → shoot → start → Done ×2 → Undo → someone leaves �
   await page.getByRole('button', { name: 'Reopen shoot' }).click();
   await expect(page.getByRole('button', { name: 'Done ✓' })).toBeVisible();
 });
+
+test('after a shoot is finished, Back always gets home (no loop)', async ({ page }) => {
+  await page.goto('./#/families');
+  await page.getByRole('button', { name: 'Load demo family' }).click();
+  await expect(page.getByRole('heading', { name: /Pike–Vega family/ })).toBeVisible();
+  await page.getByRole('link', { name: 'Back' }).click();
+  await page.getByRole('link', { name: /Shoots/ }).click();
+  await page.getByRole('button', { name: '+ New shoot' }).click();
+  await page.getByRole('dialog', { name: 'New shoot' }).getByRole('button', { name: 'Create shoot' }).click();
+  await page.getByRole('button', { name: 'Start shoot' }).click();
+  await expect(page).toHaveURL(/\/live$/);
+  // A reload mid-shoot must not lose the way back.
+  await page.reload();
+  await page.getByRole('button', { name: 'Shoot day menu' }).click();
+  await page.getByRole('dialog', { name: 'Shoot day' }).getByRole('button', { name: 'Finish shoot' }).click();
+  await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
+
+  const back = page.getByRole('link', { name: 'Back' });
+  // Summary → shoot → Shoots.
+  await back.click();
+  await expect(page.getByRole('button', { name: 'See the summary' }).or(page.getByRole('link', { name: 'See the summary' }))).toBeVisible();
+  await back.click();
+  await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
+  await expect(page).toHaveURL(/#\/$/);
+
+  // Again by way of See the summary, twice round.
+  for (let i = 0; i < 2; i++) {
+    await page.locator('a.list-item').first().click();
+    await page.getByRole('link', { name: 'See the summary' }).click();
+    await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
+    await back.click();
+    await back.click();
+    await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
+  }
+});

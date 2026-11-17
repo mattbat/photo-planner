@@ -403,7 +403,7 @@ function OptionsSheet({ data, onClose, onShare }: { data: ShootData; onClose: ()
     if (!ok) return;
     await deleteShoot(shoot.id);
     onClose();
-    navigate(paths.shoots());
+    navigate(paths.shoots(), { replace: true });
   };
   return (
     <Sheet title="Shoot options" onClose={onClose}>
