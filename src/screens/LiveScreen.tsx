@@ -3,6 +3,7 @@ import { CustomShotSheet } from '../components/CustomShotSheet';
 import { PriorityBadge, PriorityRow } from '../components/PrioritySheet';
 import { MoreIcon } from '../components/icons';
 import { applyPriority } from '../components/priority';
+import { cameraFor } from '../domain/camera';
 import { ShareShootSheet, SharedBanner } from '../components/ShareShoot';
 import { lockedAway } from '../data/handoff';
 import { FamilyTree } from '../components/FamilyTree';
@@ -193,7 +194,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
       {view === 'now' && (
         <>
           {current ? (
-            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} poses={poseIdsOf(current).flatMap((id) => (poses.has(id) ? [poses.get(id)!] : []))} waiting={waitingFor(state, current)} counter={shotCounter(state)} priorities={shoot.priorities} onPose={setPoseOpen} />
+            <CurrentCard shot={current} nameOf={nameOf} nodes={nodes} extras={extras} poses={poseIdsOf(current).flatMap((id) => (poses.has(id) ? [poses.get(id)!] : []))} waiting={waitingFor(state, current)} counter={shotCounter(state)} priorities={shoot.priorities} camera={cameraFor(current, shoot.cameraPersonId, shoot.backupCameraPersonId, nameOf)} onPose={setPoseOpen} />
           ) : (
             <section className="live-card live-empty" aria-label="Current shot">
               <h2>{open === 0 ? 'All shots handled' : 'Waiting for people'}</h2>
@@ -209,7 +210,7 @@ function Live({ data, lightBanner }: { data: ShootData; lightBanner: ReactNode }
               )}
             </section>
           )}
-          {current && <NextCard move={move} nameOf={nameOf} />}
+          {current && <NextCard move={move} nameOf={nameOf} camera={move.next ? cameraFor(move.next, shoot.cameraPersonId, shoot.backupCameraPersonId, nameOf) : undefined} />}
         </>
       )}
 
@@ -377,6 +378,7 @@ function CurrentCard({
   waiting,
   counter,
   priorities,
+  camera,
   onPose,
 }: {
   shot: Shot;
@@ -387,6 +389,7 @@ function CurrentCard({
   waiting: string[];
   counter: ShotCounter;
   priorities: Shoot['priorities'];
+  camera: string | undefined;
   onPose: (pose: Pose) => void;
 }) {
   const extraById = new Map(extras.map((e) => [e.id, e]));
@@ -403,6 +406,7 @@ function CurrentCard({
         )}
       </p>
       <h2 className="live-name">{shot.name}</h2>
+      {camera && <p className="live-camera">{camera}</p>}
       {waiting.length > 0 && (
         <p className="live-waiting" role="status">
           Waiting for: {waiting.map(nameOf).join(', ')}
@@ -451,13 +455,14 @@ function CurrentCard({
   );
 }
 
-function NextCard({ move, nameOf }: { move: ReturnType<typeof transition>; nameOf: (id: string) => string }) {
+function NextCard({ move, nameOf, camera }: { move: ReturnType<typeof transition>; nameOf: (id: string) => string; camera: string | undefined }) {
   const list = (ids: string[]) => ids.map(nameOf).join(', ');
   const done = new Set(move.doneForDay);
   return (
     <section className="live-next" aria-label="Next shot">
       <p className="live-kicker">Next</p>
       {move.next ? <h3>{move.next.name}</h3> : <h3>That’s the last shot</h3>}
+      {camera && <p className="live-camera">{camera}</p>}
       {move.callIn.length > 0 && (
         <p className="step in">
           <span aria-hidden>▲</span> Call in: <b>{list(move.callIn)}</b>

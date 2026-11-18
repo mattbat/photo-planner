@@ -126,6 +126,16 @@ describe('pack and unpack', () => {
     expect((await decodeHandoff(await encodeHandoff(bad as unknown as ShootHandoff))).ok).toBe(false);
   });
 
+  it('carries who is behind the camera', async () => {
+    const { shootId } = await planned();
+    const h = await build(shootId);
+    const withCamera: ShootHandoff = { ...h, shoot: { ...h.shoot, cameraPersonId: h.people[0]!.id, backupCameraPersonId: h.people[1]!.id } };
+    const parsed = await decodeHandoff(await encodeHandoff(withCamera));
+    expect(parsed.ok && parsed.handoff.shoot).toMatchObject({ cameraPersonId: h.people[0]!.id, backupCameraPersonId: h.people[1]!.id });
+    const bad = { ...withCamera, shoot: { ...withCamera.shoot, cameraPersonId: 7 } };
+    expect((await decodeHandoff(await encodeHandoff(bad as unknown as ShootHandoff))).ok).toBe(false);
+  });
+
   it('survives any title and notes (property)', async () => {
     const { shootId } = await planned();
     const h = await build(shootId);

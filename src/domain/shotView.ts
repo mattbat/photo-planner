@@ -15,6 +15,7 @@ import {
   type Shot as EngineShot,
 } from '../engine';
 import { formatClock } from '../sun';
+import { cameraFor } from './camera';
 import { poseIdsOf } from './shotPoses';
 import { orderedPeople, toTreePeople } from './familyView';
 
@@ -191,6 +192,8 @@ export interface OrderInput {
   estimates: TimeEstimates;
   /** People to shoot early or late (O7). */
   priorities?: Record<string, 'early' | 'late'> | undefined;
+  /** Who is behind the camera (P6). */
+  cameraPersonId?: string | undefined;
   thisYear?: number;
 }
 
@@ -213,6 +216,7 @@ function runOrder(input: OrderInput, fixedPrefix: string[], useOptions: boolean)
       ...(useOptions ? { kidsFirst: o.kidsFirst, releaseOlderEarly: o.releaseOlderEarly, bigGroupFirst: o.bigGroupFirst, mustHavesEarly: o.mustHavesEarly, everyoneFirst: o.everyoneFirst !== false, groupHouseholds: o.groupHouseholds !== false } : {}),
       mustHaveKeys: ordered.filter((s) => s.mustHave).map((s) => s.id),
       ...(input.priorities ? { priorities: input.priorities } : {}),
+      ...(input.cameraPersonId ? { cameraPersonId: input.cameraPersonId } : {}),
       fixedPrefix,
       minutesBySize: minutesBySize(input.estimates),
       setupMinutes: input.estimates.setup,
@@ -289,6 +293,8 @@ export function shotListText(args: {
   minutes?: { key: string; start: number }[];
   /** Names the poses on a shot (PL5). */
   poseName?: (id: string) => string | undefined;
+  /** Who is behind the camera and who covers their shots (P6). */
+  camera?: { personId?: string | undefined; backupId?: string | undefined };
 }): string {
   const ordered = inOrder(args.shots, args.order);
   const start = new Map((args.minutes ?? []).map((m) => [m.key, m.start]));
@@ -298,6 +304,8 @@ export function shotListText(args: {
     lines.push(`${i + 1}. ${s.mustHave ? '★ ' : ''}${s.name}${at}`);
     lines.push(`   ${s.personIds.map(args.nameOf).join(', ')}`);
     const poses = poseIdsOf(s).flatMap((id) => args.poseName?.(id) ?? []);
+    const cam = cameraFor(s, args.camera?.personId, args.camera?.backupId, args.nameOf);
+    if (cam) lines.push(`   ${cam}`);
     if (poses.length) lines.push(`   ${poses.length === 1 ? 'Pose' : 'Poses'}: ${poses.join(', ')}`);
     if (s.notes.trim()) lines.push(`   Note: ${s.notes.trim()}`);
   });

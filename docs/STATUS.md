@@ -98,6 +98,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | O8 | ✅ | Who's here on shoot day has Normal / Early / Late (same `PriorityRow` as the shoot screen); `suggestDayOrder` in `src/domain/shotView.ts` re-orders only to-do shots into their own slots (done shots never move, the current shot stays first); `reorderNote` gives the note. Undo does not undo a re-order. |
 | O9 | ✅ | `everyoneFirst` order option (`src/engine/order.ts`, `everyoneShotKeys`): everyone shots form a front tier, largest first; a shot with a Late person drops out of it. On by default (`DEFAULT_ORDER_OPTIONS`, Settings › New shoots, "Everyone first" on the shoot); missing in older data counts as on. "Full group waits for …" via `everyoneWaitsFor`. Example and property tests. |
 | O10 | ✅ | `groupHouseholds` order option (`src/engine/order.ts`, tiers plus `arrangeBlocks`): everyone, early, oldest generation, cross-household shots, then one contiguous block per household, then late. On by default (`DEFAULT_ORDER_OPTIONS`, Settings › New shoots, "Group each household" on the shoot); missing in older data counts as on. Example, property and performance tests. |
+| O11 | ✅ | `cameraPersonId` option in `orderShots` (`groupCamera` in `src/engine/order.ts`: a stable move of the camera person's shots to the front of each tier / household run, after everything else, so the guarantees of O7, O9, O10 and the fixed prefix still hold); passed through `OrderInput` (`runOrder`, so `suggestOrder` and `suggestDayOrder`) and the repo's order calls. Example and property tests. |
 | O6 | ⬜ |  |
 
 ## 7. Shoot planning
@@ -109,6 +110,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | P3 | 🟡 | Shoot header: date, family, attendees, estimated time (M3). Location picking arrives in M5. |
 | P4 | ✅ | Duplicate shoot (M3). |
 | P5 | ✅ | Share shot list as text (M3). |
+| P6 | ✅ | `Shoot.cameraPersonId` / `backupCameraPersonId` (optional, no Dexie version); `setCameraPeople` in `repo.ts` (partial update, re-orders like `setPriorities`; cleared when the person is deleted); `CameraSheet` ("Behind the camera" link in the shoot facts, `ChoosePerson` from the attending people, Clear); `cameraFor` in `src/domain/camera.ts` gives the label for shot rows, the live current and next cards and the shared text list (`shotListText`); validated in `validate.ts`; carried in the hand-off and copied by Duplicate (both spread the shoot). Tests: domain, repo, validate, hand-off, backup restore (older shoots without the fields), e2e. |
 
 ## 8. Shoot day (checklist)
 

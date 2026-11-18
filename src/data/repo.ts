@@ -146,6 +146,8 @@ export async function deletePerson(id: string): Promise<void> {
       shoot.shots = shoot.shots.map((s) => ({ ...s, personIds: s.personIds.filter((p) => p !== id) }));
       delete shoot.presence[id];
       if (shoot.priorities) delete shoot.priorities[id];
+      if (shoot.cameraPersonId === id) delete shoot.cameraPersonId;
+      if (shoot.backupCameraPersonId === id) delete shoot.backupCameraPersonId;
       shoot.updatedAt = now;
     });
     await db.people.delete(id);
@@ -717,7 +719,7 @@ export async function applySuggestedOrder(id: string, rest = false): Promise<voi
     if (!shoot) return;
     const input = await planInput(shoot);
     const order = suggestOrder(
-      { ...input, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities },
+      { ...input, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities, cameraPersonId: shoot.cameraPersonId },
       rest,
     );
     await db.shoots.update(id, { order, manualOrder: false, updatedAt: tick() });
@@ -742,7 +744,38 @@ export async function setPriorities(id: string, personIds: string[], how: Priori
     }
     if (Object.keys(priorities).length) shoot.priorities = priorities;
     else delete shoot.priorities;
-    const input = { ...(await planInput(shoot)), shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities };
+    const input = { ...(await planInput(shoot)), shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities, cameraPersonId: shoot.cameraPersonId };
+    let order = shoot.order;
+    if (shoot.status === 'live') order = suggestDayOrder(input, currentShot(shoot)?.id);
+    else if (shoot.status === 'planned' && !shoot.manualOrder) order = suggestOrder(input);
+    const reordered = order.join() !== shoot.order.join();
+    await db.shoots.put({ ...shoot, order, updatedAt: tick() });
+    return { reordered };
+  });
+}
+
+/**
+ * Sets who is behind the camera and who covers their shots (P6); `null`
+ * clears one, a missing field is left alone. The same person can't be both.
+ * Re-orders like `setPriorities` (the camera person's shots are kept together).
+ * Returns whether the order changed.
+ */
+export async function setCameraPeople(
+  id: string,
+  fields: { cameraPersonId?: string | null; backupCameraPersonId?: string | null },
+): Promise<{ reordered: boolean }> {
+  const settings = await getSettings();
+  return db.transaction('rw', [...SHOOT_TABLES()], async () => {
+    const shoot = await db.shoots.get(id);
+    if (!shoot || lockedAway(shoot)) return { reordered: false };
+    for (const key of ['cameraPersonId', 'backupCameraPersonId'] as const) {
+      const v = fields[key];
+      if (v === undefined) continue;
+      if (v === null) delete shoot[key];
+      else shoot[key] = v;
+    }
+    if (shoot.cameraPersonId && shoot.cameraPersonId === shoot.backupCameraPersonId) delete shoot.backupCameraPersonId;
+    const input = { ...(await planInput(shoot)), shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities, cameraPersonId: shoot.cameraPersonId };
     let order = shoot.order;
     if (shoot.status === 'live') order = suggestDayOrder(input, currentShot(shoot)?.id);
     else if (shoot.status === 'planned' && !shoot.manualOrder) order = suggestOrder(input);
