@@ -323,3 +323,72 @@ describe('orderShots everyoneFirst (O9)', () => {
     );
   });
 });
+
+describe('orderShots cameraPersonId (P6)', () => {
+  const ids = ['a', 'b', 'c', 'd', 'e', 'f'];
+  const cam = 'a';
+  const people = DEMO_PEOPLE;
+  const everyone = [...new Set(demoShots.flatMap((s) => s.peopleIds))];
+
+  it('keeps the camera person\u2019s shots in fewer runs (demo family)', () => {
+    const c = everyone[2]!;
+    const r = orderShots(demoShots, people, { cameraPersonId: c, groupHouseholds: true });
+    expect([...r.order].sort()).toEqual(demoShots.map((s) => s.key).sort());
+    const flagsOf = (order: string[]) => order.map((k) => byKey(demoShots).get(k)!.peopleIds.includes(c));
+    const runs = (f: boolean[]) => f.filter((x, i) => x && !f[i - 1]).length;
+    expect(runs(flagsOf(r.order))).toBeLessThanOrEqual(runs(flagsOf(orderShots(demoShots, people, { groupHouseholds: true }).order)));
+  });
+
+  it('puts the camera shots first in the block and keeps the rest in order', () => {
+    const shots = [shot('x1', 'b', 'c'), shot('x2', 'a', 'b'), shot('x3', 'c', 'd'), shot('x4', 'a', 'd')];
+    const plain = orderShots(shots, []).order;
+    const r = orderShots(shots, [], { cameraPersonId: 'a' }).order;
+    expect(r.slice(0, 2).sort()).toEqual(['x2', 'x4']);
+    const rest = (o: string[]) => o.filter((k) => k !== 'x2' && k !== 'x4');
+    expect(rest(r)).toEqual(rest(plain));
+  });
+
+  it('leaves the fixed prefix and the everyone shots alone', () => {
+    const shots = [shot('all', 'a', 'b', 'c'), shot('p', 'b'), shot('q', 'a'), shot('r', 'c')];
+    const r = orderShots(shots, [], { everyoneFirst: true, cameraPersonId: 'c', fixedPrefix: ['p'] }).order;
+    expect(r[0]).toBe('p');
+    const noCam = orderShots(shots, [], { everyoneFirst: true, fixedPrefix: ['p'] }).order;
+    expect(r.indexOf('all')).toBe(noCam.indexOf('all'));
+  });
+
+  it('ignores a camera person who is in no shot', () => {
+    expect(orderShots(demoShots, people, { cameraPersonId: 'nobody' }).order).toEqual(orderShots(demoShots, people).order);
+  });
+
+  it('property: permutation, prefix kept, tiers in order, camera shots first and contiguous per tier, deterministic', () => {
+    const shotsArb = fc
+      .uniqueArray(fc.subarray(ids, { minLength: 1 }), { minLength: 2, maxLength: 12, selector: (x) => x.join() })
+      .map((lists) => lists.map((l, i) => shot(`s${i}`, ...l)));
+    const prioArb = fc.dictionary(fc.constantFrom(...ids.slice(1)), fc.constantFrom('early' as const, 'late' as const));
+    fc.assert(
+      fc.property(shotsArb, prioArb, fc.nat(3), fc.boolean(), (shots, priorities, p, kids) => {
+        const fixedPrefix = shots.slice(0, Math.min(p, shots.length - 1)).map((s) => s.key);
+        const opts: OrderOptions = { priorities, fixedPrefix, kidsFirst: kids, cameraPersonId: cam };
+        const r = orderShots(shots, [], opts);
+        expect([...r.order].sort()).toEqual(shots.map((s) => s.key).sort());
+        expect(r.order.slice(0, fixedPrefix.length)).toEqual(fixedPrefix);
+        const m = byKey(shots);
+        const kind = (k: string) => {
+          const ps = m.get(k)!.peopleIds;
+          const e = ps.some((id) => priorities[id] === 'early');
+          const l = ps.some((id) => priorities[id] === 'late');
+          return e && !l ? 0 : l && !e ? 2 : 1;
+        };
+        const rest = r.order.slice(fixedPrefix.length);
+        const tiers = rest.map(kind);
+        expect(tiers).toEqual([...tiers].sort((a, b) => a - b));
+        for (const t of [0, 1, 2]) {
+          const run = rest.filter((k) => kind(k) === t).map((k) => m.get(k)!.peopleIds.includes(cam));
+          const firstFalse = run.indexOf(false);
+          expect(firstFalse < 0 || run.slice(firstFalse).every((x) => !x)).toBe(true);
+        }
+        expect(orderShots(shots, [], opts).order).toEqual(r.order);
+      }),
+    );
+  });
+});

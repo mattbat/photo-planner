@@ -86,6 +86,10 @@ describe('validators', () => {
     expect(isValidShoot({ ...shoot, priorities: { a: 'early', b: 'late' } })).toBe(true);
     expect(isValidShoot({ ...shoot, priorities: { a: 'urgent' } })).toBe(false);
     expect(isValidShoot({ ...shoot, priorities: ['early'] })).toBe(false);
+    expect(isValidShoot(shoot)).toBe(true); // older shoots have no camera people
+    expect(isValidShoot({ ...shoot, cameraPersonId: 'a', backupCameraPersonId: 'b' })).toBe(true);
+    expect(isValidShoot({ ...shoot, cameraPersonId: 5 })).toBe(false);
+    expect(isValidShoot({ ...shoot, backupCameraPersonId: ['b'] })).toBe(false);
     expect(isValidShoot({ ...shoot, status: 'soon' })).toBe(false);
     expect(isValidShoot({ ...shoot, shots: [{ id: 'x' }] })).toBe(false);
     expect(isValidShoot({ ...shoot, templates: [{ id: 'made-up', enabled: true }] })).toBe(false);

@@ -237,6 +237,10 @@ export interface Shoot extends Stamped {
   removedKeys: string[];
   /** People to shoot early or late (O7), by person id. Optional: no index, so no Dexie version. */
   priorities?: Record<string, Priority>;
+  /** The family member who usually takes the photos (P6). Optional: no index, so no Dexie version. */
+  cameraPersonId?: string;
+  /** Who takes the shots the camera person is in (P6). */
+  backupCameraPersonId?: string;
   // Shoot day (§8)
   presence: Record<string, Presence>;
   /** The shot being photographed now (D1); resumes after the phone locks (D8). */

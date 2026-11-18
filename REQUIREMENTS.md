@@ -123,6 +123,7 @@ A pure TypeScript module (`src/engine`), no React, Dexie or DOM, tested like nex
 | Generations | **Grandparents + all grandkids** | |
 | Generations | **Grandparents + all grandkids + great-grandkids** | |
 | Siblings | **All siblings** (each set of siblings) | Mike, Sarah, Dan |
+| Siblings | **Sibling pairs** (off by default; sets of 3 or more) | Mike & Sarah, Mike & Dan, Sarah & Dan |
 | Siblings | **All sons / all daughters** (needs sex) | Mike + Dan |
 | Siblings | **All grandsons / granddaughters** | |
 | Siblings | **Cousins** (all of a generation across branches) | All 9 grandkids |
@@ -133,6 +134,7 @@ A pure TypeScript module (`src/engine`), no React, Dexie or DOM, tested like nex
 | Households | **Each parent + their children** | Mike + his 3 kids; Jen + her 3 kids |
 | Households | **Each child's kids only** | Mike's 3 kids |
 | Pairs | **Each grandparent + each grandkid** (off by default: it multiplies fast) | |
+| Pairs | **Aunt or uncle + nieces and nephews** (off by default; blood relatives only) | Dan + Mike's kids |
 | Pairs | **Each parent + each child** (mother-daughter, father-son…) | |
 | Pairs | **Grandma with the granddaughters / Grandpa with the grandsons** | |
 | Solo | **Solo portraits** (choose generations: everyone, kids only, adults only) | |
@@ -171,6 +173,7 @@ The grown-children templates exist because grown children are their own househol
 | O8 | On shoot day, **Who's here** has the same Normal / Early / Late control. Changing it re-orders only the shots still to do, keeping the one being photographed first; done, skipped and retake shots never move. A short note says what happened ("Reordered: Grandma's 4 shots are next") (decided 2026-11-15). |
 | O9 | **Everyone first** (option, on by default, in Settings and per shoot). The "everyone" shots open the shoot, largest first: the full-group templates (with or without pets and guests) and any shot containing all the people. The rest are ordered as before. A shot with someone marked Late (O7) is not an everyone shot until they are Normal or Early again: the shoot screen says "Full group waits for Dan". Shots fixed by hand or already done keep their place (decided 2026-11-15). |
 | O10 | **Group each household** (option, on by default, in Settings and per shoot). A household is a grown child, their partner and their not-grown kids. After the shots fixed by hand or done, the Early people's shots and the everyone shots, the order is: shots with the oldest generation (grandparents, when Release older people early is on; "Grandparents + each household", "Grandparents + all grandkids"); then shots that mix households with no grandparent (cousins, siblings, all the grandkids), ordered for the fewest changes; then one contiguous block per household (all its people from one household), biggest shot first, then couples or kid groups, then solos; blocks are ordered for the fewest changes, ties by branch order in the tree; last, shots with a Late person. Kids first and Must-haves early only break ties inside a tier or block. Off: the order is as before (decided 2026-11-15). |
+| O11 | **Camera person's shots together.** When a shoot has a camera person (P6), the shots they are in are kept as one run, first inside each tier and each household block, in their usual relative order, so the camera is handed over once per block instead of back and forth. The Everyone shots (largest first), shots fixed by hand and done shots are untouched, and the Early/Late tiers still never interleave. |
 | O6 | Performance: 40 people and 120 shots ordered in under 1 second on an iPhone. |
 
 ## 7. Shoot planning
@@ -182,6 +185,7 @@ The grown-children templates exist because grown children are their own househol
 | P3 | Shot list screen: generated shots grouped by template group, toggle templates, add custom shots, mark **must-have ★**, notes, attach a suggested pose (§11). |
 | P4 | **Duplicate a shoot** (e.g. same family next year), carrying over templates, custom shots and settings, not statuses. |
 | P5 | **Share the shot list as text** (Messages, email, Notes, print) so the family can check it ahead of time: "Anything missing?" |
+| P6 | **Behind the camera.** Often the photographer is also in the family. On a shoot, pick who usually takes the photos (`cameraPersonId`) and who takes the shots that include them (`backupCameraPersonId`), from the people attending; either can be cleared. Shots with the camera person say "📷 Priya takes this", or "📷 Use a timer or tripod" when the backup is in the shot too or none is set. Shown on the shot list, the live current and next cards and the shared text list; carried in the hand-off and copied by Duplicate. Both are optional and missing in older data and backups. |
 
 ## 8. Shoot day (checklist)
 

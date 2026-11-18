@@ -80,6 +80,13 @@ function build(ctx: Ctx, tid: TemplateId): Cand[] {
         c([...g.ids, ...fam.descendants(g.ids, 2), ...fam.descendants(g.ids, 3)], `${g.label} + all ${their(g)}grandkids and great-grandkids`));
     case 'siblings':
       return fam.siblingSets.map((s) => c(s.ids, s.ids.length <= 4 ? join(s.ids) : `All ${s.ids.length} siblings`));
+    case 'siblingPairs':
+      for (const s of fam.siblingSets) {
+        if (s.ids.length < 3) continue; // a set of two is already the "All siblings" shot
+        const here = s.ids.filter((i) => ctx.attending.has(i));
+        for (let a = 0; a < here.length; a++) for (let b = a + 1; b < here.length; b++) out.push(c([here[a]!, here[b]!], join([here[a]!, here[b]!])));
+      }
+      return out;
     case 'sonsDaughters':
       for (const s of fam.siblingSets) {
         const owner = single && sigOf(s.parentIds) === sigOf(fam.rootUnits[0] ?? []) ? 'All the' : `${join(s.parentIds)}'s`;
@@ -127,6 +134,20 @@ function build(ctx: Ctx, tid: TemplateId): Cand[] {
       }
       return [...bySet.values()].map((e) => c(e.kids, `${join(e.parents)}'s kids`));
     }
+    case 'auntUncleNiblings':
+      for (const p of P) {
+        if (!ctx.attending.has(p.id)) continue;
+        // blood siblings only (never a sibling's partner), each with the kids who are coming
+        const fams = [...new Set(fam.siblingSets.filter((s) => s.ids.includes(p.id)).flatMap((s) => s.ids))]
+          .filter((sib) => sib !== p.id)
+          .map((sib) => ({ sib, kids: fam.children(sib).filter((k) => ctx.attending.has(k)) }))
+          .filter((f) => f.kids.length);
+        if (!fams.length) continue;
+        // with just one sibling's kids coming, "all of them" and "that family's kids" are the same photo
+        if (fams.length > 1) out.push(c([p.id, ...fams.flatMap((f) => f.kids)], `${nm(p.id)} + nieces and nephews`));
+        for (const f of fams) out.push(c([p.id, ...f.kids], `${nm(p.id)} + ${nm(f.sib)}'s kids`));
+      }
+      return out;
     case 'grandparentGrandkid':
       for (const p of P) for (const gk of fam.descendants([p.id], 2)) out.push(c([p.id, gk], `${nm(p.id)} & ${nm(gk)}`));
       return out;

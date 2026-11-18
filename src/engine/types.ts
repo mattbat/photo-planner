@@ -25,10 +25,10 @@ export type TemplateId =
   | 'fullGroup' | 'fullGroupNoPartners'
   | 'generations' | 'generationsWithPartners'
   | 'grandparentsChildren' | 'grandparentsGrandkids' | 'grandparentsGrandkidsGreat'
-  | 'siblings' | 'sonsDaughters' | 'grandsonsGranddaughters' | 'cousins'
+  | 'siblings' | 'siblingPairs' | 'sonsDaughters' | 'grandsonsGranddaughters' | 'cousins'
   | 'branches' | 'grandparentsBranches'
   | 'households' | 'couples' | 'parentChildren' | 'childKids'
-  | 'grandparentGrandkid' | 'parentChild' | 'grandmaGranddaughters'
+  | 'grandparentGrandkid' | 'auntUncleNiblings' | 'parentChild' | 'grandmaGranddaughters'
   | 'soloEveryone' | 'soloKids' | 'soloAdults'
   | 'grownChildrenAll' | 'parentsEachGrownChild' | 'parentsEachGrownHousehold' | 'grownHouseholdAlone';
 

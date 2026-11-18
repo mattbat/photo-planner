@@ -4,9 +4,9 @@ Tracks every requirement in [REQUIREMENTS.md](../REQUIREMENTS.md). Update this f
 
 **Legend:** ✅ Done · 🟡 Partial · ⬜ Not started · ➖ Dropped · 📱 Needs checking on a real iPhone
 
-**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 27 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **M4 (shoot day)** is done: Start shoot, the live checklist (`#/shoots/:id/live`), who's here, undo, finish and summary, poses on shots. **M6 (hand-off)** is done: share a shoot by link or file, receive, one phone at a time. **M5 (light)**, **M7 (poses)** and **M8 (help, intro, README, polish)** are done. **Next:** check on a real iPhone, then release 1.0.
+**Done:** M0, the scaffold from next5: an empty but real app (Shoots, Families and Poses tabs, Settings), the full data model and database, backup and restore, theme that follows the phone, update banner, install hint, error banner, wake-lock hook, What's new, Diagnostics, CI, release script and beta builds. **M1 (families and the tree)** is done apart from the relationship finder (V6) and the shot/attendance views (V7, V8), which wait for later milestones. **M2 (shot engine)** is in `src/engine` (pure, 29 template ids are the single source of truth) with the adapter `src/domain/shotView.ts`. **M3 (shoots and shot list)** is done apart from shoot-day items. **M4 (shoot day)** is done: Start shoot, the live checklist (`#/shoots/:id/live`), who's here, undo, finish and summary, poses on shots. **M6 (hand-off)** is done: share a shoot by link or file, receive, one phone at a time. **M5 (light)**, **M7 (poses)** and **M8 (help, intro, README, polish)** are done. **Next:** check on a real iPhone, then release 1.0.
 
-Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md](IDEAS.md))
+Last updated: 2026-11-18 (Sibling pairs, Aunt or uncle + nieces and nephews, Behind the camera P6/O11; ideas for what's next are in [IDEAS.md](IDEAS.md))
 
 ## Milestones
 
@@ -98,6 +98,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | O8 | ✅ | Who's here on shoot day has Normal / Early / Late (same `PriorityRow` as the shoot screen); `suggestDayOrder` in `src/domain/shotView.ts` re-orders only to-do shots into their own slots (done shots never move, the current shot stays first); `reorderNote` gives the note. Undo does not undo a re-order. |
 | O9 | ✅ | `everyoneFirst` order option (`src/engine/order.ts`, `everyoneShotKeys`): everyone shots form a front tier, largest first; a shot with a Late person drops out of it. On by default (`DEFAULT_ORDER_OPTIONS`, Settings › New shoots, "Everyone first" on the shoot); missing in older data counts as on. "Full group waits for …" via `everyoneWaitsFor`. Example and property tests. |
 | O10 | ✅ | `groupHouseholds` order option (`src/engine/order.ts`, tiers plus `arrangeBlocks`): everyone, early, oldest generation, cross-household shots, then one contiguous block per household, then late. On by default (`DEFAULT_ORDER_OPTIONS`, Settings › New shoots, "Group each household" on the shoot); missing in older data counts as on. Example, property and performance tests. |
+| O11 | ✅ | `cameraPersonId` option in `orderShots` (`groupCamera` in `src/engine/order.ts`: a stable move of the camera person's shots to the front of each tier / household run, after everything else, so the guarantees of O7, O9, O10 and the fixed prefix still hold); passed through `OrderInput` (`runOrder`, so `suggestOrder` and `suggestDayOrder`) and the repo's order calls. Example and property tests. |
 | O6 | ⬜ |  |
 
 ## 7. Shoot planning
@@ -109,6 +110,7 @@ Last updated: 2026-11-15 (0.2.0 released; ideas for what's next are in [IDEAS.md
 | P3 | 🟡 | Shoot header: date, family, attendees, estimated time (M3). Location picking arrives in M5. |
 | P4 | ✅ | Duplicate shoot (M3). |
 | P5 | ✅ | Share shot list as text (M3). |
+| P6 | ✅ | `Shoot.cameraPersonId` / `backupCameraPersonId` (optional, no Dexie version); `setCameraPeople` in `repo.ts` (partial update, re-orders like `setPriorities`; cleared when the person is deleted); `CameraSheet` ("Behind the camera" link in the shoot facts, `ChoosePerson` from the attending people, Clear); `cameraFor` in `src/domain/camera.ts` gives the label for shot rows, the live current and next cards and the shared text list (`shotListText`); validated in `validate.ts`; carried in the hand-off and copied by Duplicate (both spread the shoot). Tests: domain, repo, validate, hand-off, backup restore (older shoots without the fields), e2e. |
 
 ## 8. Shoot day (checklist)
 
@@ -188,6 +190,7 @@ The template ids and their starting on/off choices (Q12) are defined in `src/dat
 | Grandparents + all grandkids | ⬜ | |
 | Grandparents + all grandkids + great-grandkids | ⬜ | |
 | All siblings | ⬜ | |
+| Sibling pairs | ✅ | Off by default. One shot per pair in every sibling set of 3 or more (sets of 2 are the All siblings shot). Only attending people are paired. |
 | All sons / all daughters | ⬜ | |
 | All grandsons / granddaughters | ⬜ | |
 | Cousins | ⬜ | |
@@ -198,6 +201,7 @@ The template ids and their starting on/off choices (Q12) are defined in `src/dat
 | Each parent + their children | ⬜ | |
 | Each child's kids only | ⬜ | |
 | Each grandparent + each grandkid | ⬜ | |
+| Aunt or uncle + nieces and nephews | ✅ | Off by default. Filed under Pairs (one person plus a group, like grandparent + grandkid). Blood aunts and uncles only; for each, one shot with all their coming nieces and nephews (when more than one sibling has kids) and one per sibling with that sibling's kids. Named "Rosa + nieces and nephews" and "Rosa + Ben's kids". Uses attendance when building, so absent aunts or kids never leave a "can't make" flag. |
 | Each parent + each child | ⬜ | |
 | Grandma with granddaughters / Grandpa with grandsons | ⬜ | |
 | Solo portraits | ⬜ | |

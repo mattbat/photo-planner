@@ -13,6 +13,7 @@ export const TEMPLATES: Template[] = [
   t('grandparentsGrandkids', 'Generations', 'Grandparents + all grandkids', 'The top couple with all their grandkids.', true, 3),
   t('grandparentsGrandkidsGreat', 'Generations', 'Grandparents + all grandkids + great-grandkids', 'The top couple with every grandkid and great-grandkid.', false, 3),
   t('siblings', 'Siblings', 'All siblings', 'Each set of siblings together.', true, 2),
+  t('siblingPairs', 'Siblings', 'Sibling pairs', 'Each pair of siblings on their own.', false, 2),
   t('sonsDaughters', 'Siblings', 'All sons / all daughters', 'Brothers together, sisters together (needs sex).', false, 2),
   t('grandsonsGranddaughters', 'Siblings', 'All grandsons / granddaughters', 'All the grandsons, all the granddaughters (needs sex).', false, 2),
   t('cousins', 'Siblings', 'Cousins', 'A generation of cousins across branches.', true, 2),
@@ -23,6 +24,7 @@ export const TEMPLATES: Template[] = [
   t('parentChildren', 'Households', 'Each parent + their children', 'One parent with all their children.', false, 2),
   t('childKids', 'Households', "Each child's kids only", "One person's children without the parents.", false, 2),
   t('grandparentGrandkid', 'Pairs', 'Each grandparent + each grandkid', 'Off by default: it multiplies fast.', false, 2),
+  t('auntUncleNiblings', 'Pairs', 'Aunt or uncle + nieces and nephews', "Each aunt or uncle with their nieces and nephews: all of them, then each family's kids.", false, 2),
   t('parentChild', 'Pairs', 'Each parent + each child', 'Every parent and child pair.', false, 2),
   t('grandmaGranddaughters', 'Pairs', 'Grandma with the granddaughters / grandpa with the grandsons', 'Needs sex.', false, 3),
   t('soloEveryone', 'Solo', 'Solo portraits: everyone', 'A portrait of each person.', false, 1),
@@ -42,8 +44,8 @@ export const DEFAULT_TEMPLATE_IDS: TemplateId[] = TEMPLATES.filter((x) => x.defa
 /** Most specific first: decides which template names a merged shot. */
 export const SPECIFICITY: TemplateId[] = [
   'soloKids', 'soloAdults', 'soloEveryone', 'parentChild', 'grandparentGrandkid', 'grandmaGranddaughters',
-  'couples', 'childKids', 'parentChildren', 'households', 'grownHouseholdAlone', 'parentsEachGrownChild',
-  'parentsEachGrownHousehold', 'grownChildrenAll', 'branches', 'grandparentsBranches', 'siblings', 'sonsDaughters',
+  'couples', 'childKids', 'auntUncleNiblings', 'parentChildren', 'households', 'grownHouseholdAlone', 'parentsEachGrownChild',
+  'parentsEachGrownHousehold', 'grownChildrenAll', 'branches', 'grandparentsBranches', 'siblingPairs', 'siblings', 'sonsDaughters',
   'grandsonsGranddaughters', 'cousins', 'grandparentsChildren', 'grandparentsGrandkids', 'grandparentsGrandkidsGreat',
   'generations', 'generationsWithPartners', 'fullGroupNoPartners', 'fullGroup',
 ];

@@ -154,6 +154,22 @@ describe('restoreBackup with the old single pose (PL5)', () => {
   });
 });
 
+describe('restoreBackup with camera people (P6)', () => {
+  it('restores an older shoot without them, and one with them', async () => {
+    await fullPhone();
+    const backup = await createBackup();
+    const [shoot] = backup.shoots;
+    expect(shoot!.cameraPersonId).toBeUndefined();
+    const withCamera = { ...backup, shoots: [{ ...shoot!, cameraPersonId: shoot!.attendingIds[0]!, backupCameraPersonId: shoot!.attendingIds[1]! }] };
+    for (const data of [backup, withCamera]) {
+      expect(parseBackup(JSON.stringify(data)).ok).toBe(true);
+      await clearDb();
+      await restoreBackup(data, 'replace');
+      expect((await db.shoots.toArray())[0]!.cameraPersonId).toBe(data.shoots[0]!.cameraPersonId);
+    }
+  });
+});
+
 describe('restoreBackup (B1)', () => {
   it('replace: the phone ends up exactly like the backup', async () => {
     await fullPhone();
