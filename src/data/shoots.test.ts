@@ -14,6 +14,7 @@ import {
   renameShot,
   restoreShot,
   setAttending,
+  setCameraPeople,
   setOrderOptions,
   setShotOrder,
   setSoloScope,
@@ -242,5 +243,31 @@ describe('duplicate shoot (P4)', () => {
     expect(plain.title).toBe('Spring');
     expect(plain.date).toBe(today());
     expect(await duplicateShoot('missing')).toBeUndefined();
+  });
+});
+
+describe('behind the camera (P6)', () => {
+  it('sets, clears and keeps the two people apart, and copies carry them', async () => {
+    const { family, ivy } = await seedFamily();
+    const { id } = await createShoot(family);
+    const shoot = await load(id);
+    const [a, b] = shoot.attendingIds;
+    expect(shoot.cameraPersonId).toBeUndefined();
+    await setCameraPeople(id, { cameraPersonId: a!, backupCameraPersonId: b! });
+    expect(await load(id)).toMatchObject({ cameraPersonId: a, backupCameraPersonId: b });
+    const flags = (await load(id)).order.map((sid) => shoot.shots.find((s) => s.id === sid)!.personIds.includes(a!));
+    const runs = flags.filter((x, i) => x && !flags[i - 1]).length;
+    expect(runs).toBeLessThanOrEqual(2);
+    await setCameraPeople(id, { backupCameraPersonId: a! });
+    expect((await load(id)).backupCameraPersonId).toBeUndefined();
+    await setCameraPeople(id, { cameraPersonId: null });
+    expect((await load(id)).cameraPersonId).toBeUndefined();
+    expect(await setCameraPeople('missing', { cameraPersonId: a! })).toEqual({ reordered: false });
+    const other = shoot.attendingIds.find((x) => x !== ivy.id)!;
+    await setCameraPeople(id, { cameraPersonId: ivy.id, backupCameraPersonId: other });
+    const copy = (await duplicateShoot(id))!;
+    expect(await load(copy.id)).toMatchObject({ cameraPersonId: ivy.id, backupCameraPersonId: other });
+    await deletePerson(ivy.id);
+    expect((await load(id)).cameraPersonId).toBeUndefined();
   });
 });

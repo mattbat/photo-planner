@@ -271,6 +271,13 @@ const ALL: Topic[] = [
           <b>Late</b> badge shows on their names. If you ordered the list by hand it stays as it is until you tap{' '}
           <b>Suggested order</b>.
         </p>
+        <h2>Behind the camera</h2>
+        <p>
+          If you are in the family too, tap <b>Behind the camera</b> at the top of the shoot and choose who usually takes the
+          photos, then who takes the shots that include them. Those shots show <b>📷 Priya takes this</b>, or{' '}
+          <b>📷 Use a timer or tripod</b> when the other person is in the shot too. Their shots are kept together, so the
+          camera is handed over once instead of back and forth.
+        </p>
         <h2>Call in and can leave</h2>
         <p>
           Each shot shows <b>Call in:</b> the people who aren’t in the shot before it, and <b>Can leave:</b> people whose

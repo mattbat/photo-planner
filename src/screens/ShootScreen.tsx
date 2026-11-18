@@ -5,6 +5,7 @@ import { useConfirm } from '../components/ConfirmSheet';
 import { LiveControls } from '../components/LiveControls';
 import { LightSection } from '../components/LightSection';
 import { CustomShotSheet } from '../components/CustomShotSheet';
+import { CameraSheet } from '../components/CameraSheet';
 import { PriorityBadge, PrioritySheet } from '../components/PrioritySheet';
 import { ShotSheet } from '../components/ShotSheet';
 import { TemplatesPanel } from '../components/TemplatesPanel';
@@ -27,6 +28,7 @@ import {
 } from '../data/repo';
 import type { Shoot, Shot } from '../data/types';
 import { formatDate } from '../domain/dates';
+import { cameraFor } from '../domain/camera';
 import { shortNames } from '../domain/shortNames';
 import { branchColors, toTreePeople } from '../domain/familyView';
 import {
@@ -47,7 +49,7 @@ import { navigate, paths } from '../router';
 
 const minutesText = (m: number) => (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60 ? `${m % 60} min` : ''}`.trim());
 
-type Dialog = 'attendance' | 'custom' | 'options' | 'priorities' | { shotId: string } | null;
+type Dialog = 'attendance' | 'custom' | 'options' | 'priorities' | 'camera' | { shotId: string } | null;
 
 /** One shoot: templates, shot list and order (§6, §7). */
 export function ShootScreen({ shootId }: { shootId: string }) {
@@ -77,8 +79,8 @@ function Shoot({ data }: { data: ShootData }) {
 
   const ordered = useMemo(() => inOrder(shoot.shots, shoot.order), [shoot.shots, shoot.order]);
   const orderInput: OrderInput = useMemo(
-    () => ({ people, partnerships, extras, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities }),
-    [people, partnerships, extras, shoot.shots, shoot.order, shoot.orderOptions, settings.timeEstimates, shoot.priorities],
+    () => ({ people, partnerships, extras, shots: shoot.shots, order: shoot.order, options: shoot.orderOptions, estimates: settings.timeEstimates, priorities: shoot.priorities, cameraPersonId: shoot.cameraPersonId }),
+    [people, partnerships, extras, shoot.shots, shoot.order, shoot.orderOptions, settings.timeEstimates, shoot.priorities, shoot.cameraPersonId],
   );
   const analysis = useMemo(() => analyzeOrder(orderInput), [orderInput]);
   const planInput = useMemo(
@@ -110,6 +112,7 @@ function Shoot({ data }: { data: ShootData }) {
       nameOf,
       minutes: analysis.minutes,
       poseName: (id) => poses.get(id)?.name,
+      camera: { personId: shoot.cameraPersonId, backupId: shoot.backupCameraPersonId },
     });
     setStatus(await shareText(title, text, 'Shot list'));
   };
@@ -147,6 +150,9 @@ function Shoot({ data }: { data: ShootData }) {
           <span>about {minutesText(analysis.totalMinutes)}</span>
           <button type="button" className="link" onClick={() => setDialog('priorities')}>
             {Object.keys(shoot.priorities ?? {}).length ? `${Object.keys(shoot.priorities ?? {}).length} early or late` : 'Early or late people'}
+          </button>
+          <button type="button" className="link" onClick={() => setDialog('camera')}>
+            {shoot.cameraPersonId ? `📷 ${nameOf(shoot.cameraPersonId)}` : 'Behind the camera'}
           </button>
         </div>
       </section>
@@ -223,6 +229,7 @@ function Shoot({ data }: { data: ShootData }) {
                 nameOf={nameOf}
                 colorOf={(id) => colors.get(id)}
                 priorities={shoot.priorities}
+                camera={cameraFor(shot, shoot.cameraPersonId, shoot.backupCameraPersonId, nameOf)}
                 step={stepByKey.get(shot.id)}
                 minutes={minutesByKey.get(shot.id)}
                 startTime={shoot.startTime}
@@ -270,6 +277,7 @@ function Shoot({ data }: { data: ShootData }) {
         </Sheet>
       )}
       {dialog === 'priorities' && <PrioritySheet shoot={shoot} people={people} partnerships={partnerships} nameOf={nameOf} onClose={() => setDialog(null)} />}
+      {dialog === 'camera' && <CameraSheet shoot={shoot} people={people} nameOf={nameOf} onClose={() => setDialog(null)} />}
       {dialog === 'custom' && (
         <CustomShotSheet
           shootId={shoot.id}
@@ -303,6 +311,7 @@ function ShotRow({
   nameOf,
   colorOf,
   priorities,
+  camera,
   step,
   minutes,
   startTime,
@@ -318,6 +327,7 @@ function ShotRow({
   nameOf: (id: string) => string;
   colorOf: (id: string) => number | undefined;
   priorities: Shoot['priorities'];
+  camera: string | undefined;
   step: ReturnType<typeof analyzeOrder>['steps'][number] | undefined;
   minutes: { start: number; duration: number } | undefined;
   startTime: string | undefined;
@@ -364,6 +374,7 @@ function ShotRow({
         })}
         {more > 0 && <span className="pchip more">+{more} more</span>}
       </div>
+      {camera && <p className="shot-camera">{camera}</p>}
       {step && (
         <div className="shot-steps">
           {step.callIn.length > 0 && (

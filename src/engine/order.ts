@@ -40,6 +40,13 @@ export interface OrderOptions {
    * first), plus early people are done for the day as soon as possible.
    */
   priorities?: Record<string, 'early' | 'late'>;
+  /**
+   * The person behind the camera (P6). Inside each tier, and each household
+   * block, the shots they are in are kept together as one run, placed first,
+   * so the camera changes hands once per block. The "everyone" shots keep
+   * their largest-first order, and the fixed prefix never moves.
+   */
+  cameraPersonId?: string;
   /** Keys already done or ordered by hand: kept first, in this order. */
   fixedPrefix?: string[];
   /** Keys like "1-2", "3-6", "7+". */
@@ -285,7 +292,24 @@ export function orderShots(shots: Shot[], people: EnginePerson[], options: Order
       const rc = objective(rev);
       if (rc < bestCost - 1e-9 || (Math.abs(rc - bestCost) <= 1e-9 && sizes[rev[0]!]! > sizes[best[0]!]!)) best = rev;
     }
+    if (options.cameraPersonId) groupCamera(best, P, options.cameraPersonId);
   } else prefix.forEach((v, i) => { best[i]! = v; });
+
+  /** Camera person's shots first inside each tier / household block, relative order kept (P6). */
+  function groupCamera(ord: Int32Array, from: number, cam: string) {
+    let a = from;
+    while (a < n) {
+      let b = a + 1;
+      while (b < n && tier[ord[b]!]! === tier[ord[a]!]! && blockOf[ord[b]!]! === blockOf[ord[a]!]!) b++;
+      if (tier[ord[a]!]! !== 0 && b - a > 1) {
+        const run = Array.from(ord.subarray(a, b));
+        const mine = run.filter((i) => shots[i]!.peopleIds.includes(cam));
+        const rest = run.filter((i) => !shots[i]!.peopleIds.includes(cam));
+        [...mine, ...rest].forEach((v, k) => { ord[a + k]! = v; });
+      }
+      a = b;
+    }
+  }
 
   /** Rewrites the household-tier run of `ord` as contiguous blocks (see `groupHouseholds`). */
   function arrangeBlocks(ord: Int32Array, from: number) {
