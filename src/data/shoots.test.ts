@@ -64,6 +64,16 @@ describe('editing a shoot rebuilds the list in one step', () => {
     expect((await load(id)).shots.length).toBe(before);
   });
 
+  it('adds templates that a shoot saved before they existed does not list, switched off', async () => {
+    const { family } = await seedFamily();
+    const { id } = await createShoot(family);
+    await db.shoots.update(id, { templates: (await load(id)).templates.filter((t) => t.id !== 'siblingPairs' && t.id !== 'auntUncleNiblings') });
+    await setTemplateEnabled(id, 'siblingPairs', true);
+    const t = (await load(id)).templates;
+    expect(t.find((x) => x.id === 'siblingPairs')!.enabled).toBe(true);
+    expect(t.find((x) => x.id === 'auntUncleNiblings')!.enabled).toBe(false);
+  });
+
   it('switches the solo portraits scope between everyone, kids, adults and off', async () => {
     const { family } = await seedFamily();
     const { id } = await createShoot(family);

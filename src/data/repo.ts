@@ -5,7 +5,7 @@ import { planShoot, suggestDayOrder, suggestOrder, type PlanInput, type SoloScop
 import { starterPoses } from '../poses/starterPoses';
 import { demoFamily } from '../tree/fixtures';
 import { ALL_TABLES, db } from './db';
-import { defaultSettings } from './defaults';
+import { defaultSettings, withAllTemplates } from './defaults';
 import { lockedAway, receivedHandoff, roleOf, type ShootHandoff } from './handoff';
 import type {
   AppSettings,
@@ -435,7 +435,7 @@ export async function createShoot(family: Pick<Family, 'id'>, fields: NewShoot =
     ...fields,
     status: 'planned' as const,
     attendingIds: fields.attendingIds ?? [...people.filter((p) => !p.usuallyAbsent).map((p) => p.id), ...extras.map((e) => e.id)],
-    templates: settings.defaultTemplates,
+    templates: withAllTemplates(settings.defaultTemplates),
     shots: [],
     order: [],
     manualOrder: false,
@@ -497,7 +497,7 @@ export function regenerateShoot(id: string): Promise<void> {
 
 export function setTemplateEnabled(id: string, templateId: TemplateId, enabled: boolean): Promise<void> {
   return editShoot(id, (shoot) => {
-    shoot.templates = shoot.templates.map((t) => (t.id === templateId ? { ...t, enabled } : t));
+    shoot.templates = withAllTemplates(shoot.templates).map((t) => (t.id === templateId ? { ...t, enabled } : t));
   });
 }
 
@@ -505,7 +505,7 @@ export function setTemplateEnabled(id: string, templateId: TemplateId, enabled: 
 export function setSoloScope(id: string, scope: SoloScope): Promise<void> {
   const on: TemplateId | undefined = scope === 'off' ? undefined : (`solo${scope[0]!.toUpperCase()}${scope.slice(1)}` as TemplateId);
   return editShoot(id, (shoot) => {
-    shoot.templates = shoot.templates.map((t) => (t.id.startsWith('solo') ? { ...t, enabled: t.id === on } : t));
+    shoot.templates = withAllTemplates(shoot.templates).map((t) => (t.id.startsWith('solo') ? { ...t, enabled: t.id === on } : t));
   });
 }
 

@@ -123,6 +123,7 @@ A pure TypeScript module (`src/engine`), no React, Dexie or DOM, tested like nex
 | Generations | **Grandparents + all grandkids** | |
 | Generations | **Grandparents + all grandkids + great-grandkids** | |
 | Siblings | **All siblings** (each set of siblings) | Mike, Sarah, Dan |
+| Siblings | **Sibling pairs** (off by default; sets of 3 or more) | Mike & Sarah, Mike & Dan, Sarah & Dan |
 | Siblings | **All sons / all daughters** (needs sex) | Mike + Dan |
 | Siblings | **All grandsons / granddaughters** | |
 | Siblings | **Cousins** (all of a generation across branches) | All 9 grandkids |
@@ -133,6 +134,7 @@ A pure TypeScript module (`src/engine`), no React, Dexie or DOM, tested like nex
 | Households | **Each parent + their children** | Mike + his 3 kids; Jen + her 3 kids |
 | Households | **Each child's kids only** | Mike's 3 kids |
 | Pairs | **Each grandparent + each grandkid** (off by default: it multiplies fast) | |
+| Pairs | **Aunt or uncle + nieces and nephews** (off by default; blood relatives only) | Dan + Mike's kids |
 | Pairs | **Each parent + each child** (mother-daughter, father-son…) | |
 | Pairs | **Grandma with the granddaughters / Grandpa with the grandsons** | |
 | Solo | **Solo portraits** (choose generations: everyone, kids only, adults only) | |

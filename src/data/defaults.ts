@@ -6,6 +6,12 @@ export function defaultTemplates(): TemplateSetting[] {
   return TEMPLATE_IDS.map((id) => ({ id, enabled: DEFAULT_TEMPLATE_IDS.includes(id) }));
 }
 
+/** Adds any template that was added to the app after these settings were saved (switched off unless it is a default), keeping the saved choices. */
+export function withAllTemplates(saved: TemplateSetting[]): TemplateSetting[] {
+  const have = new Set(saved.map((t) => t.id));
+  return [...saved, ...defaultTemplates().filter((t) => !have.has(t.id))];
+}
+
 export const DEFAULT_ORDER_OPTIONS: OrderOptions = {
   kidsFirst: true,
   releaseOlderEarly: true,

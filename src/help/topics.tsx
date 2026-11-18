@@ -166,7 +166,8 @@ const ALL: Topic[] = [
           </dd>
           <dt>Siblings</dt>
           <dd>
-            <b>All siblings</b>: Emma and Noah together. <b>All sons / all daughters</b> and{' '}
+            <b>All siblings</b>: Emma and Noah together. <b>Sibling pairs</b> adds each pair on their own when there are
+            three or more. <b>All sons / all daughters</b> and{' '}
             <b>grandsons / granddaughters</b> need sex filled in. <b>Cousins</b> gathers a generation across branches:
             Emma, Noah, Ava, Ben and Mia.
           </dd>
@@ -184,7 +185,8 @@ const ALL: Topic[] = [
           <dt>Pairs</dt>
           <dd>
             <b>Each grandparent + each grandkid</b> and <b>each parent + each child</b> make one photo per pair, so they
-            multiply quickly. That’s why they start off. Check the count before switching them on.
+            multiply quickly. That’s why they start off. Check the count before switching them on. <b>Aunt or uncle + nieces and nephews</b> pairs each aunt or uncle (blood
+            relatives only) with all their nieces and nephews, then with each sibling’s kids.
           </dd>
           <dt>Solo</dt>
           <dd>
