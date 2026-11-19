@@ -4,6 +4,13 @@ What changed in each release of Photo Planner, in plain words. Newest first. The
 
 Changes that are merged but not released yet wait as notes in [`changes/`](changes/README.md). See "Releases" in the README for how a release is made.
 
+## 0.5.0 (2026-11-18)
+
+### New
+
+- Behind the camera: if you are in the family too, say who takes the photos for the shots you are in. Those shots show "Priya takes this" (or "Use a timer or tripod"), and they are kept together so the camera is handed over once.
+- Two new shot types, both off until you switch them on: "Sibling pairs" (each pair of brothers and sisters on their own) and "Aunt or uncle + nieces and nephews".
+
 ## 0.4.2 (2026-11-17)
 
 ### Fixed
